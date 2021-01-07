@@ -1,4 +1,5 @@
 # simba
-SIMBA: Single-cell Embedding Along  with features
 
-<img src="docs/static/img/logo.png" width="50%" height="50%">
+SIMBA: SIngle-cell eEMedding Along with features
+
+![simba](./docs/static/img/logo_100x100.png?raw=true)

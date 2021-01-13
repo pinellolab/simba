@@ -158,7 +158,7 @@ def cal_qc_rna(adata, expr_cutoff=1):
     n_features = (adata.X >= expr_cutoff).sum(axis=1).A1
     adata.obs['n_genes'] = n_features
     adata.obs['pct_genes'] = n_features/adata.shape[1]
-    r = re.compile("^MT-", flags=re.IGNORECASE)
+    r = re.compile(b"^MT-", flags=re.IGNORECASE)
     mt_genes = list(filter(r.match, adata.var_names))
     if(len(mt_genes) > 0):
         n_counts_mt = adata[:, mt_genes].X.sum(axis=1).A1
@@ -466,13 +466,13 @@ def filter_cells_rna(adata,
 
 
 def filter_cells_atac(adata,
-                 min_n_peaks=None,
-                 max_n_peaks=None,
-                 min_pct_peaks=None,
-                 max_pct_peaks=None,
-                 min_n_counts=None,
-                 max_n_counts=None,
-                 expr_cutoff=1):
+                    min_n_peaks=None,
+                    max_n_peaks=None,
+                    min_pct_peaks=None,
+                    max_pct_peaks=None,
+                    min_n_counts=None,
+                    max_n_counts=None,
+                    expr_cutoff=1):
     """Filter out cells for ATAC-seq based on different metrics.
     Parameters
     ----------

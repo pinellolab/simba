@@ -340,6 +340,8 @@ def filter_samples( adata,
         pct_features = n_features/adata.shape[1]
         adata.obs['pct_features'] = pct_features
 
+    print('before filtering: ')
+    print(f"{adata.shape[0]} samples, {adata.shape[1]} feature")
     if(sum(list(map(lambda x: x is None,
                     [min_n_features,
                      min_pct_features,
@@ -431,6 +433,8 @@ def filter_cells_rna(adata,
         pct_genes = n_genes/adata.shape[1]
         adata.obs['pct_genes'] = pct_genes
 
+    print('before filtering: ')
+    print(f"{adata.shape[0]} cells,  {adata.shape[1]} genes")
     if(sum(list(map(lambda x: x is None,
                     [min_n_genes,
                      min_pct_genes,
@@ -522,6 +526,8 @@ def filter_cells_atac(adata,
         pct_peaks = n_peaks/adata.shape[1]
         adata.obs['pct_peaks'] = pct_peaks
 
+    print('before filtering: ')
+    print(f"{adata.shape[0]} cells,  {adata.shape[1]} peaks")
     if(sum(list(map(lambda x: x is None,
                     [min_n_peaks,
                      min_pct_peaks,
@@ -611,6 +617,8 @@ def filter_genes(adata,
         pct_cells = n_cells/adata.shape[0]
         adata.var['pct_cells'] = pct_cells
 
+    print('Before filtering: ')
+    print(str(adata.shape[0])+' cells, ' + str(adata.shape[1])+' '+feature)
     if(sum(list(map(lambda x: x is None,
                     [min_n_cells, min_pct_cells, min_n_counts,
                      max_n_cells, max_pct_cells, max_n_counts,
@@ -696,6 +704,8 @@ def filter_peaks(adata,
         pct_cells = n_cells/adata.shape[0]
         adata.var['pct_cells'] = pct_cells
 
+    print('Before filtering: ')
+    print(str(adata.shape[0])+' cells, ' + str(adata.shape[1])+' '+feature)
     if(sum(list(map(lambda x: x is None,
                     [min_n_cells, min_pct_cells, min_n_counts,
                      max_n_cells, max_pct_cells, max_n_counts,
@@ -779,6 +789,9 @@ def filter_features(adata,
     else:
         pct_samples = n_samples/adata.shape[0]
         adata.var['pct_samples'] = pct_samples
+
+    print('Before filtering: ')
+    print(f"{adata.shape[0]} samples,  {adata.shape[1]} features")
 
     if(sum(list(map(lambda x: x is None,
                     [min_n_samples, min_pct_samples, min_n_counts,

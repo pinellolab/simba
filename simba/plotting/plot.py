@@ -71,6 +71,7 @@ def violin(adata,
                             s=size)
 
             ax_i.set_title(obs)
+            ax_i.set_ylabel('')
             ax_i.locator_params(axis='y',nbins=6)
             ax_i.tick_params(axis="y",pad=-2)
             ax_i.spines['right'].set_visible(False)
@@ -106,6 +107,7 @@ def violin(adata,
                             s=size)
 
             ax_i.set_title(var)
+            ax_i.set_ylabel('')
             ax_i.locator_params(axis='y',nbins=6)
             ax_i.tick_params(axis="y",pad=-2)
             ax_i.spines['right'].set_visible(False)

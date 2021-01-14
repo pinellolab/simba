@@ -161,7 +161,7 @@ def cal_qc_rna(adata, expr_cutoff=1):
     n_features = (adata.X >= expr_cutoff).sum(axis=1).A1
     adata.obs['n_genes'] = n_features
     adata.obs['pct_genes'] = n_features/adata.shape[1]
-    r = re.compile(b"^MT-", flags=re.IGNORECASE)
+    r = re.compile("^MT-", flags=re.IGNORECASE)
     mt_genes = list(filter(r.match, adata.var_names))
     if(len(mt_genes) > 0):
         n_counts_mt = adata[:, mt_genes].X.sum(axis=1).A1
@@ -934,7 +934,8 @@ def pca(adata,
         algorithm='randomized',
         n_iter=5,
         random_state=2021,
-        tol=0.0
+        tol=0.0,
+        feature=None,
         ):
     """perform Principal Component Analysis (PCA)
     Parameters
@@ -956,13 +957,18 @@ def pca(adata,
     `.uns['pca']['variance_ratio']` : `array`
         Percentage of variance explained by each of the selected components.
     """
+    if(feature is None):
+        X = adata.X.copy()
+    else:
+        mask = adata.var['highly_variable']
+        X = adata[:,mask].X.copy()
     svd = TruncatedSVD(n_components=n_components,
                        algorithm=algorithm,
                        n_iter=n_iter,
                        random_state=random_state,
-                       tol=0.0)
-    svd.fit(adata.X)
-    adata.obsm['X_pca'] = svd.transform(adata.X)
+                       tol=tol)
+    svd.fit(X)
+    adata.obsm['X_pca'] = svd.transform(X)
     adata.varm['PCs'] = svd.components_.T
     adata.uns['pca'] = dict()
     adata.uns['pca']['variance'] = svd.explained_variance_
@@ -986,6 +992,7 @@ def select_pcs(adata,
         n_pcs = locate_elbow(range(n_components),
                              adata.uns['pca']['variance_ratio'],
                              S=S,
+                             curve=curve,
                              min_elbow=min_elbow,
                              direction=direction,
                              online=online,

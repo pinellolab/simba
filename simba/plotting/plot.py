@@ -6,6 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import seaborn as sns
+from adjustText import adjust_text
 
 
 # import sys
@@ -306,6 +307,66 @@ def pcs_features(adata,
         if(not os.path.exists(fig_path)):
             os.makedirs(fig_path)
         plt.savefig(os.path.join(fig_path, fig_name),
+                    pad_inches=1,
+                    bbox_inches='tight')
+        plt.close(fig)
+
+
+def variable_genes(adata,
+                    show_texts=False,
+                    n_texts=10,
+                    size=8,
+                    text_size=10,
+                    fig_size=(4, 4),
+                    save_fig=None,
+                    fig_path=None,
+                    fig_name='plot_variable_genes.pdf',
+                    pad=1.08,
+                    w_pad=None,
+                    h_pad=None):
+    """Plot highly variable genes.
+    """
+    if(fig_size is None):
+        fig_size = mpl.rcParams['figure.figsize']
+    if(save_fig is None):
+        save_fig = settings.save_fig
+    if(fig_path is None):
+        fig_path = os.path.join(settings.workdir, 'figures')
+
+    means = adata.var['means']
+    variances_norm = adata.var['variances_norm']
+    mask = adata.var['highly_variable']
+    genes = adata.var_names
+
+    fig, ax = plt.subplots(figsize=fig_size)
+    ax.scatter(means[~mask],
+                variances_norm[~mask],
+                s=size,
+                c='#1F2433')
+    ax.scatter(means[mask],
+                variances_norm[mask],
+                s=size,
+                c='#ce3746')
+    ax.set_xscale(value='log')
+
+    if(show_texts):
+        ids = variances_norm.values.argsort()[-n_texts:][::-1]
+        texts = [plt.text(means[i], variances_norm[i], genes[i],
+                    fontdict={'family': 'serif','color': 'black','weight': 'normal','size': text_size,}) 
+                for i in ids]
+        adjust_text(texts,arrowprops=dict(arrowstyle='-', color='black'))
+
+    ax.set_xlabel('average expression')
+    ax.set_ylabel('standardized variance')
+    ax.locator_params(axis='x', tight=True)
+    ax.locator_params(axis='y', tight=True)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    fig.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
+    if(save_fig):
+        if(not os.path.exists(fig_path)):
+            os.makedirs(fig_path)
+        fig.savefig(os.path.join(fig_path, fig_name),
                     pad_inches=1,
                     bbox_inches='tight')
         plt.close(fig)

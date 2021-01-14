@@ -10,6 +10,8 @@ from .preprocess import (
     filter_features,
     filter_genes,
     filter_peaks,
+    log_transform,
+    normalize,
     pca,
     select_pcs,
     select_pcs_features,

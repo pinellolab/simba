@@ -7,6 +7,7 @@ from scipy.sparse import (
 )
 import re
 from sklearn.decomposition import TruncatedSVD
+from sklearn.utils import sparsefuncs
 from ._utils import (
     locate_elbow,
     cal_tf_idf
@@ -54,7 +55,8 @@ def normalize(adata, method='lib_size', scale_factor=1e4, save_raw=True):
     if(save_raw):
         adata.layers['raw'] = adata.X
     if(method == 'lib_size'):
-        adata.X = (np.divide(adata.X.T, adata.X.sum(axis=1)).T)*scale_factor
+        sparsefuncs.inplace_row_scale(adata.X, 1/adata.X.sum(axis=1).A)
+        adata.X = adata.X*scale_factor
     if(method == 'tf_idf'):
         adata.X = cal_tf_idf(adata.X)
 

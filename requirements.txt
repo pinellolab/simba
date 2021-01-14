@@ -6,3 +6,4 @@ scipy>=1.4
 kneed>=0.7
 seaborn>=0.11
 matplotlib>=3.3
+scikit-misc>=0.1.3

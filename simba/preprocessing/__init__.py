@@ -15,4 +15,5 @@ from .preprocess import (
     pca,
     select_pcs,
     select_pcs_features,
+    select_variable_genes
 )

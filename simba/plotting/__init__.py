@@ -7,4 +7,5 @@ from ._plot import (
     violin,
     hist,
     umap,
+    discretize
 )

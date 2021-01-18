@@ -753,3 +753,54 @@ def umap(adata,
                        fig_path=fig_path,
                        fig_name=fig_name,
                        **kwargs)
+
+
+def discretize(adata,
+               layer=None,
+               kde=False,
+               bins=20,
+               fig_size=(5, 8),
+               pad=1.08,
+               w_pad=None,
+               h_pad=None,
+               save_fig=None,
+               fig_path=None,
+               fig_name='plot_discretize.pdf',
+               **kwargs):
+    """Plot original data VS discretized data
+        Parameters
+    ----------
+
+
+    Returns
+    -------
+
+    """
+    if layer is None:
+        X = adata.X.copy()
+    else:
+        X = adata.layers[layer].copy()
+    nonzero_disc = adata.uns['disc']['disc_ori'].data
+    bin_edges = adata.uns['disc']['bin_edges'][0]
+    print(bin_edges)
+    fig, ax = plt.subplots(2, 1, figsize=fig_size)
+    _ = sns.histplot(ax=ax[0],
+                     x=X.data,
+                     kde=kde,
+                     bins=bins,
+                     **kwargs)
+    _ = sns.histplot(ax=ax[1],
+                     x=nonzero_disc,
+                     kde=False,
+                     bins=bin_edges,
+                     **kwargs)
+    ax[0].set_xlabel('Non-zero values')
+    ax[0].set_title('Original')
+    ax[1].set_xlabel('Non-zero values')
+    ax[1].set_title('Discretized')
+    plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
+    if(save_fig):
+        plt.savefig(os.path.join(fig_path, fig_name),
+                    pad_inches=1,
+                    bbox_inches='tight')
+        plt.close(fig)

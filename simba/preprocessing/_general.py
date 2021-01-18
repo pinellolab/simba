@@ -3,6 +3,7 @@
 import numpy as np
 from sklearn.decomposition import TruncatedSVD
 from sklearn.utils import sparsefuncs
+from sklearn import preprocessing
 from skmisc.loess import loess
 from ._utils import (
     cal_tf_idf
@@ -25,6 +26,16 @@ def log_transform(adata):
 
     adata.X = np.log1p(adata.X)
     return None
+
+
+def binarize(adata,
+             threshold=1e-5,
+             copy=True):
+    """Binarize an array.
+    """
+    adata.X = preprocessing.binarize(adata.X,
+                                     threshold=threshold,
+                                     copy=copy)
 
 
 def normalize(adata, method='lib_size', scale_factor=1e4, save_raw=True):

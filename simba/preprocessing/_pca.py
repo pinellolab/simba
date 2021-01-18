@@ -2,8 +2,6 @@
 
 import numpy as np
 from sklearn.decomposition import TruncatedSVD
-from sklearn.utils import sparsefuncs
-from skmisc.loess import loess
 from ._utils import (
     locate_elbow,
 )
@@ -16,6 +14,7 @@ def pca(adata,
         random_state=2021,
         tol=0.0,
         feature=None,
+        **kwargs,
         ):
     """perform Principal Component Analysis (PCA)
     Parameters
@@ -28,7 +27,7 @@ def pca(adata,
     updates `adata` with the following fields:
     `.obsm['X_pca']` : `array`
         PCA transformed X.
-    `.varm['PCs']` : `array`
+    `.uns['pca']['PCs']` : `array`
         Principal components in feature space,
         representing the directions of maximum variance in the data.
     `.uns['pca']['variance']` : `array`
@@ -40,17 +39,18 @@ def pca(adata,
     if(feature is None):
         X = adata.X.copy()
     else:
-        mask = adata.var['highly_variable']
+        mask = adata.var[feature]
         X = adata[:,mask].X.copy()
     svd = TruncatedSVD(n_components=n_components,
                        algorithm=algorithm,
                        n_iter=n_iter,
                        random_state=random_state,
-                       tol=tol)
+                       tol=tol,
+                       **kwargs)
     svd.fit(X)
     adata.obsm['X_pca'] = svd.transform(X)
-    adata.varm['PCs'] = svd.components_.T
     adata.uns['pca'] = dict()
+    adata.uns['pca']['PCs'] = svd.components_.T
     adata.uns['pca']['variance'] = svd.explained_variance_
     adata.uns['pca']['variance_ratio'] = svd.explained_variance_ratio_
 
@@ -92,19 +92,19 @@ def select_pcs_features(adata,
     """select features that contribute to the top PCs
     """
     n_pcs = adata.uns['pca']['n_pcs']
-    n_features = adata.varm['PCs'].shape[0]
+    n_features = adata.uns['pca']['PCs'].shape[0]
     if(min_elbow is None):
         min_elbow = n_features/10
     adata.uns['pca']['features'] = dict()
     ids_features = list()
     for i in range(n_pcs):
         elbow = locate_elbow(range(n_features),
-                             np.sort(np.abs(adata.varm['PCs'][:, i],))[::-1],
+                             np.sort(np.abs(adata.uns['pca']['PCs'][:, i],))[::-1],
                              S=S,
                              min_elbow=min_elbow,
                              **kwargs)
         ids_features_i = \
-            list(np.argsort(np.abs(adata.varm['PCs'][:, i],))[::-1][:elbow])
+            list(np.argsort(np.abs(adata.uns['pca']['PCs'][:, i],))[::-1][:elbow])
         adata.uns['pca']['features'][f'pc_{i}'] = ids_features_i
         ids_features = ids_features + ids_features_i
     adata.var['top_pcs'] = False

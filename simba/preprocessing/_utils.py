@@ -12,9 +12,9 @@ def locate_elbow(x, y, S=10, min_elbow=0,
 
     Parameters
     ----------
-    x : `array-like`
+    x : `array_like`
         x values
-    y : `array-like`
+    y : `array_like`
         y values
     S : `float`, optional (default: 10)
         Sensitivity

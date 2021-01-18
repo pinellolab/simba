@@ -5,7 +5,7 @@ import seaborn as sns
 import matplotlib as mpl
 
 
-class simbaConfig:
+class SimbaConfig:
     """configuration class for SIMBA"""
 
     def __init__(self,
@@ -98,4 +98,4 @@ class simbaConfig:
         print('Saving results in: %s' % workdir)
 
 
-settings = simbaConfig()
+settings = SimbaConfig()

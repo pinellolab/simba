@@ -5,5 +5,6 @@ from ._plot import (
     pcs_features,
     variable_genes,
     violin,
-    hist
+    hist,
+    umap,
 )

@@ -23,6 +23,9 @@ setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        l.strip() for l in Path('requirements.txt').read_text('utf-8').splitlines()
+        x.strip() for x in
+        Path('requirements.txt').read_text('utf-8').splitlines()
     ],
+    include_package_data=True,
+    package_data={"simba": ["data/*.bed"]}
 )

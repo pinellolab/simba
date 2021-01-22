@@ -118,6 +118,7 @@ def cal_qc_rna(adata, expr_cutoff=1):
     else:
         adata.obs['pct_mt'] = 0
 
+
 def cal_qc_atac(adata, expr_cutoff=1):
     """Calculate quality control metrics.
 
@@ -236,14 +237,14 @@ def cal_qc_atac(adata, expr_cutoff=1):
 #     adata.uns['assay'] = assay
 
 
-def filter_samples( adata,
-                    min_n_features=1,
-                    max_n_features=None,
-                    min_pct_features=None,
-                    max_pct_features=None,
-                    min_n_counts=None,
-                    max_n_counts=None,
-                    expr_cutoff=1):
+def filter_samples(adata,
+                   min_n_features=1,
+                   max_n_features=None,
+                   min_pct_features=None,
+                   max_pct_features=None,
+                   min_n_counts=None,
+                   max_n_counts=None,
+                   expr_cutoff=1):
     """Filter out samples based on different metrics.
     Parameters
     ----------

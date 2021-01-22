@@ -1,11 +1,8 @@
 """Predict gene scores based on chromatin accessibility"""
 
-"""Reading in datasets"""
-
 import numpy as np
 import pandas as pd
 import anndata as ad
-import os
 import io
 import pybedtools
 from scipy.sparse import (

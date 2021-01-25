@@ -1,7 +1,7 @@
 import sys
 
-if sys.version_info < (3, 6):
-    sys.exit('simba requires Python >= 3.6')
+if sys.version_info < (3, 6) or sys.version_info >= (3, 9):
+    sys.exit('simba requires Python >= 3.6,<3.9')
 
 from setuptools import setup, find_packages
 from pathlib import Path

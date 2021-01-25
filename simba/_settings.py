@@ -23,7 +23,6 @@ class SimbaConfig:
                           font='sans-serif',
                           font_scale=1.1,
                           color_codes=True,
-                          save_fig=False,
                           dpi=80,
                           dpi_save=150,
                           fig_size=[5.4, 4.8],
@@ -54,6 +53,7 @@ class SimbaConfig:
             Please see https://matplotlib.org/tutorials/introductory/customizing.html#a-sample-matplotlibrc-file
         """
         # mpl.rcParams.update(mpl.rcParamsDefault)
+
         sns.set(context=context,
                 style=style,
                 palette=palette,
@@ -70,7 +70,7 @@ class SimbaConfig:
                     'legend.handletextpad': 0.1,
                     'pdf.fonttype': 42,
                     })
-        if(rc is not None):
+        if rc is not None:
             assert isinstance(rc, dict), "rc must be dict"
             for key, value in rc.items():
                 if key in mpl.rcParams.keys():
@@ -96,6 +96,59 @@ class SimbaConfig:
             os.makedirs(workdir)
         self.workdir = workdir
         print('Saving results in: %s' % workdir)
+
+    def set_pbg_params(self, config=None):
+        """Reset PBG parameters
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+        if config is None:
+            config = dict(
+                # I/O data
+                entity_path=os.path.join(self.workdir,
+                                         "pbg/input/entity"),
+                edge_paths=[
+                    os.path.join(self.workdir, "pbg/input/edge"),
+                ],
+                checkpoint_path=os.path.join(self.workdir,
+                                             "pbg/model/"),
+
+                # Graph structure
+                entities={},
+                relations=[],
+                dynamic_relations=False,
+
+                # Scoring model
+                dimension=50,
+                global_emb=False,
+                comparator='dot',
+
+                # Training
+                num_epochs=50,
+                workers=12,
+                num_batch_negs=50,
+                num_uniform_negs=50,
+                loss_fn='softmax',
+                lr=0.1,
+
+                early_stopping=False,
+                regularization_coef=0.0,
+                wd=0.0,
+                wd_interval=10,
+
+                # Evaluation during training
+                eval_fraction=0.05,
+                eval_num_batch_negs=50,
+                eval_num_uniform_negs=50,
+
+                checkpoint_preservation_interval=None,
+            )
+        assert isinstance(config, dict), "`config` must be dict"
+        self.pbg_params = config
 
 
 settings = SimbaConfig()

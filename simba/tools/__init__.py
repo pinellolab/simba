@@ -10,3 +10,6 @@ from ._pbg import (
     gen_graph,
     # pbg_train
 )
+from ._post_training import (
+    softmax_transform
+)

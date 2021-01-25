@@ -491,7 +491,7 @@ def _scatterplot2d(df,
     for i, hue in enumerate(list_hue):
         ax_i = fig.add_subplot(fig_nrow, fig_ncol, i+1)
         if(is_string_dtype(df[hue]) or is_categorical_dtype(df[hue])):
-            if hue is hue_palette.keys():
+            if hue in hue_palette.keys():
                 palette = hue_palette[hue]
             else:
                 palette = None
@@ -630,7 +630,7 @@ def _scatterplot2d_plotly(df,
     fig_nrow = int(np.ceil(len(list_hue)/fig_ncol))
     fig = plt.figure(figsize=(fig_size[0]*fig_ncol*1.05, fig_size[1]*fig_nrow))
     for hue in list_hue:
-        if hue is hue_palette.keys():
+        if hue in hue_palette.keys():
             palette = hue_palette[hue]
         else:
             palette = None

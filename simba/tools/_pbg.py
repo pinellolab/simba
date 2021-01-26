@@ -4,24 +4,24 @@ import numpy as np
 import pandas as pd
 import os
 
-from .._settings import settings
+from pathlib import Path
+import attr
+from torchbiggraph.config_simba import (
+    add_to_sys_path,
+    ConfigFileLoader
+)
+from torchbiggraph.converters.importers import (
+    convert_input_data,
+    TSVEdgelistReader
+)
+from torchbiggraph.train import train
+from torchbiggraph.util import (
+    set_logging_verbosity,
+    setup_logging,
+    SubprocessInitializer,
+)
 
-# from pathlib import Path
-# import attr
-# from .torchbiggraph.config_simba import (
-#     add_to_sys_path,
-#     ConfigFileLoader
-# )
-# from .torchbiggraph.converters.importers import (
-#     convert_input_data,
-#     TSVEdgelistReader
-# )
-# from .torchbiggraph.train import train
-# from .torchbiggraph.util import (
-#     set_logging_verbosity,
-#     setup_logging,
-#     SubprocessInitializer,
-# )
+from .._settings import settings
 
 
 def gen_graph(list_CP=None,
@@ -342,40 +342,40 @@ def gen_graph(list_CP=None,
         return None
 
 
-# def pbg_train(filename='pbg_graph.txt', overrides=None):
-#     """PBG training
-#     Parameters
-#     ----------
-#     adata: AnnData
-#         Annotated data matrix.
+def pbg_train(filename='pbg_graph.txt', overrides=None):
+    """PBG training
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
 
-#     Returns
-#     -------
-#     updates `adata` with the following fields:
-#     """
+    Returns
+    -------
+    updates `adata` with the following fields:
+    """
 
-#     os.environ["OMP_NUM_THREADS"] = "1"
-#     loader = ConfigFileLoader(settings.pbg_params)
-#     config = loader.load_config(overrides)
-#     set_logging_verbosity(config.verbose)
+    os.environ["OMP_NUM_THREADS"] = "1"
+    loader = ConfigFileLoader(settings.pbg_params)
+    config = loader.load_config(overrides)
+    set_logging_verbosity(config.verbose)
 
-#     filepath = os.path.join(settings.workdir, 'pbg')
-#     list_filenames = [os.path.join(filepath, filename)]
-#     input_edge_paths = [Path(name) for name in list_filenames]
-#     print("Converting input data ...")
-#     convert_input_data(
-#         config.entities,
-#         config.relations,
-#         config.entity_path,
-#         config.edge_paths,
-#         input_edge_paths,
-#         TSVEdgelistReader(lhs_col=0, rhs_col=2, rel_col=1),
-#         dynamic_relations=config.dynamic_relations,
-#         )
+    filepath = os.path.join(settings.workdir, 'pbg')
+    list_filenames = [os.path.join(filepath, filename)]
+    input_edge_paths = [Path(name) for name in list_filenames]
+    print("Converting input data ...")
+    convert_input_data(
+        config.entities,
+        config.relations,
+        config.entity_path,
+        config.edge_paths,
+        input_edge_paths,
+        TSVEdgelistReader(lhs_col=0, rhs_col=2, rel_col=1),
+        dynamic_relations=config.dynamic_relations,
+        )
 
-#     subprocess_init = SubprocessInitializer()
-#     subprocess_init.register(setup_logging, config.verbose)
-#     subprocess_init.register(add_to_sys_path, loader.config_dir.name)
+    subprocess_init = SubprocessInitializer()
+    subprocess_init.register(setup_logging, config.verbose)
+    subprocess_init.register(add_to_sys_path, loader.config_dir.name)
 
-#     train_config = attr.evolve(config, edge_paths=config.edge_paths)
-#     train(train_config, subprocess_init=subprocess_init)
+    train_config = attr.evolve(config, edge_paths=config.edge_paths)
+    train(train_config, subprocess_init=subprocess_init)

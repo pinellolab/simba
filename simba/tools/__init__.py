@@ -11,5 +11,6 @@ from ._pbg import (
     pbg_train
 )
 from ._post_training import (
-    softmax_transform
+    softmax_transform,
+    embed
 )

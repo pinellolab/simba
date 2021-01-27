@@ -1,7 +1,6 @@
 """Functions and classes for the analysis after PBG training"""
 
 import numpy as np
-import pandas as pd
 import anndata as ad
 
 
@@ -102,7 +101,12 @@ class SimbaEmbed:
         T = self.T
         list_T = self.list_T
         X_all = adata_ref.X.copy()
-        ids_all = adata_ref.obs.index
+        # obs_all = pd.DataFrame(
+        #     data=['ref']*adata_ref.shape[0],
+        #     index=adata_ref.obs.index,
+        #     columns=['id_dataset'])
+        obs_all = adata_ref.obs.copy()
+        obs_all['id_dataset'] = ['ref']*adata_ref.shape[0]
         for i, adata_query in enumerate(list_adata_query):
             if list_T is not None:
                 T = list_T[i]
@@ -128,9 +132,17 @@ class SimbaEmbed:
                     T=T
                     )
             X_all = np.vstack((X_all, adata_query.layers['softmax']))
-            ids_all = ids_all.union(adata_query.obs.index)
+            # obs_all = obs_all.append(
+            #     pd.DataFrame(
+            #         data=[f'query_{i}']*adata_query.shape[0],
+            #         index=adata_query.obs.index,
+            #         columns=['id_dataset'])
+            #         )
+            obs_query = adata_query.obs.copy()
+            obs_query['id_dataset'] = [f'query_{i}']*adata_query.shape[0]
+            obs_all = obs_all.append(obs_query, ignore_index=False)
         adata_all = ad.AnnData(X=X_all,
-                               obs=pd.DataFrame(index=ids_all))
+                               obs=obs_all)
         return adata_all
 
 

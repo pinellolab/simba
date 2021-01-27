@@ -9,3 +9,6 @@ from ._plot import (
     umap,
     discretize
 )
+from ._post_training import (
+    pbg_metrics
+)

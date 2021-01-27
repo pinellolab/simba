@@ -534,12 +534,12 @@ def _scatterplot2d(df,
         ax_i.tick_params(axis="x", pad=-1)
         ax_i.tick_params(axis="y", pad=-3)
         ax_i.set_title(hue)
-        plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
-        if(save_fig):
-            plt.savefig(os.path.join(fig_path, fig_name),
-                        pad_inches=1,
-                        bbox_inches='tight')
-            plt.close(fig)
+    plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
+    if(save_fig):
+        plt.savefig(os.path.join(fig_path, fig_name),
+                    pad_inches=1,
+                    bbox_inches='tight')
+        plt.close(fig)
 
 
 def _scatterplot2d_plotly(df,

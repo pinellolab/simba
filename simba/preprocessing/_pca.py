@@ -40,7 +40,7 @@ def pca(adata,
         X = adata.X.copy()
     else:
         mask = adata.var[feature]
-        X = adata[:,mask].X.copy()
+        X = adata[:, mask].X.copy()
     svd = TruncatedSVD(n_components=n_components,
                        algorithm=algorithm,
                        n_iter=n_iter,

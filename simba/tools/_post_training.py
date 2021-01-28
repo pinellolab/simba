@@ -4,9 +4,9 @@ import numpy as np
 import anndata as ad
 
 
-def softmax_transform(adata_ref,
-                      adata_query,
-                      T=0.3):
+def softmax(adata_ref,
+            adata_query,
+            T=0.3):
     """Softmax-based transformation
 
     This will transform query data to reference-comparable data
@@ -118,7 +118,7 @@ class SimbaEmbed:
                     print(f'No softmax-transformed matrix exists '
                           f'for query data {i}')
                     print("Performing softmax transformation;")
-                    softmax_transform(
+                    softmax(
                         adata_ref,
                         adata_query,
                         T=T
@@ -126,7 +126,7 @@ class SimbaEmbed:
             else:
                 print(f'Performing softmax transformation '
                       f'for query data {i};')
-                softmax_transform(
+                softmax(
                     adata_ref,
                     adata_query,
                     T=T

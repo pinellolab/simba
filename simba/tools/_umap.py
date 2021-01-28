@@ -17,7 +17,10 @@ def umap(adata,
     ----------
     adata: AnnData
         Annotated data matrix.
-
+    layer: `str`, optional (default: None)
+        The layer used to perform UMAP
+    obsm: `str`, optional (default: None)
+        The multi-dimensional annotation of observations used to perform UMAP
     Returns
     -------
     updates `adata` with the following fields:

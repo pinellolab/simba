@@ -6,7 +6,7 @@ import os
 
 from pathlib import Path
 import attr
-from torchbiggraph.config_simba import (
+from torchbiggraph.config import (
     add_to_sys_path,
     ConfigFileLoader
 )

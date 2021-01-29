@@ -1,10 +1,8 @@
 """General preprocessing functions"""
 
 import numpy as np
-from sklearn.decomposition import TruncatedSVD
 from sklearn.utils import sparsefuncs
 from sklearn import preprocessing
-from skmisc.loess import loess
 from ._utils import (
     cal_tf_idf
 )

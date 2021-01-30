@@ -45,4 +45,3 @@ def umap(adata,
                               **kwargs)
     reducer.fit(X)
     adata.obsm['X_umap'] = reducer.embedding_
-

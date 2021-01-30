@@ -494,12 +494,12 @@ def filter_genes(adata,
     if('n_counts' in adata.var_keys()):
         n_counts = adata.var['n_counts']
     else:
-        n_counts = np.sum(adata.X, axis=0).astype(int)
+        n_counts = np.sum(adata.X, axis=0).A1
         adata.var['n_counts'] = n_counts
     if('n_cells' in adata.var_keys()):
         n_cells = adata.var['n_cells']
     else:
-        n_cells = np.sum(adata.X >= expr_cutoff, axis=0).astype(int)
+        n_cells = np.sum(adata.X >= expr_cutoff, axis=0).A1
         adata.var['n_cells'] = n_cells
     if('pct_cells' in adata.var_keys()):
         pct_cells = adata.var['pct_cells']
@@ -582,12 +582,12 @@ def filter_peaks(adata,
     if('n_counts' in adata.var_keys()):
         n_counts = adata.var['n_counts']
     else:
-        n_counts = np.sum(adata.X, axis=0).astype(int)
+        n_counts = np.sum(adata.X, axis=0).A1
         adata.var['n_counts'] = n_counts
     if('n_cells' in adata.var_keys()):
         n_cells = adata.var['n_cells']
     else:
-        n_cells = np.sum(adata.X >= expr_cutoff, axis=0).astype(int)
+        n_cells = np.sum(adata.X >= expr_cutoff, axis=0).A1
         adata.var['n_cells'] = n_cells
     if('pct_cells' in adata.var_keys()):
         pct_cells = adata.var['pct_cells']
@@ -668,12 +668,12 @@ def filter_features(adata,
     if('n_counts' in adata.var_keys()):
         n_counts = adata.var['n_counts']
     else:
-        n_counts = np.sum(adata.X, axis=0).astype(int)
+        n_counts = np.sum(adata.X, axis=0).A1
         adata.var['n_counts'] = n_counts
     if('n_samples' in adata.var_keys()):
         n_samples = adata.var['n_samples']
     else:
-        n_samples = np.sum(adata.X >= expr_cutoff, axis=0).astype(int)
+        n_samples = np.sum(adata.X >= expr_cutoff, axis=0).A1
         adata.var['n_samples'] = n_samples
     if('pct_samples' in adata.var_keys()):
         pct_samples = adata.var['pct_samples']

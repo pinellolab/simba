@@ -399,6 +399,7 @@ def _scatterplot2d(df,
                    y,
                    list_hue=None,
                    hue_palette=None,
+                   drawing_order='sorted',
                    fig_size=None,
                    fig_ncol=3,
                    fig_legend_ncol=1,
@@ -425,6 +426,11 @@ def _scatterplot2d(df,
         Variable in `data` that specify positions on the x axis.
     list_hue: `str`, optional (default: None)
         A list of variables that will produce points with different colors.
+    drawing_order: `str` (default: 'sorted')
+        The order in which continuous/numeric values are plotted, This can be
+        one of the following values
+        - 'sorted' : plot points with higher values on top.
+        - 'random' : plot points in a random order
     fig_size: `tuple`, optional (default: None)
         figure size.
     fig_ncol: `int`, optional (default: 3)
@@ -471,6 +477,9 @@ def _scatterplot2d(df,
         hue_palette = dict()
     assert isinstance(hue_palette, dict), "`hue_palette` must be dict"
 
+    assert drawing_order in ['sorted', 'random'],\
+        "`drawing_order` must be one of ['sorted', 'random']"
+
     legend_order = {hue: np.unique(df[hue]) for hue in list_hue
                     if (is_string_dtype(df[hue])
                         or is_categorical_dtype(df[hue]))}
@@ -513,7 +522,10 @@ def _scatterplot2d(df,
         else:
             vmin_i = df[hue].min() if vmin is None else vmin
             vmax_i = df[hue].max() if vmax is None else vmax
-            df_sorted = df.sort_values(by=hue)
+            if drawing_order == 'sorted':
+                df_sorted = df.sort_values(by=hue)
+            else:
+                df_sorted = df.sample(frac=1, random_state=100)
             sc_i = ax_i.scatter(df_sorted[x],
                                 df_sorted[y],
                                 c=df_sorted[hue],
@@ -547,6 +559,7 @@ def _scatterplot2d_plotly(df,
                           y,
                           list_hue=None,
                           hue_palette=None,
+                          drawing_order='sorted',
                           fig_size=None,
                           fig_ncol=3,
                           fig_legend_order=None,
@@ -566,6 +579,11 @@ def _scatterplot2d_plotly(df,
         Variable in `data` that specify positions on the x axis.
     list_hue: `str`, optional (default: None)
         A list of variables that will produce points with different colors.
+    drawing_order: `str` (default: 'sorted')
+        The order in which continuous/numeric values are plotted, This can be
+        one of the following values
+        - 'sorted' : plot points with higher values on top.
+        - 'random' : plot points in a random order
     fig_size: `tuple`, optional (default: None)
         figure size.
     fig_ncol: `int`, optional (default: 3)
@@ -612,6 +630,9 @@ def _scatterplot2d_plotly(df,
         hue_palette = dict()
     assert isinstance(hue_palette, dict), "`hue_palette` must be dict"
 
+    assert drawing_order in ['sorted', 'random'],\
+        "`drawing_order` must be one of ['sorted', 'random']"
+
     legend_order = {hue: np.unique(df[hue]) for hue in list_hue
                     if (is_string_dtype(df[hue])
                         or is_categorical_dtype(df[hue]))}
@@ -635,10 +656,13 @@ def _scatterplot2d_plotly(df,
         else:
             palette = None
         if is_numeric_dtype(hue):
-            df = df.sort_values(by=hue, ascending=False)
+            if drawing_order == 'sorted':
+                df_sorted = df.sort_values(by=hue)
+            else:
+                df_sorted = df.sample(frac=1, random_state=100)
         else:
-            df = df.sample(frac=1, random_state=100)
-        fig = px.scatter(df,
+            df_sorted = df.sample(frac=1, random_state=100)
+        fig = px.scatter(df_sorted,
                          x=x,
                          y=y,
                          color=hue,
@@ -659,13 +683,13 @@ def umap(adata,
          comp1=0,
          comp2=1,
          comp3=2,
+         drawing_order='sorted',
          fig_size=None,
          fig_ncol=3,
          fig_legend_ncol=1,
          fig_legend_order=None,
          vmin=None,
          vmax=None,
-         clip=False,
          alpha=0.8,
          pad=1.08,
          w_pad=None,
@@ -676,7 +700,54 @@ def umap(adata,
          plolty=False,
          **kwargs):
     """ Plot coordinates in UMAP
+
+    Parameters
+    ----------
+    data: `pd.DataFrame`
+        Input data structure of shape (n_samples, n_features).
+    x: `str`
+        Variable in `data` that specify positions on the x axis.
+    y: `str`
+        Variable in `data` that specify positions on the x axis.
+    list_hue: `str`, optional (default: None)
+        A list of variables that will produce points with different colors.
+    drawing_order: `str` (default: 'sorted')
+        The order in which continuous/numeric values are plotted, This can be
+        one of the following values
+        - 'sorted' : plot points with higher values on top.
+        - 'random' : plot points in a random order
+    fig_size: `tuple`, optional (default: None)
+        figure size.
+    fig_ncol: `int`, optional (default: 3)
+        the number of columns of the figure panel
+    fig_legend_order: `dict`,optional (default: None)
+        Specified order for the appearance of the annotation keys.
+        Only valid for categorical/string variable
+        e.g. fig_legend_order = {'ann1':['a','b','c'],'ann2':['aa','bb','cc']}
+    fig_legend_ncol: `int`, optional (default: 1)
+        The number of columns that the legend has.
+    vmin,vmax: `float`, optional (default: None)
+        The min and max values are used to normalize continuous values.
+        If None, the respective min and max of continuous values is used.
+    alpha: `float`, optional (default: 0.8)
+        0.0 transparent through 1.0 opaque
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots,
+        as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots,
+        as a fraction of the font size. Defaults to pad.
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_path: `str`, optional (default: None)
+        If save_fig is True, specify figure path.
+    fig_name: `str`, optional (default: 'scatterplot2d.pdf')
+        if save_fig is True, specify figure name.
+    Returns
+    -------
+    None
     """
+
     if fig_size is None:
         fig_size = mpl.rcParams['figure.figsize']
     if save_fig is None:
@@ -726,6 +797,7 @@ def umap(adata,
                               y='UMAP2',
                               list_hue=color,
                               hue_palette=dict_palette,
+                              drawing_order=drawing_order,
                               fig_size=fig_size,
                               fig_ncol=fig_ncol,
                               fig_legend_order=fig_legend_order,
@@ -739,6 +811,7 @@ def umap(adata,
                        y='UMAP2',
                        list_hue=color,
                        hue_palette=dict_palette,
+                       drawing_order=drawing_order,
                        fig_size=fig_size,
                        fig_ncol=fig_ncol,
                        fig_legend_ncol=fig_legend_ncol,

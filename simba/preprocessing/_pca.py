@@ -99,12 +99,14 @@ def select_pcs_features(adata,
     ids_features = list()
     for i in range(n_pcs):
         elbow = locate_elbow(range(n_features),
-                             np.sort(np.abs(adata.uns['pca']['PCs'][:, i],))[::-1],
+                             np.sort(
+                                 np.abs(adata.uns['pca']['PCs'][:, i],))[::-1],
                              S=S,
                              min_elbow=min_elbow,
                              **kwargs)
         ids_features_i = \
-            list(np.argsort(np.abs(adata.uns['pca']['PCs'][:, i],))[::-1][:elbow])
+            list(np.argsort(np.abs(
+                adata.uns['pca']['PCs'][:, i],))[::-1][:elbow])
         adata.uns['pca']['features'][f'pc_{i}'] = ids_features_i
         ids_features = ids_features + ids_features_i
     adata.var['top_pcs'] = False

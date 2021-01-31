@@ -427,8 +427,9 @@ def _scatterplot2d(df,
     list_hue: `str`, optional (default: None)
         A list of variables that will produce points with different colors.
     drawing_order: `str` (default: 'sorted')
-        The order in which continuous/numeric values are plotted, This can be
+        The order in which values are plotted, This can be
         one of the following values
+        - 'original': plot points in the same order as in input dataframe
         - 'sorted' : plot points with higher values on top.
         - 'random' : plot points in a random order
     fig_size: `tuple`, optional (default: None)
@@ -477,8 +478,8 @@ def _scatterplot2d(df,
         hue_palette = dict()
     assert isinstance(hue_palette, dict), "`hue_palette` must be dict"
 
-    assert drawing_order in ['sorted', 'random'],\
-        "`drawing_order` must be one of ['sorted', 'random']"
+    assert drawing_order in ['sorted', 'random', 'original'],\
+        "`drawing_order` must be one of ['original', 'sorted', 'random']"
 
     legend_order = {hue: np.unique(df[hue]) for hue in list_hue
                     if (is_string_dtype(df[hue])
@@ -504,12 +505,18 @@ def _scatterplot2d(df,
                 palette = hue_palette[hue]
             else:
                 palette = None
+            if drawing_order == 'sorted':
+                df_updated = df.sort_values(by=hue)
+            elif drawing_order == 'random':
+                df_updated = df.sample(frac=1, random_state=100)
+            else:
+                df_updated = df
             sc_i = sns.scatterplot(ax=ax_i,
                                    x=x,
                                    y=y,
                                    hue=hue,
                                    hue_order=legend_order[hue],
-                                   data=df.sample(frac=1, random_state=100),
+                                   data=df_updated,
                                    alpha=alpha,
                                    linewidth=0,
                                    palette=palette,
@@ -523,12 +530,14 @@ def _scatterplot2d(df,
             vmin_i = df[hue].min() if vmin is None else vmin
             vmax_i = df[hue].max() if vmax is None else vmax
             if drawing_order == 'sorted':
-                df_sorted = df.sort_values(by=hue)
+                df_updated = df.sort_values(by=hue)
+            elif drawing_order == 'random':
+                df_updated = df.sample(frac=1, random_state=100)
             else:
-                df_sorted = df.sample(frac=1, random_state=100)
-            sc_i = ax_i.scatter(df_sorted[x],
-                                df_sorted[y],
-                                c=df_sorted[hue],
+                df_updated = df
+            sc_i = ax_i.scatter(df_updated[x],
+                                df_updated[y],
+                                c=df_updated[hue],
                                 vmin=vmin_i,
                                 vmax=vmax_i,
                                 alpha=alpha)
@@ -579,8 +588,9 @@ def _scatterplot2d_plotly(df,
     list_hue: `str`, optional (default: None)
         A list of variables that will produce points with different colors.
     drawing_order: `str` (default: 'sorted')
-        The order in which continuous/numeric values are plotted, This can be
+        The order in which values are plotted, This can be
         one of the following values
+        - 'original': plot points in the same order as in input dataframe
         - 'sorted' : plot points with higher values on top.
         - 'random' : plot points in a random order
     fig_size: `tuple`, optional (default: None)
@@ -629,8 +639,8 @@ def _scatterplot2d_plotly(df,
         hue_palette = dict()
     assert isinstance(hue_palette, dict), "`hue_palette` must be dict"
 
-    assert drawing_order in ['sorted', 'random'],\
-        "`drawing_order` must be one of ['sorted', 'random']"
+    assert drawing_order in ['sorted', 'random', 'original'],\
+        "`drawing_order` must be one of ['original', 'sorted', 'random']"
 
     legend_order = {hue: np.unique(df[hue]) for hue in list_hue
                     if (is_string_dtype(df[hue])
@@ -654,14 +664,13 @@ def _scatterplot2d_plotly(df,
             palette = hue_palette[hue]
         else:
             palette = None
-        if is_numeric_dtype(hue):
-            if drawing_order == 'sorted':
-                df_sorted = df.sort_values(by=hue)
-            else:
-                df_sorted = df.sample(frac=1, random_state=100)
+        if drawing_order == 'sorted':
+            df_updated = df.sort_values(by=hue)
+        elif drawing_order == 'random':
+            df_updated = df.sample(frac=1, random_state=100)
         else:
-            df_sorted = df.sample(frac=1, random_state=100)
-        fig = px.scatter(df_sorted,
+            df_updated = df
+        fig = px.scatter(df_updated,
                          x=x,
                          y=y,
                          color=hue,
@@ -711,8 +720,9 @@ def umap(adata,
     list_hue: `str`, optional (default: None)
         A list of variables that will produce points with different colors.
     drawing_order: `str` (default: 'sorted')
-        The order in which continuous/numeric values are plotted, This can be
+        The order in which values are plotted, This can be
         one of the following values
+        - 'original': plot points in the same order as in input dataframe
         - 'sorted' : plot points with higher values on top.
         - 'random' : plot points in a random order
     fig_size: `tuple`, optional (default: None)

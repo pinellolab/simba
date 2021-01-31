@@ -15,6 +15,7 @@ class SimbaConfig:
         self.workdir = workdir
         self.save_fig = save_fig
         self.n_jobs = n_jobs
+        self.set_pbg_params()
 
     def set_figure_params(self,
                           context='notebook',
@@ -95,6 +96,7 @@ class SimbaConfig:
         if(not os.path.exists(workdir)):
             os.makedirs(workdir)
         self.workdir = workdir
+        self.set_pbg_params()
         print('Saving results in: %s' % workdir)
 
     def set_pbg_params(self, config=None):
@@ -109,13 +111,9 @@ class SimbaConfig:
         if config is None:
             config = dict(
                 # I/O data
-                entity_path=os.path.join(self.workdir,
-                                         "pbg/input/entity"),
-                edge_paths=[
-                    os.path.join(self.workdir, "pbg/input/edge"),
-                ],
-                checkpoint_path=os.path.join(self.workdir,
-                                             "pbg/model/"),
+                entity_path="",
+                edge_paths=["", ],
+                checkpoint_path="",
 
                 # Graph structure
                 entities={},

@@ -187,3 +187,21 @@ def embed(adata_ref,
                     use_precomputed=use_precomputed)
     adata_all = SE.embed()
     return adata_all
+
+
+# def compare_entities(adata_ref,
+#                      adata_query):
+#     """Compare the embeddings of two entities
+
+#     Parameters
+#     ----------
+#         adata_ref: `AnnData`
+#             Reference anndata.
+#         adata_query: `list`
+#             Query anndata objects
+
+#     Returns
+#     -------
+#     adata_all: `AnnData`
+#         Store #entities × #dimensions.
+#     """

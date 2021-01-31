@@ -35,8 +35,8 @@ def gen_graph(list_CP=None,
               prefix_K='K',
               prefix_G='G',
               copy=False,
+              dirname='graph0',
               filename='pbg_graph.txt',
-              config=None,
               ):
     """Generate graph for PBG training based on indices of obs and var
 
@@ -57,6 +57,12 @@ def gen_graph(list_CP=None,
         Prefix to indicate the entity type of cells
     prefix_G: `str`, optional (default: 'G')
         Prefix to indicate the entity type of genes
+    dirname: `str`, (default: 'graph0')
+        The name of the directory in which graph will be stored
+    filename: `str`, (default: 'pbg_graph.txt')
+        The name of graph file
+    copy: `bool`, optional (default: False)
+        If True, it returns the graph file as a data frame
 
     Returns
     -------
@@ -65,6 +71,16 @@ def gen_graph(list_CP=None,
         Each line contains information about one edge.
         Using tabs as separators, each line contains the identifiers of
         the source entities, the relation types and the target entities.
+    updates `settings.pbg_params` with the following parameters.
+    entity_path: `str`
+        The path of the directory containing entity count files.
+    edge_paths: `list`
+        A list of paths to directories containing (partitioned) edgelists.
+        Typically a single path is provided.
+    entities: `dict`
+        The entity types.
+    relations: `list`
+        The relation types.
     """
 
     if(sum(list(map(lambda x: x is None,
@@ -73,8 +89,15 @@ def gen_graph(list_CP=None,
                      list_PK,
                      list_CG,
                      list_CC]))) == 5):
-        print('No graph is generated')
-    settings.set_pbg_params(config)
+        return 'No graph is generated'
+
+    filepath = os.path.join(settings.workdir, 'pbg', dirname)
+    settings.pbg_params['entity_path'] = \
+        os.path.join(filepath, "input/entity")
+    settings.pbg_params['edge_paths'] = \
+        [os.path.join(filepath, "input/edge"), ]
+    if(not os.path.exists(filepath)):
+        os.makedirs(filepath)
 
     # Collect the indices of entities
     dict_cells = dict()  # unique cell indices from all cell-centric datasets
@@ -327,9 +350,6 @@ def gen_graph(list_CP=None,
                                                    'alias'].copy()
 
     print(f'Number of total edges: {df_edges.shape[0]}')
-    filepath = os.path.join(settings.workdir, 'pbg')
-    if(not os.path.exists(filepath)):
-        os.makedirs(filepath)
     print(f'Writing "{filename}" to {filepath} ...')
     df_edges.to_csv(os.path.join(filepath, filename),
                     header=False,
@@ -342,24 +362,56 @@ def gen_graph(list_CP=None,
         return None
 
 
-def pbg_train(filename='pbg_graph.txt', overrides=None):
+def pbg_train(dirname=None,
+              filename='pbg_graph.txt',
+              pbg_params=None,
+              output='model'):
     """PBG training
     Parameters
     ----------
-    adata: AnnData
-        Annotated data matrix.
-
+    dirname: `str`, optional (default: None)
+        The name of the directory in which graph is stored
+        If None, it will be inferred from `pbg_params['entity_path']`
+    filename: `str`, optional (default: 'pbg_graph.txt')
+        The name of graph file
+    pbg_params: `dict`, optional (default: None)
+        Configuration for pbg training.
+        If specified, it will be used instead of the default setting
+    output: `str`, optional (default: 'model')
+        The name of the directory where training output will be written to.
+        It overrides `pbg_params` if `checkpoint_path` is specified in it
     Returns
     -------
-    updates `adata` with the following fields:
+    updates `settings.pbg_params` with the following parameter
+    checkpoint_path:
+        The path to the directory where checkpoints (and thus the output)
+        will be written to.
+        If checkpoints are found in it, training will resume from them.
     """
 
+    if pbg_params is None:
+        pbg_params = settings.pbg_params
+    else:
+        assert isinstance(pbg_params, dict),\
+            "`pbg_params` must be dict"
+
+    if dirname is None:
+        filepath = Path(pbg_params['entity_path']).parent.parent.as_posix()
+    else:
+        filepath = os.path.join(settings.workdir, 'pbg', dirname)
+
+    settings.pbg_params['checkpoint_path'] = \
+        os.path.join(filepath, output)
+    pbg_params['checkpoint_path'] = os.path.join(filepath, output)
+
+    # to avoid oversubscription issues in workloads
+    # that involve nested parallelism
     os.environ["OMP_NUM_THREADS"] = "1"
-    loader = ConfigFileLoader(settings.pbg_params)
-    config = loader.load_config(overrides)
+
+    loader = ConfigFileLoader()
+    config = loader.load_config_simba(pbg_params)
     set_logging_verbosity(config.verbose)
 
-    filepath = os.path.join(settings.workdir, 'pbg')
     list_filenames = [os.path.join(filepath, filename)]
     input_edge_paths = [Path(name) for name in list_filenames]
     print("Converting input data ...")
@@ -378,4 +430,5 @@ def pbg_train(filename='pbg_graph.txt', overrides=None):
     subprocess_init.register(add_to_sys_path, loader.config_dir.name)
 
     train_config = attr.evolve(config, edge_paths=config.edge_paths)
+    print("Starting training ...")
     train(train_config, subprocess_init=subprocess_init)

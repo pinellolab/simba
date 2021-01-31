@@ -91,6 +91,8 @@ def pbg_metrics(metrics=['mrr'],
                      c=dict_palette[metric],
                      **kwargs)
         ax_i.set_title(metric)
+        ax_i.set_xlabel('epoch')
+        ax_i.set_ylabel(metric)
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
     if(save_fig):
         plt.savefig(os.path.join(fig_path, fig_name),

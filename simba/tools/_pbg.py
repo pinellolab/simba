@@ -37,6 +37,8 @@ def gen_graph(list_CP=None,
               copy=False,
               dirname='graph0',
               filename='pbg_graph.txt',
+              use_highly_variable=True,
+              use_top_pcs=True,
               ):
     """Generate graph for PBG training based on indices of obs and var
 
@@ -61,6 +63,10 @@ def gen_graph(list_CP=None,
         The name of the directory in which graph will be stored
     filename: `str`, (default: 'pbg_graph.txt')
         The name of graph file
+    use_highly_variable: `bool`, optional (default: True)
+        Use highly variable genes
+    use_top_pcs: `bool`, optional (default: True)
+        Use top-PCs-associated features
     copy: `bool`, optional (default: False)
         If True, it returns the graph file as a data frame
 
@@ -112,7 +118,11 @@ def gen_graph(list_CP=None,
     ids_motifs = pd.Index([])
 
     if list_CP is not None:
-        for adata in list_CP:
+        for adata_ori in list_CP:
+            if use_top_pcs:
+                adata = adata_ori[:, adata_ori.var['top_pcs']].copy()
+            else:
+                adata = adata_ori.copy()
             ids_cells_i = adata.obs.index
             if(len(dict_cells) == 0):
                 dict_cells[prefix_C] = ids_cells_i
@@ -130,15 +140,27 @@ def gen_graph(list_CP=None,
                     dict_cells[f'{prefix_C}{len(dict_cells)+1}'] = ids_cells_i
             ids_peaks = ids_peaks.union(adata.var.index)
     if list_PM is not None:
-        for adata in list_PM:
+        for adata_ori in list_PM:
+            if use_top_pcs:
+                adata = adata_ori[:, adata_ori.var['top_pcs']].copy()
+            else:
+                adata = adata_ori.copy()
             ids_peaks = ids_peaks.union(adata.obs.index)
             ids_motifs = ids_motifs.union(adata.var.index)
     if list_PK is not None:
-        for adata in list_PK:
+        for adata_ori in list_PK:
+            if use_top_pcs:
+                adata = adata_ori[:, adata_ori.var['top_pcs']].copy()
+            else:
+                adata = adata_ori.copy()
             ids_peaks = ids_peaks.union(adata.obs.index)
             ids_kmers = ids_kmers.union(adata.var.index)
     if list_CG is not None:
-        for adata in list_CG:
+        for adata_ori in list_CG:
+            if use_highly_variable:
+                adata = adata_ori[:, adata_ori.var['highly_variable']].copy()
+            else:
+                adata = adata_ori.copy()
             ids_cells_i = adata.obs.index
             if(len(dict_cells) == 0):
                 dict_cells[prefix_C] = ids_cells_i
@@ -195,7 +217,11 @@ def gen_graph(list_CP=None,
     id_r = 0
 
     if list_CP is not None:
-        for adata in list_CP:
+        for adata_ori in list_CP:
+            if use_top_pcs:
+                adata = adata_ori[:, adata_ori.var['top_pcs']].copy()
+            else:
+                adata = adata_ori.copy()
             # select reference of cells
             for key, df_cells in dict_df_cells.items():
                 if set(adata.obs_names) <= set(df_cells.index):
@@ -230,7 +256,11 @@ def gen_graph(list_CP=None,
             adata.var['pbg_id'] = df_peaks.loc[adata.var_names, 'alias'].copy()
 
     if list_PM is not None:
-        for adata in list_PM:
+        for adata_ori in list_PM:
+            if use_top_pcs:
+                adata = adata_ori[:, adata_ori.var['top_pcs']].copy()
+            else:
+                adata = adata_ori.copy()
             df_edges_x = pd.DataFrame(columns=col_names)
             df_edges_x['source'] = df_peaks.loc[
                 adata.obs_names[adata.X.nonzero()[0]],
@@ -263,7 +293,11 @@ def gen_graph(list_CP=None,
                                                 'alias'].copy()
 
     if list_PK is not None:
-        for adata in list_PK:
+        for adata_ori in list_PK:
+            if use_top_pcs:
+                adata = adata_ori[:, adata_ori.var['top_pcs']].copy()
+            else:
+                adata = adata_ori.copy()
             df_edges_x = pd.DataFrame(columns=col_names)
             df_edges_x['source'] = df_peaks.loc[
                 adata.obs_names[adata.X.nonzero()[0]],
@@ -296,7 +330,11 @@ def gen_graph(list_CP=None,
                                                'alias'].copy()
 
     if list_CG is not None:
-        for adata in list_CG:
+        for adata_ori in list_CG:
+            if use_highly_variable:
+                adata = adata_ori[:, adata_ori.var['highly_variable']].copy()
+            else:
+                adata = adata_ori.copy()
             # select reference of cells
             for key, df_cells in dict_df_cells.items():
                 if set(adata.obs_names) <= set(df_cells.index):

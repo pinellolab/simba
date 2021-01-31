@@ -196,12 +196,20 @@ def embed(adata_ref,
 #     Parameters
 #     ----------
 #         adata_ref: `AnnData`
-#             Reference anndata.
+#             Reference entity anndata.
 #         adata_query: `list`
-#             Query anndata objects
+#             Query entity anndata.
 
 #     Returns
 #     -------
-#     adata_all: `AnnData`
-#         Store #entities × #dimensions.
+#     adata_cmp: `AnnData`
+#         Store reference entity as observations and query entity as variables
 #     """
+#     X_ref = adata_ref.X
+#     X_query = adata_query.X
+#     X_cmp = np.matmul(X_ref, X_query.T)
+#     adata_cmp = ad.AnnData(X=X_cmp,
+#                            obs=adata_ref.obs,
+#                            var=adata_query.obs)
+#     return adata_cmp
+#     # adata_cmp.layers['norm'] = df_scores_MC.subtract(np.log(np.exp(X_cmp).mean(axis=0)),axis=1)

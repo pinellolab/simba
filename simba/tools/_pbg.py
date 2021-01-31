@@ -71,7 +71,8 @@ def gen_graph(list_CP=None,
         Each line contains information about one edge.
         Using tabs as separators, each line contains the identifiers of
         the source entities, the relation types and the target entities.
-    updates `settings.pbg_params` with the following parameters.
+
+    updates `.settings.pbg_params` with the following parameters.
     entity_path: `str`
         The path of the directory containing entity count files.
     edge_paths: `list`
@@ -81,6 +82,10 @@ def gen_graph(list_CP=None,
         The entity types.
     relations: `list`
         The relation types.
+
+    updates `.settings.pbg_params` with the following parameters.
+    graph_stats: `dict`
+        Statistics of input graph
     """
 
     if(sum(list(map(lambda x: x is None,
@@ -184,6 +189,7 @@ def gen_graph(list_CP=None,
         settings.pbg_params['entities'][prefix_M] = {'num_partitions': 1}
 
     # generate edges
+    dict_graph_stats = dict()
     col_names = ["source", "relation", "destination"]
     df_edges = pd.DataFrame(columns=col_names)
     id_r = 0
@@ -206,6 +212,10 @@ def gen_graph(list_CP=None,
                   f'source: {key}, '
                   f'destination: {prefix_P}\n'
                   f'#edges: {df_edges_x.shape[0]}')
+            dict_graph_stats[f'relation{id_r}'] = \
+                {'source': key,
+                 'destination': prefix_P,
+                 'n_edges': df_edges_x.shape[0]}
             df_edges = df_edges.append(df_edges_x,
                                        ignore_index=True)
             settings.pbg_params['relations'].append(
@@ -233,6 +243,10 @@ def gen_graph(list_CP=None,
                   f'source: {prefix_P}, '
                   f'destination: {prefix_M}\n'
                   f'#edges: {df_edges_x.shape[0]}')
+            dict_graph_stats[f'relation{id_r}'] = \
+                {'source': prefix_P,
+                 'destination': prefix_M,
+                 'n_edges': df_edges_x.shape[0]}
             df_edges = df_edges.append(df_edges_x,
                                        ignore_index=True)
             settings.pbg_params['relations'].append(
@@ -262,6 +276,10 @@ def gen_graph(list_CP=None,
                   f'source: {prefix_P}, '
                   f'destination: {prefix_K}\n'
                   f'#edges: {df_edges_x.shape[0]}')
+            dict_graph_stats[f'relation{id_r}'] = \
+                {'source': prefix_P,
+                 'destination': prefix_K,
+                 'n_edges': df_edges_x.shape[0]}
             df_edges = df_edges.append(df_edges_x,
                                        ignore_index=True)
             settings.pbg_params['relations'].append(
@@ -299,6 +317,10 @@ def gen_graph(list_CP=None,
                       f'source: {key}, '
                       f'destination: {prefix_G}\n'
                       f'#edges: {df_edges_x.shape[0]}')
+                dict_graph_stats[f'relation{id_r}'] = \
+                    {'source': key,
+                     'destination': prefix_G,
+                     'n_edges': df_edges_x.shape[0]}
                 df_edges = df_edges.append(df_edges_x,
                                            ignore_index=True)
                 settings.pbg_params['relations'].append(
@@ -334,6 +356,10 @@ def gen_graph(list_CP=None,
                   f'source: {key_obs}, '
                   f'destination: {key_var}\n'
                   f'#edges: {df_edges_x.shape[0]}')
+            dict_graph_stats[f'relation{id_r}'] = \
+                {'source': key_obs,
+                 'destination': key_var,
+                 'n_edges': df_edges_x.shape[0]}
             df_edges = df_edges.append(df_edges_x,
                                        ignore_index=True)
             settings.pbg_params['relations'].append(
@@ -350,6 +376,9 @@ def gen_graph(list_CP=None,
                                                    'alias'].copy()
 
     print(f'Number of total edges: {df_edges.shape[0]}')
+    dict_graph_stats['n_edges'] = df_edges.shape[0]
+    settings.graph_stats[os.path.join(filepath, filename)] = dict_graph_stats
+
     print(f'Writing "{filename}" to {filepath} ...')
     df_edges.to_csv(os.path.join(filepath, filename),
                     header=False,
@@ -365,7 +394,8 @@ def gen_graph(list_CP=None,
 def pbg_train(dirname=None,
               filename='pbg_graph.txt',
               pbg_params=None,
-              output='model'):
+              output='model',
+              auto_wd=True):
     """PBG training
     Parameters
     ----------
@@ -380,6 +410,10 @@ def pbg_train(dirname=None,
     output: `str`, optional (default: 'model')
         The name of the directory where training output will be written to.
         It overrides `pbg_params` if `checkpoint_path` is specified in it
+    auto_wd: `bool`, optional (default: True)
+        If True, it will override `pbg_params['wd']` with a new weight decay
+        estimated based on training sample size
+        Recommended for relative small training sample size (<1e7)
     Returns
     -------
     updates `settings.pbg_params` with the following parameter
@@ -400,9 +434,19 @@ def pbg_train(dirname=None,
     else:
         filepath = os.path.join(settings.workdir, 'pbg', dirname)
 
-    settings.pbg_params['checkpoint_path'] = \
-        os.path.join(filepath, output)
     pbg_params['checkpoint_path'] = os.path.join(filepath, output)
+    settings.pbg_params['checkpoint_path'] = pbg_params['checkpoint_path']
+
+    if auto_wd:
+        # empirical numbers from simulation experiment
+        # optimial wd (8e-4) for sample size (36050102)
+        wd = np.around(
+            8e-4 * 36050102 / settings.graph_stats[
+                os.path.join(filepath, filename)]['n_edges'],
+            decimals=6)
+        pbg_params['wd'] = wd
+        settings.pbg_params['wd'] = pbg_params['wd']
+        print(f'Auto-estimated weight decay is {wd}')
 
     # to avoid oversubscription issues in workloads
     # that involve nested parallelism

@@ -16,6 +16,7 @@ class SimbaConfig:
         self.save_fig = save_fig
         self.n_jobs = n_jobs
         self.set_pbg_params()
+        self.graph_stats = dict()
 
     def set_figure_params(self,
                           context='notebook',

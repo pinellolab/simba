@@ -799,9 +799,11 @@ def umap(adata,
 
                     if ann not in dict_palette.keys():
                         if ann+'_color' in adata.uns['color'].keys():
-                            dict_palette[ann] = adata.uns['color'][ann+'_color']
+                            dict_palette[ann] = \
+                                adata.uns['color'][ann+'_color']
                         else:
-                            dict_palette[ann] = generate_palette(adata.obs[ann])
+                            dict_palette[ann] = \
+                                generate_palette(adata.obs[ann])
                             adata.uns['color'][ann+'_color'] = \
                                 dict_palette[ann].copy()
                     else:

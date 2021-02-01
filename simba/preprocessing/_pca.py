@@ -50,6 +50,7 @@ def pca(adata,
     svd.fit(X)
     adata.obsm['X_pca'] = svd.transform(X)
     adata.uns['pca'] = dict()
+    adata.uns['pca']['n_pcs'] = n_components
     adata.uns['pca']['PCs'] = svd.components_.T
     adata.uns['pca']['variance'] = svd.explained_variance_
     adata.uns['pca']['variance_ratio'] = svd.explained_variance_ratio_

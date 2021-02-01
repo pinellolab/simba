@@ -11,6 +11,7 @@ from adjustText import adjust_text
 from scipy.stats import rankdata
 
 from ._utils import (
+    get_colors,
     generate_palette
 )
 from .._settings import settings
@@ -112,7 +113,7 @@ def entity_metrics(adata_cmp,
                    cutoff_x=0,
                    cutoff_y=0,
                    n_texts=10,
-                   texts=None,
+                   entities=None,
                    fig_size=None,
                    save_fig=None,
                    fig_path=None,
@@ -138,6 +139,8 @@ def entity_metrics(adata_cmp,
         based on softmax probability)
         - entropy (The entropy of reference entities,
         based on softmax probability)
+    entities: `list` optional(default: None)
+        Entity names to plot
 
     Returns
     -------
@@ -161,7 +164,7 @@ def entity_metrics(adata_cmp,
                adata_cmp.var[y],
                **kwargs)
     if show_texts:
-        if texts is not None:
+        if entities is not None:
             plt_texts = [plt.text(adata_cmp.var[x][t],
                                   adata_cmp.var[y][t],
                                   t,
@@ -169,7 +172,7 @@ def entity_metrics(adata_cmp,
                                    'color': 'black',
                                    'weight': 'normal',
                                    'size': text_size})
-                         for t in texts]
+                         for t in entities]
         else:
             if x == 'entropy':
                 ranks_x = rankdata(-adata_cmp.var[x])
@@ -207,7 +210,98 @@ def entity_metrics(adata_cmp,
         plt.close(fig)
 
 
-# def barcode(adata_cmp,
-#             list_query,
-#             anno_ref=None,
-#             pale)
+def entity_barcode(adata_cmp,
+                   entities,
+                   anno_ref=None,
+                   layer='softmax',
+                   palette=None,
+                   alpha=0.8,
+                   linewidths=1,
+                   show_cutoff=False,
+                   cutoff=0.5,
+                   fig_size=(6, 2),
+                   fig_ncol=1,
+                   save_fig=None,
+                   fig_path=None,
+                   fig_name='barcode.pdf',
+                   pad=1.08,
+                   w_pad=None,
+                   h_pad=None,
+                   **kwargs
+                   ):
+    """Plot query entity barcode
+
+    Parameters
+    ----------
+    adata_cmp: `AnnData`
+        Anndata object from `compare_entities`
+    entities: `list`
+        Entity names to plot.
+    anno_ref:  `str`
+        Annotation used for reference entity
+    palette: `dict`
+        Color palette used for `anno_ref`
+    Returns
+    -------
+    None
+    """
+
+    if fig_size is None:
+        fig_size = mpl.rcParams['figure.figsize']
+    if save_fig is None:
+        save_fig = settings.save_fig
+    if fig_path is None:
+        fig_path = os.path.join(settings.workdir, 'figures')
+
+    assert isinstance(entities, list), "`entities` must be list"
+
+    if layer is None:
+        X = adata_cmp[:, entities].X
+    else:
+        X = adata_cmp[:, entities].layers[layer]
+    df_scores = pd.DataFrame(
+        data=X,
+        index=adata_cmp.obs_names,
+        columns=entities)
+
+    n_plots = len(entities)
+    fig_nrow = int(np.ceil(n_plots/fig_ncol))
+    fig = plt.figure(figsize=(fig_size[0]*fig_ncol*1.05,
+                              fig_size[1]*fig_nrow))
+
+    for i, x in enumerate(entities):
+        ax_i = fig.add_subplot(fig_nrow, fig_ncol, i+1)
+        scores_x_sorted = df_scores[x].sort_values(ascending=False)
+        lines = []
+        for xx, yy in zip(np.arange(len(scores_x_sorted)),
+                          scores_x_sorted):
+            lines.append([(xx, 0), (xx, yy)])
+        if anno_ref is None:
+            colors = get_colors(np.array([""]*len(scores_x_sorted)))
+        else:
+            ids_ref = scores_x_sorted.index
+            if palette is None:
+                colors = get_colors(adata_cmp[ids_ref, :].obs[anno_ref])
+            else:
+                colors = [palette[adata_cmp.obs.loc[xx, anno_ref]]
+                          for xx in scores_x_sorted.index]
+        stemlines = LineCollection(
+            lines,
+            colors=colors,
+            alpha=alpha,
+            linewidths=linewidths)
+        ax_i.add_collection(stemlines)
+        ax_i.autoscale()
+        ax_i.set_title(x)
+        ax_i.set_ylabel(layer)
+        ax_i.locator_params(axis='y', tight=True)
+        if show_cutoff:
+            ax_i.axhline(y=cutoff,
+                         color='#CC6F47',
+                         linestyle='--')
+    plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
+    if(save_fig):
+        plt.savefig(os.path.join(fig_path, fig_name),
+                    pad_inches=1,
+                    bbox_inches='tight')
+        plt.close(fig)

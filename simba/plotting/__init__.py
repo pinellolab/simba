@@ -11,5 +11,6 @@ from ._plot import (
 )
 from ._post_training import (
     pbg_metrics,
-    entity_metrics
+    entity_metrics,
+    entity_barcode
 )

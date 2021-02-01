@@ -400,6 +400,9 @@ def _scatterplot2d(df,
                    list_hue=None,
                    hue_palette=None,
                    drawing_order='sorted',
+                   show_texts=False,
+                   entities=None,
+                   text_size=10,
                    fig_size=None,
                    fig_ncol=3,
                    fig_legend_ncol=1,
@@ -548,6 +551,18 @@ def _scatterplot2d(df,
                                 aspect=40)
             cbar.solids.set_edgecolor("face")
             cbar.ax.locator_params(nbins=5)
+        if show_texts:
+            if entities is not None:
+                plt_texts = [plt.text(df_updated[x][t],
+                                      df_updated[y][t],
+                                      t,
+                                      fontdict={'family': 'serif',
+                                                'color': 'black',
+                                                'weight': 'normal',
+                                                'size': text_size})
+                             for t in entities]
+                adjust_text(plt_texts,
+                            arrowprops=dict(arrowstyle='->', color='black'))
         ax_i.set_xlabel(x)
         ax_i.set_ylabel(y, labelpad=0)
         ax_i.locator_params(axis='x', nbins=5)
@@ -693,6 +708,9 @@ def umap(adata,
          comp2=1,
          comp3=2,
          drawing_order='sorted',
+         show_texts=False,
+         entities=None,
+         text_size=10,
          fig_size=None,
          fig_ncol=3,
          fig_legend_ncol=1,
@@ -837,6 +855,9 @@ def umap(adata,
                        list_hue=color,
                        hue_palette=dict_palette,
                        drawing_order=drawing_order,
+                       show_texts=show_texts,
+                       text_size=text_size,
+                       entities=entities,
                        fig_size=fig_size,
                        fig_ncol=fig_ncol,
                        fig_legend_ncol=fig_legend_ncol,

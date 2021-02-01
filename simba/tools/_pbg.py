@@ -41,6 +41,8 @@ def gen_graph(list_CP=None,
               use_top_pcs=True,
               ):
     """Generate graph for PBG training based on indices of obs and var
+    It also generates an accompanying file 'entity_alias.tsv' to map
+    the indices to the aliases used in the graph
 
     Parameters
     ----------
@@ -72,6 +74,7 @@ def gen_graph(list_CP=None,
 
     Returns
     -------
+    If `copy` is True,
     edges: `pd.DataFrame`
         The edges of the graph used for PBG training.
         Each line contains information about one edge.
@@ -178,6 +181,7 @@ def gen_graph(list_CP=None,
                     dict_cells[f'{prefix_C}{len(dict_cells)+1}'] = ids_cells_i
             ids_genes = ids_genes.union(adata.var.index)
 
+    entity_alias = pd.DataFrame(columns=['alias'])
     dict_df_cells = dict()  # unique cell dataframes
     for k in dict_cells.keys():
         dict_df_cells[k] = pd.DataFrame(
@@ -185,30 +189,40 @@ def gen_graph(list_CP=None,
             columns=['alias'],
             data=[f'{k}.{x}' for x in range(len(dict_cells[k]))])
         settings.pbg_params['entities'][k] = {'num_partitions': 1}
+        entity_alias = entity_alias.append(dict_df_cells[k],
+                                           ignore_index=False)
     if(len(ids_genes) > 0):
         df_genes = pd.DataFrame(
                 index=ids_genes,
                 columns=['alias'],
                 data=[f'{prefix_G}.{x}' for x in range(len(ids_genes))])
         settings.pbg_params['entities'][prefix_G] = {'num_partitions': 1}
+        entity_alias = entity_alias.append(df_genes,
+                                           ignore_index=False)
     if(len(ids_peaks) > 0):
         df_peaks = pd.DataFrame(
                 index=ids_peaks,
                 columns=['alias'],
                 data=[f'{prefix_P}.{x}' for x in range(len(ids_peaks))])
         settings.pbg_params['entities'][prefix_P] = {'num_partitions': 1}
+        entity_alias = entity_alias.append(df_peaks,
+                                           ignore_index=False)
     if(len(ids_kmers) > 0):
         df_kmers = pd.DataFrame(
                 index=ids_kmers,
                 columns=['alias'],
                 data=[f'{prefix_K}.{x}' for x in range(len(ids_kmers))])
         settings.pbg_params['entities'][prefix_K] = {'num_partitions': 1}
+        entity_alias = entity_alias.append(df_kmers,
+                                           ignore_index=False)
     if(len(ids_motifs) > 0):
         df_motifs = pd.DataFrame(
             index=ids_motifs,
             columns=['alias'],
             data=[f'{prefix_M}.{x}' for x in range(len(ids_motifs))])
         settings.pbg_params['entities'][prefix_M] = {'num_partitions': 1}
+        entity_alias = entity_alias.append(df_motifs,
+                                           ignore_index=False)
 
     # generate edges
     dict_graph_stats = dict()
@@ -422,6 +436,10 @@ def gen_graph(list_CP=None,
                     header=False,
                     index=False,
                     sep='\t')
+    entity_alias.to_csv(os.path.join(filepath, 'entity_alias.txt'),
+                        header=True,
+                        index=True,
+                        sep='\t')
     print("Finished.")
     if copy:
         return df_edges
@@ -476,7 +494,7 @@ def pbg_train(dirname=None,
     settings.pbg_params['checkpoint_path'] = pbg_params['checkpoint_path']
 
     if auto_wd:
-        # empirical numbers from simulation experiment
+        # empirical numbers from simulation experiments
         # optimial wd (8e-4) for sample size (36050102)
         wd = np.around(
             8e-4 * 36050102 / settings.graph_stats[

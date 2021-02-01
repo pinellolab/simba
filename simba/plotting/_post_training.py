@@ -6,6 +6,7 @@ import pandas as pd
 import json
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
 from adjustText import adjust_text
 from scipy.stats import rankdata
 
@@ -150,9 +151,9 @@ def entity_metrics(adata_cmp,
     if fig_path is None:
         fig_path = os.path.join(settings.workdir, 'figures')
 
-    assert (x in ['max','std','gini', 'entropy']), \
+    assert (x in ['max', 'std', 'gini', 'entropy']), \
         "x must be one of ['max','std','gini','entropy']"
-    assert (y in ['max','std','gini', 'entropy']), \
+    assert (y in ['max', 'std', 'gini', 'entropy']), \
         "y must be one of ['max','std','gini','entropy']"
 
     fig, ax = plt.subplots(figsize=fig_size)
@@ -204,3 +205,9 @@ def entity_metrics(adata_cmp,
                     pad_inches=1,
                     bbox_inches='tight')
         plt.close(fig)
+
+
+# def barcode(adata_cmp,
+#             list_query,
+#             anno_ref=None,
+#             pale)

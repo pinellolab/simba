@@ -687,6 +687,7 @@ def _scatterplot2d_plotly(df,
 # TO-DO add 3D plot
 def umap(adata,
          color=None,
+         dict_palette=None,
          n_components=None,
          comp1=0,
          comp2=1,
@@ -717,8 +718,13 @@ def umap(adata,
         Variable in `data` that specify positions on the x axis.
     y: `str`
         Variable in `data` that specify positions on the x axis.
-    list_hue: `str`, optional (default: None)
+    color: `str`, optional (default: None)
         A list of variables that will produce points with different colors.
+        e.g. color = ['anno1', 'anno2']
+    dict_palette: `dict`,optional (default: None)
+        A dictionary of palettes for different variables in `color`.
+        Only valid for categorical/string variables
+        e.g. dict_palette = {'ann1': {},'ann2': {}}
     drawing_order: `str` (default: 'sorted')
         The order in which values are plotted, This can be
         one of the following values
@@ -773,12 +779,13 @@ def umap(adata,
               f"It is corrected to {adata.obsm['X_umap'].shape[1]}")
         n_components = adata.obsm['X_umap'].shape[1]
 
+    if dict_palette is None:
+        dict_palette = dict()
     if color is None:
         color = []
         return "No `color` is specified"
     else:
         color = list(dict.fromkeys(color))  # remove duplicate keys
-        dict_palette = dict()
         df_plot = pd.DataFrame(index=adata.obs.index,
                                data=adata.obsm['X_umap'],
                                columns=['UMAP'+str(x+1) for x in
@@ -789,12 +796,19 @@ def umap(adata,
                 if(not is_numeric_dtype(df_plot[ann])):
                     if 'color' not in adata.uns_keys():
                         adata.uns['color'] = dict()
-                    if ann+'_color' in adata.uns['color'].keys():
-                        dict_palette[ann] = adata.uns['color'][ann+'_color']
+
+                    if ann not in dict_palette.keys():
+                        if ann+'_color' in adata.uns['color'].keys():
+                            dict_palette[ann] = adata.uns['color'][ann+'_color']
+                        else:
+                            dict_palette[ann] = generate_palette(adata.obs[ann])
+                            adata.uns['color'][ann+'_color'] = \
+                                dict_palette[ann].copy()
                     else:
-                        dict_palette[ann] = generate_palette(adata.obs[ann])
-                        adata.uns['color'][ann+'_color'] = \
-                            dict_palette[ann].copy()
+                        if ann+'_color' not in adata.uns['color'].keys():
+                            adata.uns['color'][ann+'_color'] = \
+                                dict_palette[ann].copy()
+
             elif(ann in adata.var_names):
                 df_plot[ann] = adata.obs_vector(ann)
             else:

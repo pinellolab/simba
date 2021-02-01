@@ -12,5 +12,6 @@ from ._pbg import (
 )
 from ._post_training import (
     softmax,
-    embed
+    embed,
+    compare_entities
 )

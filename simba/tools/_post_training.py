@@ -2,6 +2,9 @@
 
 import numpy as np
 import anndata as ad
+from scipy.stats import entropy
+
+from ._utils import _gini
 
 
 def softmax(adata_ref,
@@ -189,27 +192,56 @@ def embed(adata_ref,
     return adata_all
 
 
-# def compare_entities(adata_ref,
-#                      adata_query):
-#     """Compare the embeddings of two entities
+def compare_entities(adata_ref,
+                     adata_query,
+                     n_top_cells=50):
+    """Compare the embeddings of two entities by calculating
+    the following values between reference and query entities:
+    - dot product
+    - normalized dot product
+    - softmax probability
 
-#     Parameters
-#     ----------
-#         adata_ref: `AnnData`
-#             Reference entity anndata.
-#         adata_query: `list`
-#             Query entity anndata.
+    and the following metrics for each query entity
+    - max (The average maximum dot product of top-rank reference entities,
+      based on normalized dot product)
+    - std (standard deviation of reference entities,
+      based on dot product)
+    - gini (Gini coefficients of reference entities,
+      based on softmax probability)
+    - entropy (The entropy of reference entities,
+      based on softmax probability)
 
-#     Returns
-#     -------
-#     adata_cmp: `AnnData`
-#         Store reference entity as observations and query entity as variables
-#     """
-#     X_ref = adata_ref.X
-#     X_query = adata_query.X
-#     X_cmp = np.matmul(X_ref, X_query.T)
-#     adata_cmp = ad.AnnData(X=X_cmp,
-#                            obs=adata_ref.obs,
-#                            var=adata_query.obs)
-#     return adata_cmp
-#     # adata_cmp.layers['norm'] = df_scores_MC.subtract(np.log(np.exp(X_cmp).mean(axis=0)),axis=1)
+    Parameters
+    ----------
+        adata_ref: `AnnData`
+            Reference entity anndata.
+        adata_query: `list`
+            Query entity anndata.
+        n_top_cells: `int`, optional (default: 50)
+            The number of cells to consider when calculating the metric 'max'
+
+    Returns
+    -------
+    adata_cmp: `AnnData`
+        Store reference entity as observations and query entity as variables
+    """
+
+    X_ref = adata_ref.X
+    X_query = adata_query.X
+    X_cmp = np.matmul(X_ref, X_query.T)
+    adata_cmp = ad.AnnData(X=X_cmp,
+                           obs=adata_ref.obs,
+                           var=adata_query.obs)
+    adata_cmp.layers['norm'] = X_cmp \
+        - np.log(np.exp(X_cmp).mean(axis=0)).reshape(1, -1)
+    adata_cmp.layers['softmax'] = np.exp(X_cmp) \
+        / np.exp(X_cmp).sum(axis=0).reshape(1, -1)
+    adata_cmp.var['max'] = \
+        np.clip(np.sort(adata_cmp.layers['norm'], axis=0)[-n_top_cells:, ],
+                a_min=0,
+                a_max=None).mean(axis=0)
+    adata_cmp.var['std'] = np.std(X_cmp, axis=0, ddof=1)
+    adata_cmp.var['gini'] = np.array([_gini(adata_cmp.layers['softmax'][:, i])
+                                      for i in np.arange(X_cmp.shape[1])])
+    adata_cmp.var['entropy'] = entropy(adata_cmp.layers['softmax'])
+    return adata_cmp

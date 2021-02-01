@@ -99,3 +99,38 @@ def pbg_metrics(metrics=['mrr'],
                     pad_inches=1,
                     bbox_inches='tight')
         plt.close(fig)
+
+
+# def entity_metrics(adata_cmp,
+#                    x,
+#                    y,
+#                    fig_size=None,
+#                    save_fig=None,
+#                    fig_path=None,
+#                    fig_name='entity_metrics.pdf',
+#                    pad=1.08,
+#                    w_pad=None,
+#                    h_pad=None):
+#     """Plot entity metrics
+
+#     Parameters
+#     ----------
+#     adata_cmp: `AnnData`
+#         Anndata object from `compare_entities`
+#     x, y: `str`
+#         Variables that specify positions on the x and y axes.
+#         Possible values:
+#         - max (The average maximum dot product of top-rank reference entities,
+#         based on normalized dot product)
+#         - std (standard deviation of reference entities,
+#         based on dot product)
+#         - gini (Gini coefficients of reference entities,
+#         based on softmax probability)
+#         - entropy (The entropy of reference entities,
+#         based on softmax probability)
+
+#     Returns
+#     -------
+#     None
+#     """
+    

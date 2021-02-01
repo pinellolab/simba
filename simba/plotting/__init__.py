@@ -10,5 +10,6 @@ from ._plot import (
     discretize
 )
 from ._post_training import (
-    pbg_metrics
+    pbg_metrics,
+    entity_metrics
 )

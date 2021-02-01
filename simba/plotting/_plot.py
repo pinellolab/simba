@@ -367,7 +367,7 @@ def variable_genes(adata,
                c='#ce3746')
     ax.set_xscale(value='log')
 
-    if(show_texts):
+    if show_texts:
         ids = variances_norm.values.argsort()[-n_texts:][::-1]
         texts = [plt.text(means[i], variances_norm[i], genes[i],
                  fontdict={'family': 'serif',

@@ -48,7 +48,8 @@ main <- function(){
   species = opt$species
   dir.output = opt$output
   
-  suppressMessages(library(HDF5Array))
+  suppressMessages(library(rhdf5))
+  suppressMessages(library(HDF5Array))  # used for saving sparse matrix
   suppressMessages(library(Biostrings))
   suppressMessages(library(Matrix))
   suppressMessages(library(TFBSTools))
@@ -109,10 +110,11 @@ main <- function(){
     # write.table(colnames(freq_k),file.path(output_dir,'kmers.tsv'),quote=FALSE,row.names = FALSE,col.names = FALSE)
    
     filename = 'freq_kmer.h5'
-    # writeHDF5Array internally tranposes the matrix so `t()` is used to counteract this operation
+    # writeHDF5Array internally transposes the matrix so `t()` is used to counteract this operation
     writeHDF5Array(t(freq_k), file.path(dir.output,filename), name="mat", with.dimnames=FALSE, verbose=FALSE)
-    h5writeDimnames(list(col=colnames(freq_k), row=rownames(freq_k)),
-                    file.path(dir.output,filename), name="mat", group='mat_anno',h5dimnames=c('col','row'))
+    # using this structure in order for  anndata 'read_hdf' to recognize row names and column names
+    h5write(rownames(freq_k), file.path(dir.output,filename), "row_names")
+    h5write(colnames(freq_k), file.path(dir.output,filename), "col_names")
   }
 
   ### save motifs
@@ -127,10 +129,11 @@ main <- function(){
     # write.table(colnames(freq_motif),file.path(output_dir,'motifs.tsv'),quote=FALSE,row.names = FALSE,col.names = FALSE)
 
     filename = 'freq_motif.h5'
-    # writeHDF5Array internally tranposes the matrix so `t()` is used to counteract this operation
+    # writeHDF5Array internally transposes the matrix so `t()` is used to counteract this operation
     writeHDF5Array(t(freq_motif), file.path(dir.output,filename), name="mat", with.dimnames=FALSE, verbose=FALSE)
-    h5writeDimnames(list(col=colnames(freq_motif), row=rownames(freq_motif)),
-                    file.path(dir.output,filename), name="mat", group='mat_anno',h5dimnames=c('col','row'))
+    # using this structure in order for  anndata 'read_hdf' to recognize row names and column names
+    h5write(rownames(freq_motif), file.path(dir.output,filename), "row_names")
+    h5write(colnames(freq_motif), file.path(dir.output,filename), "col_names")
   }
   
   print('Finished.')

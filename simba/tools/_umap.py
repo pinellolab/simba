@@ -17,10 +17,21 @@ def umap(adata,
     ----------
     adata: AnnData
         Annotated data matrix.
+    n_neighbors: `int`, optional (default: 15)
+        The size of local neighborhood for UMAP
+    n_components: `int`, optional (default: None)
+        The dimension of the space to embed into for UMAP
+    random_state: `int`, optional (default: None)
+        The seed used by the random number generator for UMAP
     layer: `str`, optional (default: None)
         The layer used to perform UMAP
     obsm: `str`, optional (default: None)
         The multi-dimensional annotation of observations used to perform UMAP
+    n_dim: `str`, optional (default: None)
+        The number of dimensions used in `layer` or `obsm`
+    kwargs:
+        Other keyword arguments are passed down to `umap_learn.UMAP`
+
     Returns
     -------
     updates `adata` with the following fields:

@@ -113,7 +113,7 @@ def entity_metrics(adata_cmp,
                    cutoff_x=0,
                    cutoff_y=0,
                    n_texts=10,
-                   entities=None,
+                   texts=None,
                    fig_size=None,
                    save_fig=None,
                    fig_path=None,
@@ -139,7 +139,7 @@ def entity_metrics(adata_cmp,
         based on softmax probability)
         - entropy (The entropy of reference entities,
         based on softmax probability)
-    entities: `list` optional(default: None)
+    texts: `list` optional(default: None)
         Entity names to plot
 
     Returns
@@ -164,7 +164,7 @@ def entity_metrics(adata_cmp,
                adata_cmp.var[y],
                **kwargs)
     if show_texts:
-        if entities is not None:
+        if texts is not None:
             plt_texts = [plt.text(adata_cmp.var[x][t],
                                   adata_cmp.var[y][t],
                                   t,
@@ -172,7 +172,7 @@ def entity_metrics(adata_cmp,
                                    'color': 'black',
                                    'weight': 'normal',
                                    'size': text_size})
-                         for t in entities]
+                         for t in texts]
         else:
             if x == 'entropy':
                 ranks_x = rankdata(-adata_cmp.var[x])

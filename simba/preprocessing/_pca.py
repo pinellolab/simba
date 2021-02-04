@@ -21,6 +21,22 @@ def pca(adata,
     ----------
     adata: AnnData
         Annotated data matrix.
+    n_components: `int`, optional (default: 50)
+        Desired dimensionality of output data
+    algorithm: `str`, optional (default: 'randomized')
+        SVD solver to use. Choose from {'arpack', 'randomized'}.
+    n_iter: `int`, optional (default: '5')
+        Number of iterations for randomized SVD solver.
+        Not used by ARPACK.
+    tol: `float`, optional (default: 0)
+        Tolerance for ARPACK. 0 means machine precision.
+        Ignored by randomized SVD solver.
+    feature: `str`, optional (default: None)
+        Feature used to perform PCA.
+        The data type of `.var[feature]` needs to be `bool`
+        If None, adata.X will be used.
+    kwargs:
+        Other keyword arguments are passed down to `TruncatedSVD()`
 
     Returns
     -------

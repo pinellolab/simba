@@ -21,12 +21,37 @@ def infer_edges(adata_ref,
     """Identify edges across experimental conditions or single cell modalities
     Parameters
     ----------
-    adata: AnnData
-        Annotated data matrix.
+    adata_ref: `AnnData`
+        Annotated reference data matrix.
+    adata_query: `AnnData`
+        Annotated query data matrix.
+    feature: `str`, optional (default: None)
+        Feature used for edges inference.
+        The data type of `.var[feature]` needs to be `bool`
+    n_components: `int`, optional (default: 20)
+        The number of components used in `randomized_svd`
+        for comparing reference and query observations
+    random_state: `int`, optional (default: 42)
+        The seed used for truncated randomized SVD
+    n_top_edges: `int`, optional (default: None)
+        The number of edges to keep
+        If specified, `percentile` will be ignored
+    percentile: `float`, optional (default: 0.01)
+        The percentile of edges to keep
+    metric: `str`, optional (default: 'euclidean')
+        The metric to use when calculating distance between
+        reference and query observations
+    layer: `str`, optional (default: None)
+        The layer used to perform edge inference
+        If None, `.X` will be used.
+    kwargs:
+        Other keyword arguments are passed down to `randomized_svd()`
 
     Returns
     -------
-    updates `adata` with the following fields:
+    adata_ref_query: `AnnData`
+        Annotated relation matrix betwewn reference and query observations
+        Store reference entity as observations and query entity as variables
     """
     mask_ref = adata_ref.var[feature]
     feature_ref = adata_ref.var_names[mask_ref]

@@ -27,5 +27,5 @@ setup(
         Path('requirements.txt').read_text('utf-8').splitlines()
     ],
     include_package_data=True,
-    package_data={"simba": ["data/*.bed"]}
+    package_data={"simba": ["data/gene_anno/*.bed"]}
 )

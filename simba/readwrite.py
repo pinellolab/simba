@@ -101,6 +101,6 @@ def load_pbg_config(path_config=None):
     """
     if path_config is None:
         path_config = settings.pbg_params['checkpoint_path']
-    with os.path.join(path_config, 'config.json', "rt") as tf:
+    with open(os.path.join(path_config, 'config.json'), "rt") as tf:
         pbg_params = json.load(tf)
     settings.set_pbg_params(config=pbg_params)

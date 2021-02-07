@@ -94,3 +94,13 @@ def read_embedding(path_emb=None,
                 adata.obs.index = names_entity
                 dict_adata[entity_type] = adata
     return dict_adata
+
+
+def load_pbg_config(path_config=None):
+    """Load PBG configuration into global setting
+    """
+    if path_config is None:
+        path_config = settings.pbg_params['checkpoint_path']
+    with os.path.join(path_config, 'config.json', "rt") as tf:
+        pbg_params = json.load(tf)
+    settings.set_pbg_params(config=pbg_params)

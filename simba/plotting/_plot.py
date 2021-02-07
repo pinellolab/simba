@@ -275,8 +275,9 @@ def pca_variance_ratio(adata,
 
 def pcs_features(adata,
                  log=False,
+                 size=3,
                  show_cutoff=True,
-                 fig_size=None,
+                 fig_size=(3, 3),
                  fig_ncol=3,
                  save_fig=None,
                  fig_path=None,
@@ -305,11 +306,13 @@ def pcs_features(adata,
         if(log):
             ax_i.scatter(range(n_features),
                          np.log(np.sort(
-                             np.abs(adata.uns['pca']['PCs'][:, i],))[::-1]))
+                             np.abs(adata.uns['pca']['PCs'][:, i],))[::-1]),
+                         s=size)
         else:
             ax_i.scatter(range(n_features),
                          np.sort(
-                             np.abs(adata.uns['pca']['PCs'][:, i],))[::-1])
+                             np.abs(adata.uns['pca']['PCs'][:, i],))[::-1],
+                         s=size)
         n_ft_selected_i = len(adata.uns['pca']['features'][f'pc_{i}'])
         if(show_cutoff):
             print(f'#features selected from PC {i} is: {n_ft_selected_i}')

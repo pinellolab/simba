@@ -55,6 +55,11 @@ def pbg_metrics(metrics=['mrr'],
     None
     """
 
+    if save_fig is None:
+        save_fig = settings.save_fig
+    if fig_path is None:
+        fig_path = os.path.join(settings.workdir, 'figures')
+
     assert isinstance(metrics, list), "`metrics` must be list"
     for x in metrics:
         if(x not in ['pos_rank', 'mrr', 'r1',
@@ -98,6 +103,8 @@ def pbg_metrics(metrics=['mrr'],
         ax_i.set_ylabel(metric)
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
     if(save_fig):
+        if(not os.path.exists(fig_path)):
+            os.makedirs(fig_path)
         plt.savefig(os.path.join(fig_path, fig_name),
                     pad_inches=1,
                     bbox_inches='tight')

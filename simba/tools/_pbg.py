@@ -296,7 +296,7 @@ def gen_graph(list_CP=None,
                  'lhs': f'{prefix_P}',
                  'rhs': f'{prefix_M}',
                  'operator': 'none',
-                 'weight': 1.0
+                 'weight': 0.2
                  })
             id_r += 1
             adata.obs['pbg_id'] = df_peaks.loc[adata.obs_names,
@@ -333,7 +333,7 @@ def gen_graph(list_CP=None,
                  'lhs': f'{prefix_P}',
                  'rhs': f'{prefix_K}',
                  'operator': 'none',
-                 'weight': 1.0
+                 'weight': 0.02
                  })
             id_r += 1
             adata.obs['pbg_id'] = df_peaks.loc[adata.obs_names,
@@ -417,7 +417,7 @@ def gen_graph(list_CP=None,
                  'lhs': f'{key_obs}',
                  'rhs': f'{key_var}',
                  'operator': 'none',
-                 'weight': 1.0
+                 'weight': 10.0
                  })
             id_r += 1
             adata.obs['pbg_id'] = df_cells_obs.loc[adata.obs_names,
@@ -429,7 +429,7 @@ def gen_graph(list_CP=None,
     dict_graph_stats['n_edges'] = df_edges.shape[0]
     settings.graph_stats[dirname] = dict_graph_stats
 
-    print(f'Writing graph file "pbg_graph.txt" to {filepath} ...')
+    print(f'Writing graph file "pbg_graph.txt" to "{filepath}" ...')
     df_edges.to_csv(os.path.join(filepath, "pbg_graph.txt"),
                     header=False,
                     index=False,

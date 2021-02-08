@@ -490,6 +490,8 @@ def filter_genes(adata,
     """
 
     feature = 'genes'
+    if(not issparse(adata.X)):
+        adata.X = csr_matrix(adata.X)
 
     if('n_counts' in adata.var_keys()):
         n_counts = adata.var['n_counts']
@@ -578,6 +580,8 @@ def filter_peaks(adata,
     """
 
     feature = 'peaks'
+    if(not issparse(adata.X)):
+        adata.X = csr_matrix(adata.X)
 
     if('n_counts' in adata.var_keys()):
         n_counts = adata.var['n_counts']
@@ -665,6 +669,8 @@ def filter_features(adata,
        The percentage of cells in which each gene is expressed.
     """
 
+    if(not issparse(adata.X)):
+        adata.X = csr_matrix(adata.X)
     if('n_counts' in adata.var_keys()):
         n_counts = adata.var['n_counts']
     else:

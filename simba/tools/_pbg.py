@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 import os
+import json
 
 from pathlib import Path
 import attr
@@ -36,7 +37,6 @@ def gen_graph(list_CP=None,
               prefix_G='G',
               copy=False,
               dirname='graph0',
-              filename='pbg_graph.txt',
               use_highly_variable=True,
               use_top_pcs=True,
               ):
@@ -62,9 +62,7 @@ def gen_graph(list_CP=None,
     prefix_G: `str`, optional (default: 'G')
         Prefix to indicate the entity type of genes
     dirname: `str`, (default: 'graph0')
-        The name of the directory in which graph will be stored
-    filename: `str`, (default: 'pbg_graph.txt')
-        The name of graph file
+        The name of the directory in which each graph will be stored
     use_highly_variable: `bool`, optional (default: True)
         Use highly variable genes
     use_top_pcs: `bool`, optional (default: True)
@@ -92,8 +90,8 @@ def gen_graph(list_CP=None,
     relations: `list`
         The relation types.
 
-    updates `.settings.pbg_params` with the following parameters.
-    graph_stats: `dict`
+    updates `.settings.graph_stats` with the following parameters.
+    `dirname`: `dict`
         Statistics of input graph
     """
 
@@ -429,10 +427,10 @@ def gen_graph(list_CP=None,
 
     print(f'Number of total edges: {df_edges.shape[0]}')
     dict_graph_stats['n_edges'] = df_edges.shape[0]
-    settings.graph_stats[os.path.join(filepath, filename)] = dict_graph_stats
+    settings.graph_stats[dirname] = dict_graph_stats
 
-    print(f'Writing "{filename}" to {filepath} ...')
-    df_edges.to_csv(os.path.join(filepath, filename),
+    print(f'Writing graph file "pbg_graph.txt" to {filepath} ...')
+    df_edges.to_csv(os.path.join(filepath, "pbg_graph.txt"),
                     header=False,
                     index=False,
                     sep='\t')
@@ -440,6 +438,12 @@ def gen_graph(list_CP=None,
                         header=True,
                         index=True,
                         sep='\t')
+    with open(os.path.join(filepath, 'graph_stats.json'), 'w') as fp:
+        json.dump(dict_graph_stats,
+                  fp,
+                  sort_keys=True,
+                  indent=4,
+                  separators=(',', ': '))
     print("Finished.")
     if copy:
         return df_edges
@@ -448,7 +452,6 @@ def gen_graph(list_CP=None,
 
 
 def pbg_train(dirname=None,
-              filename='pbg_graph.txt',
               pbg_params=None,
               output='model',
               auto_wd=True):
@@ -458,8 +461,6 @@ def pbg_train(dirname=None,
     dirname: `str`, optional (default: None)
         The name of the directory in which graph is stored
         If None, it will be inferred from `pbg_params['entity_path']`
-    filename: `str`, optional (default: 'pbg_graph.txt')
-        The name of graph file
     pbg_params: `dict`, optional (default: None)
         Configuration for pbg training.
         If specified, it will be used instead of the default setting
@@ -498,7 +499,7 @@ def pbg_train(dirname=None,
         # optimial wd (8e-4) for sample size (36050102)
         wd = np.around(
             8e-4 * 36050102 / settings.graph_stats[
-                os.path.join(filepath, filename)]['n_edges'],
+                os.path.basename(filepath)]['n_edges'],
             decimals=6)
         pbg_params['wd'] = wd
         settings.pbg_params['wd'] = pbg_params['wd']
@@ -512,7 +513,7 @@ def pbg_train(dirname=None,
     config = loader.load_config_simba(pbg_params)
     set_logging_verbosity(config.verbose)
 
-    list_filenames = [os.path.join(filepath, filename)]
+    list_filenames = [os.path.join(filepath, "pbg_graph.txt")]
     input_edge_paths = [Path(name) for name in list_filenames]
     print("Converting input data ...")
     convert_input_data(

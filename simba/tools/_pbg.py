@@ -227,6 +227,7 @@ def gen_graph(list_CP=None,
     col_names = ["source", "relation", "destination"]
     df_edges = pd.DataFrame(columns=col_names)
     id_r = 0
+    settings.pbg_params['relations'] = []
 
     if list_CP is not None:
         for adata_ori in list_CP:
@@ -425,7 +426,7 @@ def gen_graph(list_CP=None,
             adata.var['pbg_id'] = df_cells_var.loc[adata.var_names,
                                                    'alias'].copy()
 
-    print(f'Number of total edges: {df_edges.shape[0]}')
+    print(f'Total number of edges: {df_edges.shape[0]}')
     dict_graph_stats['n_edges'] = df_edges.shape[0]
     settings.graph_stats[dirname] = dict_graph_stats
 
@@ -454,7 +455,8 @@ def gen_graph(list_CP=None,
 def pbg_train(dirname=None,
               pbg_params=None,
               output='model',
-              auto_wd=True):
+              auto_wd=True,
+              save_wd=False):
     """PBG training
     Parameters
     ----------
@@ -471,6 +473,8 @@ def pbg_train(dirname=None,
         If True, it will override `pbg_params['wd']` with a new weight decay
         estimated based on training sample size
         Recommended for relative small training sample size (<1e7)
+    save_wd: `bool`, optional (default: False)
+        If True, estimated `wd` will be saved to `settings.pbg_params['wd']`
     Returns
     -------
     updates `settings.pbg_params` with the following parameter
@@ -481,7 +485,7 @@ def pbg_train(dirname=None,
     """
 
     if pbg_params is None:
-        pbg_params = settings.pbg_params
+        pbg_params = settings.pbg_params.copy()
     else:
         assert isinstance(pbg_params, dict),\
             "`pbg_params` must be dict"
@@ -502,7 +506,8 @@ def pbg_train(dirname=None,
                 os.path.basename(filepath)]['n_edges'],
             decimals=6)
         pbg_params['wd'] = wd
-        settings.pbg_params['wd'] = pbg_params['wd']
+        if save_wd:
+            settings.pbg_params['wd'] = pbg_params['wd']
         print(f'Auto-estimated weight decay is {wd}')
 
     # to avoid oversubscription issues in workloads

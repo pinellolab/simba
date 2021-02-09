@@ -127,7 +127,7 @@ class SimbaConfig:
                 comparator='dot',
 
                 # Training
-                num_epochs=50,
+                num_epochs=30,
                 workers=12,
                 num_batch_negs=50,
                 num_uniform_negs=50,

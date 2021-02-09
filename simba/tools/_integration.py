@@ -12,8 +12,9 @@ def infer_edges(adata_ref,
                 feature='highly_variable',
                 n_components=20,
                 random_state=42,
-                n_top_edges=6000,
-                percentile=0.01,
+                n_top_edges=None,
+                percentile=0.015,
+                cutoff=None,
                 layer=None,
                 metric='euclidean',
                 **kwargs,
@@ -38,6 +39,10 @@ def infer_edges(adata_ref,
         If specified, `percentile` will be ignored
     percentile: `float`, optional (default: 0.01)
         The percentile of edges to keep
+    cutoff: `float`, optional (default: None)
+        The distance cutoff.
+        If None, it will be decided by `n_top_edges` or `percentile`
+        If specified, `n_top_edges` and `percentile` will be ignored
     metric: `str`, optional (default: 'euclidean')
         The metric to use when calculating distance between
         reference and query observations
@@ -78,12 +83,15 @@ def infer_edges(adata_ref,
     dist_ref_query = pairwise_distances(X_cca_ref,
                                         X_cca_query,
                                         metric=metric)
-    if n_top_edges is None:
-        cutoff = np.percentile(dist_ref_query.flatten(), percentile)
-    else:
-        cutoff = np.partition(dist_ref_query.flatten(),
-                              n_top_edges-1)[n_top_edges-1]
+
+    if cutoff is None:
+        if n_top_edges is None:
+            cutoff = np.percentile(dist_ref_query.flatten(), percentile)
+        else:
+            cutoff = np.partition(dist_ref_query.flatten(),
+                                  n_top_edges-1)[n_top_edges-1]
     id_x, id_y = np.where(dist_ref_query <= cutoff)
+    print(f'{len(id_x)} edges are selected')
     conn_ref_query = csr_matrix((dist_ref_query[id_x, id_y],
                                  (id_x, id_y)),
                                 shape=dist_ref_query.shape)

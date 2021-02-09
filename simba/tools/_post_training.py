@@ -9,7 +9,8 @@ from ._utils import _gini
 
 def softmax(adata_ref,
             adata_query,
-            T=0.3):
+            T=0.3,
+            cutoff=1e-6):
     """Softmax-based transformation
 
     This will transform query data to reference-comparable data
@@ -27,6 +28,8 @@ def softmax(adata_ref,
         each query becomes the average of reference;
         When T goes to zero, softargmax converges to arg max,
         each query is approximately the best of reference.
+    cutoff: `float`
+        The cutoff used to filter out low-probability reference entities
     Returns
     -------
     updates `adata_query` with the following field.
@@ -37,6 +40,8 @@ def softmax(adata_ref,
     scores_ref_query = np.matmul(adata_ref.X, adata_query.X.T)
     scores_softmax = np.exp(scores_ref_query/T) / \
         (np.exp(scores_ref_query/T).sum(axis=0))[None, :]
+    mask = scores_softmax < cutoff
+    scores_softmax[mask] = 0
     X_query = np.dot(scores_softmax.T, adata_ref.X)
     adata_query.layers['softmax'] = X_query
 
@@ -57,6 +62,8 @@ class SimbaEmbed:
                  list_adata_query,
                  T=0.3,
                  list_T=None,
+                 cutoff=1e-6,
+                 list_cutoff=None,
                  use_precomputed=True,
                  ):
         """
@@ -77,6 +84,12 @@ class SimbaEmbed:
             A list of temperature parameters.
             It should correspond to each of query data.
             Once it's specified, it will override `T`.
+        cutoff: `float`, (default: None)
+            The cutoff used to filter out low-probability reference entities
+        list_cutoff: `list`, (default: None)
+            A list of cutoff values.
+            It should correspond to each of query data.
+            Once it's specified, it will override `cutoff`.
         """
         assert isinstance(list_adata_query, list), \
             "`list_adata_query` must be list"
@@ -87,6 +100,8 @@ class SimbaEmbed:
         self.list_adata_query = list_adata_query
         self.T = T
         self.list_T = list_T
+        self.cutoff = cutoff
+        self.list_cutoff = list_cutoff
         self.use_precomputed = use_precomputed
 
     def embed(self):
@@ -103,6 +118,8 @@ class SimbaEmbed:
         use_precomputed = self.use_precomputed
         T = self.T
         list_T = self.list_T
+        cutoff = self.cutoff
+        list_cutoff = self.list_cutoff
         X_all = adata_ref.X.copy()
         # obs_all = pd.DataFrame(
         #     data=['ref']*adata_ref.shape[0],
@@ -113,6 +130,8 @@ class SimbaEmbed:
         for i, adata_query in enumerate(list_adata_query):
             if list_T is not None:
                 T = list_T[i]
+            if list_cutoff is not None:
+                cutoff = list_cutoff[i]
             if use_precomputed:
                 if 'softmax' in adata_query.layers.keys():
                     print(f'Reading in precomputed softmax-transformed matrix '
@@ -124,7 +143,8 @@ class SimbaEmbed:
                     softmax(
                         adata_ref,
                         adata_query,
-                        T=T
+                        T=T,
+                        cutoff=cutoff,
                     )
             else:
                 print(f'Performing softmax transformation '
@@ -132,7 +152,8 @@ class SimbaEmbed:
                 softmax(
                     adata_ref,
                     adata_query,
-                    T=T
+                    T=T,
+                    cutoff=cutoff,
                     )
             X_all = np.vstack((X_all, adata_query.layers['softmax']))
             # obs_all = obs_all.append(
@@ -153,6 +174,8 @@ def embed(adata_ref,
           list_adata_query,
           T=0.3,
           list_T=None,
+          cutoff=1e-6,
+          list_cutoff=None,
           use_precomputed=True):
     """Embed a list of query datasets along with reference dataset
     into the same space
@@ -187,6 +210,8 @@ def embed(adata_ref,
                     list_adata_query,
                     T=T,
                     list_T=list_T,
+                    cutoff=cutoff,
+                    list_cutoff=list_cutoff,
                     use_precomputed=use_precomputed)
     adata_all = SE.embed()
     return adata_all

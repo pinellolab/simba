@@ -137,7 +137,7 @@ class SimbaConfig:
                 early_stopping=False,
                 regularization_coef=0.0,
                 wd=0.0,
-                wd_interval=10,
+                wd_interval=30,
 
                 # Evaluation during training
                 eval_fraction=0.05,

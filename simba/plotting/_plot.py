@@ -315,12 +315,12 @@ def pcs_features(adata,
                          s=size)
         n_ft_selected_i = len(adata.uns['pca']['features'][f'pc_{i}'])
         if(show_cutoff):
-            print(f'#features selected from PC {i} is: {n_ft_selected_i}')
             ax_i.axvline(n_ft_selected_i, ls='--', c='red')
         ax_i.set_xlabel('Feautures')
         ax_i.set_ylabel('Loadings')
-        ax_i.locator_params(axis='x', nbins=5)
+        ax_i.locator_params(axis='x', nbins=3)
         ax_i.locator_params(axis='y', nbins=5)
+        ax_i.ticklabel_format(axis="x", style="sci", scilimits=(0, 0))
         ax_i.set_title(f'PC {i}')
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
     if(save_fig):
@@ -403,6 +403,7 @@ def _scatterplot2d(df,
                    list_hue=None,
                    hue_palette=None,
                    drawing_order='sorted',
+                   size=8,
                    show_texts=False,
                    texts=None,
                    text_size=10,
@@ -526,6 +527,7 @@ def _scatterplot2d(df,
                                    alpha=alpha,
                                    linewidth=0,
                                    palette=palette,
+                                   s=size,
                                    **kwargs)
             ax_i.legend(bbox_to_anchor=(1, 0.5),
                         loc='center left',
@@ -546,7 +548,8 @@ def _scatterplot2d(df,
                                 c=df_updated[hue],
                                 vmin=vmin_i,
                                 vmax=vmax_i,
-                                alpha=alpha)
+                                alpha=alpha,
+                                s=size)
             cbar = plt.colorbar(sc_i,
                                 ax=ax_i,
                                 pad=0.01,
@@ -710,6 +713,7 @@ def umap(adata,
          comp1=0,
          comp2=1,
          comp3=2,
+         size=8,
          drawing_order='sorted',
          show_texts=False,
          texts=None,
@@ -720,7 +724,7 @@ def umap(adata,
          fig_legend_order=None,
          vmin=None,
          vmax=None,
-         alpha=0.8,
+         alpha=1,
          pad=1.08,
          w_pad=None,
          h_pad=None,
@@ -752,6 +756,8 @@ def umap(adata,
         - 'original': plot points in the same order as in input dataframe
         - 'sorted' : plot points with higher values on top.
         - 'random' : plot points in a random order
+    size: `int` (default: 8)
+        Point size.
     fig_size: `tuple`, optional (default: None)
         figure size.
     fig_ncol: `int`, optional (default: 3)
@@ -819,7 +825,10 @@ def umap(adata,
                         adata.uns['color'] = dict()
 
                     if ann not in dict_palette.keys():
-                        if ann+'_color' in adata.uns['color'].keys():
+                        if (ann+'_color' in adata.uns['color'].keys()) \
+                            and \
+                            (all(np.isin(np.unique(df_plot[ann]),
+                                         list(adata.uns['color'].keys())))):
                             dict_palette[ann] = \
                                 adata.uns['color'][ann+'_color']
                         else:
@@ -858,6 +867,7 @@ def umap(adata,
                        list_hue=color,
                        hue_palette=dict_palette,
                        drawing_order=drawing_order,
+                       size=size,
                        show_texts=show_texts,
                        text_size=text_size,
                        texts=texts,

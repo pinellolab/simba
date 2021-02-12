@@ -26,7 +26,7 @@ def select_variable_genes(adata,
     -------
 
     """
-    print('selecting variable genes')
+
     if layer is None:
         X = adata.X
     else:
@@ -64,3 +64,4 @@ def select_variable_genes(adata,
     adata.var['means'] = mean
     ids_top = norm_gene_var.argsort()[-n_top_genes:][::-1]
     adata.var['highly_variable'] = np.isin(range(adata.shape[1]), ids_top)
+    print(f'{n_top_genes} variable genes are selected.')

@@ -32,6 +32,7 @@ class GeneScores:
                  tss_downsteam=1e5,
                  gb_upstream=5000,
                  cutoff_weight=1,
+                 use_top_pcs=True,
                  use_precomputed=True,
                  use_gene_weigt=True,
                  min_w=1,
@@ -51,6 +52,7 @@ class GeneScores:
         self.tss_downsteam = tss_downsteam
         self.gb_upstream = gb_upstream
         self.cutoff_weight = cutoff_weight
+        self.use_top_pcs = use_top_pcs
         self.use_precomputed = use_precomputed
         self.use_gene_weigt = use_gene_weigt
         self.min_w = min_w
@@ -149,7 +151,10 @@ class GeneScores:
 
         df_gene_ann = gene_ann.copy()
         df_gene_ann.index = _uniquify(df_gene_ann['symbol'].values)
-        mask_p = adata.var['top_pcs']
+        if self.use_top_pcs:
+            mask_p = adata.var['top_pcs']
+        else:
+            mask_p = pd.Series(True, index=adata.var_names)
         df_peaks = adata.var[mask_p][['chr', 'start', 'end']].copy()
 
         if('gene_scores' not in adata.uns_keys()):

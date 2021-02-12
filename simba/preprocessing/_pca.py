@@ -107,11 +107,28 @@ def select_pcs_features(adata,
                         min_elbow=None,
                         **kwargs):
     """select features that contribute to the top PCs
+
+    S : `float`, optional (default: 10)
+        Sensitivity
+    min_elbow: `int`, optional (default: 0)
+        The minimum elbow location
+    curve: `str`, optional (default: 'convex')
+        Choose from {'convex','concave'}
+        If 'concave', algorithm will detect knees,
+        If 'convex', algorithm will detect elbows.
+    direction: `str`, optional (default: 'decreasing')
+        Choose from {'decreasing','increasing'}
+    online: `bool`, optional (default: False)
+        kneed will correct old knee points if True,
+        kneed will return first knee if False.
+    **kwargs: `dict`, optional
+        Extra arguments to KneeLocator.
+
     """
     n_pcs = adata.uns['pca']['n_pcs']
     n_features = adata.uns['pca']['PCs'].shape[0]
     if(min_elbow is None):
-        min_elbow = n_features/10
+        min_elbow = n_features/8
     adata.uns['pca']['features'] = dict()
     ids_features = list()
     for i in range(n_pcs):
@@ -120,11 +137,16 @@ def select_pcs_features(adata,
                                  np.abs(adata.uns['pca']['PCs'][:, i],))[::-1],
                              S=S,
                              min_elbow=min_elbow,
+                             curve=curve,
+                             direction=direction,
+                             online=online,
                              **kwargs)
         ids_features_i = \
             list(np.argsort(np.abs(
                 adata.uns['pca']['PCs'][:, i],))[::-1][:elbow])
         adata.uns['pca']['features'][f'pc_{i}'] = ids_features_i
         ids_features = ids_features + ids_features_i
+        print(f'#features selected from PC {i}: {len(ids_features_i)}')
     adata.var['top_pcs'] = False
     adata.var.loc[adata.var_names[np.unique(ids_features)], 'top_pcs'] = True
+    print(f'#features in total: {adata.var["top_pcs"].sum()}')

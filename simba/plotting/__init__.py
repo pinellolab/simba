@@ -7,7 +7,9 @@ from ._plot import (
     violin,
     hist,
     umap,
-    discretize
+    discretize,
+    node_similarity,
+    cca_nodes,
 )
 from ._post_training import (
     pbg_metrics,

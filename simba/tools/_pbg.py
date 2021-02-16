@@ -397,11 +397,11 @@ def gen_graph(list_CP=None,
 
             df_edges_x = pd.DataFrame(columns=col_names)
             df_edges_x['source'] = df_cells_obs.loc[
-                adata.obs_names[adata.X.nonzero()[0]],
+                adata.obs_names[adata.layers['conn'].nonzero()[0]],
                 'alias'].values
             df_edges_x['relation'] = f'r{id_r}'
             df_edges_x['destination'] = df_cells_var.loc[
-                adata.var_names[adata.X.nonzero()[1]],
+                adata.var_names[adata.layers['conn'].nonzero()[1]],
                 'alias'].values
             print(f'relation{id_r}: '
                   f'source: {key_obs}, '

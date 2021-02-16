@@ -6,7 +6,7 @@ from ._general import (
 from ._umap import umap
 from ._gene_scores import gene_scores
 from ._integration import (
-    node_dist,
+    node_similarity,
     infer_edges
 )
 from ._pbg import (

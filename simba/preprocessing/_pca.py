@@ -128,7 +128,7 @@ def select_pcs_features(adata,
     n_pcs = adata.uns['pca']['n_pcs']
     n_features = adata.uns['pca']['PCs'].shape[0]
     if(min_elbow is None):
-        min_elbow = n_features/8
+        min_elbow = n_features/6
     adata.uns['pca']['features'] = dict()
     ids_features = list()
     for i in range(n_pcs):

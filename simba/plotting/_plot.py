@@ -12,6 +12,7 @@ from pandas.api.types import (
     is_string_dtype,
     is_categorical_dtype,
 )
+from scipy.sparse import find
 import plotly.express as px
 # import plotly.graph_objects as go
 
@@ -403,6 +404,7 @@ def _scatterplot2d(df,
                    list_hue=None,
                    hue_palette=None,
                    drawing_order='sorted',
+                   dict_drawing_order=None,
                    size=8,
                    show_texts=False,
                    texts=None,
@@ -485,6 +487,8 @@ def _scatterplot2d(df,
         hue_palette = dict()
     assert isinstance(hue_palette, dict), "`hue_palette` must be dict"
 
+    if dict_drawing_order is None:
+        dict_drawing_order = dict()
     assert drawing_order in ['sorted', 'random', 'original'],\
         "`drawing_order` must be one of ['original', 'sorted', 'random']"
 
@@ -512,9 +516,13 @@ def _scatterplot2d(df,
                 palette = hue_palette[hue]
             else:
                 palette = None
-            if drawing_order == 'sorted':
+            if hue in dict_drawing_order.keys():
+                param_drawing_order = dict_drawing_order[hue]
+            else:
+                param_drawing_order = drawing_order
+            if param_drawing_order == 'sorted':
                 df_updated = df.sort_values(by=hue)
-            elif drawing_order == 'random':
+            elif param_drawing_order == 'random':
                 df_updated = df.sample(frac=1, random_state=100)
             else:
                 df_updated = df
@@ -537,9 +545,13 @@ def _scatterplot2d(df,
         else:
             vmin_i = df[hue].min() if vmin is None else vmin
             vmax_i = df[hue].max() if vmax is None else vmax
-            if drawing_order == 'sorted':
+            if hue in dict_drawing_order.keys():
+                param_drawing_order = dict_drawing_order[hue]
+            else:
+                param_drawing_order = drawing_order
+            if param_drawing_order == 'sorted':
                 df_updated = df.sort_values(by=hue)
-            elif drawing_order == 'random':
+            elif param_drawing_order == 'random':
                 df_updated = df.sample(frac=1, random_state=100)
             else:
                 df_updated = df
@@ -715,6 +727,7 @@ def umap(adata,
          comp3=2,
          size=8,
          drawing_order='sorted',
+         dict_drawing_order=None,
          show_texts=False,
          texts=None,
          text_size=10,
@@ -828,7 +841,8 @@ def umap(adata,
                         if (ann+'_color' in adata.uns['color'].keys()) \
                             and \
                             (all(np.isin(np.unique(df_plot[ann]),
-                                         list(adata.uns['color'].keys())))):
+                                         list(adata.uns['color']
+                                         [ann+'_color'].keys())))):
                             dict_palette[ann] = \
                                 adata.uns['color'][ann+'_color']
                         else:
@@ -867,6 +881,7 @@ def umap(adata,
                        list_hue=color,
                        hue_palette=dict_palette,
                        drawing_order=drawing_order,
+                       dict_drawing_order=dict_drawing_order,
                        size=size,
                        show_texts=show_texts,
                        text_size=text_size,
@@ -908,6 +923,13 @@ def discretize(adata,
     -------
 
     """
+    if fig_size is None:
+        fig_size = mpl.rcParams['figure.figsize']
+    if save_fig is None:
+        save_fig = settings.save_fig
+    if fig_path is None:
+        fig_path = os.path.join(settings.workdir, 'figures')
+
     if layer is None:
         X = adata.X.copy()
     else:
@@ -936,3 +958,195 @@ def discretize(adata,
                     pad_inches=1,
                     bbox_inches='tight')
         plt.close(fig)
+
+
+def node_similarity(adata,
+                    bins=20,
+                    log=True,
+                    show_cutoff=True,
+                    cutoff=None,
+                    n_edges=5000,
+                    fig_size=(5, 3),
+                    pad=1.08,
+                    w_pad=None,
+                    h_pad=None,
+                    save_fig=None,
+                    fig_path=None,
+                    fig_name='plot_node_similarity.pdf',
+                    ):
+    """Plot similarity scores of nodes
+
+    Parameters
+    ----------
+
+
+    Returns
+    -------
+
+    """
+    if fig_size is None:
+        fig_size = mpl.rcParams['figure.figsize']
+    if save_fig is None:
+        save_fig = settings.save_fig
+    if fig_path is None:
+        fig_path = os.path.join(settings.workdir, 'figures')
+
+    mat_sim = adata.X
+
+    fig, ax = plt.subplots(1, 1, figsize=fig_size)
+    ax.hist(mat_sim.data, bins=bins)
+    if log:
+        ax.set_yscale('log')
+    if(show_cutoff):
+        if cutoff is None:
+            if n_edges is None:
+                raise ValueError('"cutoff" or "n_edges" has to be specified')
+            else:
+                cutoff = \
+                    np.partition(mat_sim.data,
+                                 (mat_sim.size-n_edges))[mat_sim.size-n_edges]
+        id_x, id_y, _ = find(mat_sim >= cutoff)
+        print(f'#selected edges: {len(id_x)}')
+        plt.axvline(cutoff, ls='--', c='red')
+    ax.set_xlabel('similariy scores')
+    ax.set_title('Node similarity')
+    plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
+    if(save_fig):
+        if(not os.path.exists(fig_path)):
+            os.makedirs(fig_path)
+        fig.savefig(os.path.join(fig_path, fig_name),
+                    pad_inches=1,
+                    bbox_inches='tight')
+        plt.close(fig)
+
+
+def cca_nodes(adata,
+              comp1=1,
+              comp2=2,
+              color=None,
+              dict_palette=None,
+              cutoff=None,
+              n_edges=5000,
+              size=8,
+              drawing_order='random',
+              dict_drawing_order=None,
+              fig_size=(4, 4),
+              fig_ncol=3,
+              fig_legend_ncol=1,
+              fig_legend_order=None,
+              alpha=1,
+              pad=1.08,
+              w_pad=None,
+              h_pad=None,
+              save_fig=None,
+              fig_path=None,
+              fig_name='plot_cca_nodes.pdf',
+              vmin=None,
+              vmax=None,
+              **kwargs):
+    """Plot CCA coordinates
+
+    Parameters
+    ----------
+
+
+    Returns
+    -------
+
+    """
+    if fig_size is None:
+        fig_size = mpl.rcParams['figure.figsize']
+    if save_fig is None:
+        save_fig = settings.save_fig
+    if fig_path is None:
+        fig_path = os.path.join(settings.workdir, 'figures')
+
+    mat_sim = adata.X
+    if cutoff is None:
+        if n_edges is None:
+            raise ValueError('"cutoff" or "n_edges" has to be specified')
+        else:
+            cutoff = \
+                np.partition(mat_sim.data,
+                             (mat_sim.size-n_edges))[mat_sim.size-n_edges]
+    id_x, id_y, _ = find(mat_sim >= cutoff)
+
+    X_cca_ref = adata.obsm['cca']
+    X_cca_query = adata.varm['cca']
+
+    df_plot_ref = pd.DataFrame(data=X_cca_ref[:, [comp1-1, comp2-1]],
+                               index=adata.obs.index,
+                               columns=[f'CCA {comp1}', f'CCA {comp2}'])
+    df_plot_ref['group'] = 'ref'
+    df_plot_ref['selected'] = 'no'
+    df_plot_ref.loc[df_plot_ref.index[id_x], 'selected'] = 'yes'
+    df_plot_query = pd.DataFrame(data=X_cca_query[:, [comp1-1, comp2-1]],
+                                 index=adata.var.index,
+                                 columns=[f'CCA {comp1}', f'CCA {comp2}'])
+    df_plot_query['group'] = 'query'
+    df_plot_query['selected'] = 'no'
+    df_plot_query.loc[df_plot_query.index[id_y], 'selected'] = 'yes'
+
+    df_plot = pd.concat([df_plot_ref, df_plot_query], axis=0)
+    if dict_palette is None:
+        dict_palette = dict()
+    dict_palette['group'] = {'query': '#4c72b0', 'ref': '#dd8452'}
+    dict_palette['selected'] = {'yes': '#000000', 'no': '#D4D3D3'}
+    if dict_drawing_order is None:
+        dict_drawing_order = dict()
+    dict_drawing_order['group'] = 'random'
+    dict_drawing_order['selected'] = 'sorted'
+
+    adata.uns['color'] = dict_palette.copy()
+    if color is None:
+        color = []
+    else:
+        color = list(dict.fromkeys(color))  # remove duplicate keys
+    for ann in color:
+        if (ann in adata.obs_keys()) and (ann in adata.var_keys()):
+            df_plot[ann] = pd.concat([adata.obs[ann], adata.var[ann]], axis=0)
+            if(not is_numeric_dtype(df_plot[ann])):
+                if ann not in dict_palette.keys():
+                    if (ann+'_color' in adata.uns['color'].keys()) \
+                        and \
+                        (all(np.isin(np.unique(df_plot[ann]),
+                                     list(adata.uns['color']
+                                     [ann+'_color'].keys())))):
+                        dict_palette[ann] = \
+                            adata.uns['color'][ann+'_color']
+                    else:
+                        dict_palette[ann] = \
+                            generate_palette(adata.obs[ann])
+                        adata.uns['color'][ann+'_color'] = \
+                            dict_palette[ann].copy()
+                else:
+                    if ann+'_color' not in adata.uns['color'].keys():
+                        adata.uns['color'][ann+'_color'] = \
+                            dict_palette[ann].copy()
+        else:
+            raise ValueError(f"could not find {ann} in both "
+                             "`adata.obs.columns`"
+                             " and `adata.var.columns`")
+    color = ['group', 'selected'] + color
+    _scatterplot2d(df_plot,
+                   x=f'CCA {comp1}',
+                   y=f'CCA {comp2}',
+                   list_hue=color,
+                   hue_palette=dict_palette,
+                   drawing_order=drawing_order,
+                   dict_drawing_order=dict_drawing_order,
+                   size=size,
+                   fig_size=fig_size,
+                   fig_ncol=fig_ncol,
+                   fig_legend_ncol=fig_legend_ncol,
+                   fig_legend_order=fig_legend_order,
+                   vmin=vmin,
+                   vmax=vmax,
+                   alpha=alpha,
+                   pad=pad,
+                   w_pad=w_pad,
+                   h_pad=h_pad,
+                   save_fig=save_fig,
+                   fig_path=fig_path,
+                   fig_name=fig_name,
+                   **kwargs)

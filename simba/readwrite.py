@@ -96,12 +96,12 @@ def read_embedding(path_emb=None,
     return dict_adata
 
 
-def load_pbg_config(path_config=None):
+def load_pbg_config(path=None):
     """Load PBG configuration into global setting
 
     Parameters
     ----------
-    path_config: `str`, optional (default: None)
+    path: `str`, optional (default: None)
         Path to the directory for pbg configuration file
         If None, `.settings.pbg_params['checkpoint_path']` will be used
 
@@ -110,20 +110,20 @@ def load_pbg_config(path_config=None):
     Updates `.settings.pbg_params`
 
     """
-    if path_config is None:
-        path_config = settings.pbg_params['checkpoint_path']
-    path_config = os.path.normpath(path_config)
-    with open(os.path.join(path_config, 'config.json'), "rt") as tf:
+    if path is None:
+        path = settings.pbg_params['checkpoint_path']
+    path = os.path.normpath(path)
+    with open(os.path.join(path, 'config.json'), "rt") as tf:
         pbg_params = json.load(tf)
     settings.set_pbg_params(config=pbg_params)
 
 
-def load_graph_stats(path_graph=None):
+def load_graph_stats(path=None):
     """Load graph statistics into global setting
 
     Parameters
     ----------
-    path_config: `str`, optional (default: None)
+    path: `str`, optional (default: None)
         Path to the directory for graph statistics file
         If None, `.settings.pbg_params['checkpoint_path']` will be used
 
@@ -131,11 +131,11 @@ def load_graph_stats(path_graph=None):
     -------
     Updates `.settings.graph_stats`
     """
-    if path_graph is None:
-        path_graph = \
+    if path is None:
+        path = \
             Path(settings.pbg_params['entity_path']).parent.parent.as_posix()
-    path_graph = os.path.normpath(path_graph)
-    with open(os.path.join(path_graph, 'graph_stats.json'), "rt") as tf:
+    path = os.path.normpath(path)
+    with open(os.path.join(path, 'graph_stats.json'), "rt") as tf:
         dict_graph_stats = json.load(tf)
-    dirname = os.path.basename(path_graph)
+    dirname = os.path.basename(path)
     settings.graph_stats[dirname] = dict_graph_stats.copy()

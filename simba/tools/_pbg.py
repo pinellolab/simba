@@ -265,8 +265,12 @@ def gen_graph(list_CP=None,
                  'weight': 1.0
                  })
             id_r += 1
-            adata.obs['pbg_id'] = df_cells.loc[adata.obs_names, 'alias'].copy()
-            adata.var['pbg_id'] = df_peaks.loc[adata.var_names, 'alias'].copy()
+            adata_ori.obs['pbg_id'] = ""
+            adata_ori.var['pbg_id'] = ""
+            adata_ori.obs.loc[adata.obs_names, 'pbg_id'] = \
+                df_cells.loc[adata.obs_names, 'alias'].copy()
+            adata_ori.var.loc[adata.var_names, 'pbg_id'] = \
+                df_peaks.loc[adata.var_names, 'alias'].copy()
 
     if list_PM is not None:
         for adata_ori in list_PM:
@@ -300,10 +304,12 @@ def gen_graph(list_CP=None,
                  'weight': 0.2
                  })
             id_r += 1
-            adata.obs['pbg_id'] = df_peaks.loc[adata.obs_names,
-                                               'alias'].copy()
-            adata.var['pbg_id'] = df_motifs.loc[adata.var_names,
-                                                'alias'].copy()
+            adata_ori.obs['pbg_id'] = ""
+            adata_ori.var['pbg_id'] = ""
+            adata_ori.obs.loc[adata.obs_names, 'pbg_id'] = \
+                df_peaks.loc[adata.obs_names, 'alias'].copy()
+            adata_ori.var.loc[adata.var_names, 'pbg_id'] = \
+                df_motifs.loc[adata.var_names, 'alias'].copy()
 
     if list_PK is not None:
         for adata_ori in list_PK:
@@ -337,10 +343,12 @@ def gen_graph(list_CP=None,
                  'weight': 0.02
                  })
             id_r += 1
-            adata.obs['pbg_id'] = df_peaks.loc[adata.obs_names,
-                                               'alias'].copy()
-            adata.var['pbg_id'] = df_kmers.loc[adata.var_names,
-                                               'alias'].copy()
+            adata_ori.obs['pbg_id'] = ""
+            adata_ori.var['pbg_id'] = ""
+            adata_ori.obs.loc[adata.obs_names, 'pbg_id'] = \
+                df_peaks.loc[adata.obs_names, 'alias'].copy()
+            adata_ori.var.loc[adata.var_names, 'pbg_id'] = \
+                df_kmers.loc[adata.var_names, 'alias'].copy()
 
     if list_CG is not None:
         for adata_ori in list_CG:
@@ -382,8 +390,12 @@ def gen_graph(list_CP=None,
                      'weight': 1.0
                      })
                 id_r += 1
-            adata.obs['pbg_id'] = df_cells.loc[adata.obs_names, 'alias'].copy()
-            adata.var['pbg_id'] = df_genes.loc[adata.var_names, 'alias'].copy()
+            adata_ori.obs['pbg_id'] = ""
+            adata_ori.var['pbg_id'] = ""
+            adata_ori.obs.loc[adata.obs_names, 'pbg_id'] = \
+                df_cells.loc[adata.obs_names, 'alias'].copy()
+            adata_ori.var.loc[adata.var_names, 'pbg_id'] = \
+                df_genes.loc[adata.var_names, 'alias'].copy()
 
     if list_CC is not None:
         for adata in list_CC:

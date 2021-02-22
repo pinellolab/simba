@@ -234,6 +234,8 @@ def entity_barcode(adata_cmp,
                    pad=1.08,
                    w_pad=None,
                    h_pad=None,
+                   min_rank=None,
+                   max_rank=None,
                    **kwargs
                    ):
     """Plot query entity barcode
@@ -263,13 +265,18 @@ def entity_barcode(adata_cmp,
     assert isinstance(entities, list), "`entities` must be list"
 
     if layer is None:
-        X = adata_cmp[:, entities].X
+        X = adata_cmp[:, entities].X.copy()
     else:
-        X = adata_cmp[:, entities].layers[layer]
+        X = adata_cmp[:, entities].layers[layer].copy()
     df_scores = pd.DataFrame(
         data=X,
         index=adata_cmp.obs_names,
         columns=entities)
+
+    if min_rank is None:
+        min_rank = 0
+    if max_rank is None:
+        max_rank = df_scores.shape[0]
 
     n_plots = len(entities)
     fig_nrow = int(np.ceil(n_plots/fig_ncol))
@@ -280,8 +287,8 @@ def entity_barcode(adata_cmp,
         ax_i = fig.add_subplot(fig_nrow, fig_ncol, i+1)
         scores_x_sorted = df_scores[x].sort_values(ascending=False)
         lines = []
-        for xx, yy in zip(np.arange(len(scores_x_sorted)),
-                          scores_x_sorted):
+        for xx, yy in zip(np.arange(len(scores_x_sorted))[min_rank:max_rank],
+                          scores_x_sorted[min_rank:max_rank]):
             lines.append([(xx, 0), (xx, yy)])
         if anno_ref is None:
             colors = get_colors(np.array([""]*len(scores_x_sorted)))
@@ -296,7 +303,8 @@ def entity_barcode(adata_cmp,
             lines,
             colors=colors,
             alpha=alpha,
-            linewidths=linewidths)
+            linewidths=linewidths,
+            **kwargs)
         ax_i.add_collection(stemlines)
         ax_i.autoscale()
         ax_i.set_title(x)

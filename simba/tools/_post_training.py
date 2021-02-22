@@ -10,7 +10,8 @@ from ._utils import _gini
 def softmax(adata_ref,
             adata_query,
             T=0.3,
-            cutoff=1e-6):
+            n_top=None,
+            percentile=50):
     """Softmax-based transformation
 
     This will transform query data to reference-comparable data
@@ -38,10 +39,19 @@ def softmax(adata_ref,
     """
 
     scores_ref_query = np.matmul(adata_ref.X, adata_query.X.T)
+    # avoid overflow encountered
+    scores_ref_query = scores_ref_query - scores_ref_query.max()
     scores_softmax = np.exp(scores_ref_query/T) / \
         (np.exp(scores_ref_query/T).sum(axis=0))[None, :]
-    mask = scores_softmax < cutoff
+    print(n_top)
+    if n_top is None:
+        thresh = np.percentile(scores_softmax, q=percentile, axis=0)
+    else:
+        thresh = (np.sort(scores_softmax, axis=0)[::-1, :])[n_top-1, ]
+    mask = scores_softmax < thresh[None, :]
     scores_softmax[mask] = 0
+    # rescale to make scores add up to 1
+    scores_softmax = scores_softmax/scores_softmax.sum(axis=0, keepdims=1)
     X_query = np.dot(scores_softmax.T, adata_ref.X)
     adata_query.layers['softmax'] = X_query
 
@@ -62,8 +72,9 @@ class SimbaEmbed:
                  list_adata_query,
                  T=0.3,
                  list_T=None,
-                 cutoff=1e-6,
-                 list_cutoff=None,
+                 percentile=90,
+                 n_top=None,
+                 list_percentile=None,
                  use_precomputed=True,
                  ):
         """
@@ -100,8 +111,9 @@ class SimbaEmbed:
         self.list_adata_query = list_adata_query
         self.T = T
         self.list_T = list_T
-        self.cutoff = cutoff
-        self.list_cutoff = list_cutoff
+        self.percentile = percentile
+        self.n_top = n_top
+        self.list_percentile = list_percentile
         self.use_precomputed = use_precomputed
 
     def embed(self):
@@ -118,8 +130,9 @@ class SimbaEmbed:
         use_precomputed = self.use_precomputed
         T = self.T
         list_T = self.list_T
-        cutoff = self.cutoff
-        list_cutoff = self.list_cutoff
+        n_top = self.n_top
+        percentile = self.percentile
+        list_percentile = self.list_percentile
         X_all = adata_ref.X.copy()
         # obs_all = pd.DataFrame(
         #     data=['ref']*adata_ref.shape[0],
@@ -129,9 +142,13 @@ class SimbaEmbed:
         obs_all['id_dataset'] = ['ref']*adata_ref.shape[0]
         for i, adata_query in enumerate(list_adata_query):
             if list_T is not None:
-                T = list_T[i]
-            if list_cutoff is not None:
-                cutoff = list_cutoff[i]
+                param_T = list_T[i]
+            else:
+                param_T = T
+            if list_percentile is not None:
+                param_percentile = list_percentile[i]
+            else:
+                param_percentile = percentile
             if use_precomputed:
                 if 'softmax' in adata_query.layers.keys():
                     print(f'Reading in precomputed softmax-transformed matrix '
@@ -143,8 +160,9 @@ class SimbaEmbed:
                     softmax(
                         adata_ref,
                         adata_query,
-                        T=T,
-                        cutoff=cutoff,
+                        T=param_T,
+                        percentile=param_percentile,
+                        n_top=n_top,
                     )
             else:
                 print(f'Performing softmax transformation '
@@ -152,8 +170,9 @@ class SimbaEmbed:
                 softmax(
                     adata_ref,
                     adata_query,
-                    T=T,
-                    cutoff=cutoff,
+                    T=param_T,
+                    percentile=param_percentile,
+                    n_top=n_top,
                     )
             X_all = np.vstack((X_all, adata_query.layers['softmax']))
             # obs_all = obs_all.append(
@@ -174,8 +193,9 @@ def embed(adata_ref,
           list_adata_query,
           T=0.3,
           list_T=None,
-          cutoff=1e-6,
-          list_cutoff=None,
+          percentile=90,
+          n_top=None,
+          list_percentile=None,
           use_precomputed=True):
     """Embed a list of query datasets along with reference dataset
     into the same space
@@ -210,8 +230,9 @@ def embed(adata_ref,
                     list_adata_query,
                     T=T,
                     list_T=list_T,
-                    cutoff=cutoff,
-                    list_cutoff=list_cutoff,
+                    percentile=percentile,
+                    n_top=n_top,
+                    list_percentile=list_percentile,
                     use_precomputed=use_precomputed)
     adata_all = SE.embed()
     return adata_all

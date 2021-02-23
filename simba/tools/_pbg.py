@@ -406,7 +406,7 @@ def gen_graph(list_CP=None,
             for key_var, df_cells_var in dict_df_cells.items():
                 if set(adata.var_names) <= set(df_cells_var.index):
                     break
-
+            #  edges between ref and query
             df_edges_x = pd.DataFrame(columns=col_names)
             df_edges_x['source'] = df_cells_obs.loc[
                 adata.obs_names[adata.layers['conn'].nonzero()[0]],
@@ -433,6 +433,63 @@ def gen_graph(list_CP=None,
                  'weight': 10.0
                  })
             id_r += 1
+
+            # edges within ref
+            df_edges_x = pd.DataFrame(columns=col_names)
+            df_edges_x['source'] = df_cells_obs.loc[
+                adata.obs_names[adata.obsp['conn'].nonzero()[0]],
+                'alias'].values
+            df_edges_x['relation'] = f'r{id_r}'
+            df_edges_x['destination'] = df_cells_obs.loc[
+                adata.obs_names[adata.obsp['conn'].nonzero()[1]],
+                'alias'].values
+            print(f'relation{id_r}: '
+                  f'source: {key_obs}, '
+                  f'destination: {key_obs}\n'
+                  f'#edges: {df_edges_x.shape[0]}')
+            dict_graph_stats[f'relation{id_r}'] = \
+                {'source': key_obs,
+                 'destination': key_obs,
+                 'n_edges': df_edges_x.shape[0]}
+            df_edges = df_edges.append(df_edges_x,
+                                       ignore_index=True)
+            settings.pbg_params['relations'].append(
+                {'name': f'r{id_r}',
+                 'lhs': f'{key_obs}',
+                 'rhs': f'{key_obs}',
+                 'operator': 'none',
+                 'weight': 1.0
+                 })
+            id_r += 1
+
+            # edges within query
+            df_edges_x = pd.DataFrame(columns=col_names)
+            df_edges_x['source'] = df_cells_var.loc[
+                adata.var_names[adata.varp['conn'].nonzero()[0]],
+                'alias'].values
+            df_edges_x['relation'] = f'r{id_r}'
+            df_edges_x['destination'] = df_cells_var.loc[
+                adata.var_names[adata.varp['conn'].nonzero()[1]],
+                'alias'].values
+            print(f'relation{id_r}: '
+                  f'source: {key_var}, '
+                  f'destination: {key_var}\n'
+                  f'#edges: {df_edges_x.shape[0]}')
+            dict_graph_stats[f'relation{id_r}'] = \
+                {'source': key_var,
+                 'destination': key_var,
+                 'n_edges': df_edges_x.shape[0]}
+            df_edges = df_edges.append(df_edges_x,
+                                       ignore_index=True)
+            settings.pbg_params['relations'].append(
+                {'name': f'r{id_r}',
+                 'lhs': f'{key_var}',
+                 'rhs': f'{key_var}',
+                 'operator': 'none',
+                 'weight': 1.0
+                 })
+            id_r += 1
+
             adata.obs['pbg_id'] = df_cells_obs.loc[adata.obs_names,
                                                    'alias'].copy()
             adata.var['pbg_id'] = df_cells_var.loc[adata.var_names,

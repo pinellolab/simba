@@ -1,6 +1,8 @@
 """Utility functions and classes"""
 
 import numpy as np
+from sklearn.neighbors import KDTree
+from scipy.sparse import csr_matrix
 
 
 def _uniquify(seq, sep='-'):
@@ -55,3 +57,26 @@ def _gini(array):
     n = array.shape[0]
     # Gini coefficient:
     return ((np.sum((2 * index - n - 1) * array)) / (n * np.sum(array)))
+
+
+def _knn(X,
+         k=20,
+         leaf_size=40,
+         metric='euclidean'):
+    """Calculate K nearest neigbors for each row.
+    """
+    kdt = KDTree(X, leaf_size=leaf_size, metric=metric)
+    kdt_d, kdt_i = kdt.query(X, k=k+1, return_distance=True)
+    kdt_i = kdt_i[:, 1:]  # exclude the point itself
+    kdt_d = kdt_d[:, 1:]  # exclude the point itself
+    sp_row = np.repeat(np.arange(kdt_i.shape[0]), kdt_i.shape[1])
+    sp_col = kdt_i.flatten()
+    sp_conn = np.repeat(1, len(sp_row))
+    sp_dist = kdt_d.flatten()
+    mat_knn_conn = csr_matrix(
+        (sp_conn, (sp_row, sp_col)),
+        shape=(X.shape[0], X.shape[0]))
+    mat_knn_dist = csr_matrix(
+        (sp_dist, (sp_row, sp_col)),
+        shape=(X.shape[0], X.shape[0]))
+    return mat_knn_conn, mat_knn_dist

@@ -582,10 +582,10 @@ def _scatterplot2d(df,
                 adjust_text(plt_texts,
                             arrowprops=dict(arrowstyle='->', color='black'))
         ax_i.set_xlabel(x)
-        ax_i.set_ylabel(y, labelpad=0)
+        ax_i.set_ylabel(y)
         ax_i.locator_params(axis='x', nbins=5)
         ax_i.locator_params(axis='y', nbins=5)
-        ax_i.tick_params(axis="both", labelbottom=False, labelleft=False)
+        ax_i.tick_params(axis="both", labelbottom=True, labelleft=True)
         ax_i.set_title(hue)
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
     if(save_fig):

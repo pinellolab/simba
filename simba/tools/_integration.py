@@ -6,6 +6,8 @@ from sklearn.metrics.pairwise import pairwise_distances
 from sklearn.utils.extmath import randomized_svd
 from scipy.sparse import csr_matrix, find
 
+from ._utils import _knn
+
 
 def node_similarity(adata_ref,
                     adata_query,
@@ -15,6 +17,9 @@ def node_similarity(adata_ref,
                     layer=None,
                     metric='euclidean',
                     pct_keep=0.5,
+                    k=5,
+                    knn_metric='euclidean',
+                    leaf_size=40,
                     **kwargs,
                     ):
     """Compute similarity between nodes
@@ -40,10 +45,8 @@ def node_similarity(adata_ref,
         If specified, `percentile` will be ignored
     percentile: `float`, optional (default: 0.01)
         The percentile of edges to keep
-    cutoff: `float`, optional (default: None)
-        The distance cutoff.
-        If None, it will be decided by `n_top_edges` or `percentile`
-        If specified, `n_top_edges` and `percentile` will be ignored
+    k: `int`, optional (default: 5)
+        The number of nearest neighbors to consider within each dataset
     metric: `str`, optional (default: 'euclidean')
         The metric to use when calculating distance between
         reference and query observations
@@ -89,17 +92,20 @@ def node_similarity(adata_ref,
     X_cca_ref = X_cca_ref / (X_cca_ref**2).sum(-1, keepdims=True)**0.5
     X_cca_query = X_cca_query / (X_cca_query**2).sum(-1, keepdims=True)**0.5
 
-    # print('Searching for neighbors ...')
-    # kdt = KDTree(X_cca_ref, leaf_size=leaf_size, metric=metric)
-    # kdt_d, kdt_i = kdt.query(X_cca_query, k=k, return_distance=True)
-    # sp_row = kdt_i.flatten()
-    # sp_col = np.repeat(np.arange(kdt_i.shape[0]), kdt_i.shape[1])
-    # sp_data = 1/(1+kdt_d.flatten())  # convert distance to similarity
-    # sim_ref_query = csr_matrix(
-    #     (sp_data, (sp_row, sp_col)),
-    #     shape=(X_cca_ref.shape[0], X_cca_query.shape[0]))
+    print('Searching for neighbors within each dataset ...')
+    knn_conn_ref, knn_dist_ref = _knn(
+        X=X_cca_ref,
+        k=k,
+        leaf_size=leaf_size,
+        metric=knn_metric)
+    knn_conn_query, knn_dist_query = _knn(
+        X=X_cca_query,
+        k=k,
+        leaf_size=leaf_size,
+        metric=knn_metric)
 
-    print('Computing similarity scores ...')
+    print('Computing similarity scores between reference and '
+          'query datasets...')
     dist_ref_query = pairwise_distances(X_cca_ref,
                                         X_cca_query,
                                         metric=metric)
@@ -109,11 +115,16 @@ def node_similarity(adata_ref,
         sim_ref_query < np.percentile(sim_ref_query, pct_keep*100),
         0, sim_ref_query)
     sim_ref_query = csr_matrix(sim_ref_query)
+
     adata_ref_query = ad.AnnData(X=sim_ref_query,
                                  obs=adata_ref.obs,
                                  var=adata_query.obs)
     adata_ref_query.obsm['cca'] = X_cca_ref
+    adata_ref_query.obsp['conn'] = knn_conn_ref
+    adata_ref_query.obsp['dist'] = knn_dist_ref
     adata_ref_query.varm['cca'] = X_cca_query
+    adata_ref_query.varp['conn'] = knn_conn_query
+    adata_ref_query.varp['dist'] = knn_dist_query
     return adata_ref_query
 
 

@@ -422,6 +422,7 @@ def _scatterplot2d(df,
                    save_fig=None,
                    fig_path=None,
                    fig_name='scatterplot2d.pdf',
+                   copy=False,
                    **kwargs):
     """2d scatter plot
 
@@ -480,30 +481,33 @@ def _scatterplot2d(df,
     if fig_path is None:
         fig_path = os.path.join(settings.workdir, 'figures')
 
-    for hue in list_hue:
-        if(hue not in df.columns):
-            raise ValueError(f"could not find {hue}")
-    if hue_palette is None:
-        hue_palette = dict()
-    assert isinstance(hue_palette, dict), "`hue_palette` must be dict"
+    list_ax = list()
+    if list_hue is None:
+        list_hue = [None]
+    else:
+        for hue in list_hue:
+            if(hue not in df.columns):
+                raise ValueError(f"could not find {hue}")
+        if hue_palette is None:
+            hue_palette = dict()
+        assert isinstance(hue_palette, dict), "`hue_palette` must be dict"
+        legend_order = {hue: np.unique(df[hue]) for hue in list_hue
+                        if (is_string_dtype(df[hue])
+                            or is_categorical_dtype(df[hue]))}
+        if(fig_legend_order is not None):
+            if(not isinstance(fig_legend_order, dict)):
+                raise TypeError("`fig_legend_order` must be a dictionary")
+            for hue in fig_legend_order.keys():
+                if(hue in legend_order.keys()):
+                    legend_order[hue] = fig_legend_order[hue]
+                else:
+                    print(f"{hue} is ignored for ordering legend labels"
+                          "due to incorrect name or data type")
 
     if dict_drawing_order is None:
         dict_drawing_order = dict()
     assert drawing_order in ['sorted', 'random', 'original'],\
         "`drawing_order` must be one of ['original', 'sorted', 'random']"
-
-    legend_order = {hue: np.unique(df[hue]) for hue in list_hue
-                    if (is_string_dtype(df[hue])
-                        or is_categorical_dtype(df[hue]))}
-    if(fig_legend_order is not None):
-        if(not isinstance(fig_legend_order, dict)):
-            raise TypeError("`fig_legend_order` must be a dictionary")
-        for hue in fig_legend_order.keys():
-            if(hue in legend_order.keys()):
-                legend_order[hue] = fig_legend_order[hue]
-            else:
-                print(f"{hue} is ignored for ordering legend labels"
-                      "due to incorrect name or data type")
 
     if(len(list_hue) < fig_ncol):
         fig_ncol = len(list_hue)
@@ -511,68 +515,78 @@ def _scatterplot2d(df,
     fig = plt.figure(figsize=(fig_size[0]*fig_ncol*1.05, fig_size[1]*fig_nrow))
     for i, hue in enumerate(list_hue):
         ax_i = fig.add_subplot(fig_nrow, fig_ncol, i+1)
-        if(is_string_dtype(df[hue]) or is_categorical_dtype(df[hue])):
-            if hue in hue_palette.keys():
-                palette = hue_palette[hue]
-            else:
-                palette = None
-            if hue in dict_drawing_order.keys():
-                param_drawing_order = dict_drawing_order[hue]
-            else:
-                param_drawing_order = drawing_order
-            if param_drawing_order == 'sorted':
-                df_updated = df.sort_values(by=hue)
-            elif param_drawing_order == 'random':
-                df_updated = df.sample(frac=1, random_state=100)
-            else:
-                df_updated = df
+        if hue is None:
             sc_i = sns.scatterplot(ax=ax_i,
                                    x=x,
                                    y=y,
-                                   hue=hue,
-                                   hue_order=legend_order[hue],
-                                   data=df_updated,
+                                   data=df,
                                    alpha=alpha,
                                    linewidth=0,
-                                   palette=palette,
                                    s=size,
                                    **kwargs)
-            ax_i.legend(bbox_to_anchor=(1, 0.5),
-                        loc='center left',
-                        ncol=fig_legend_ncol,
-                        frameon=False,
-                        )
         else:
-            vmin_i = df[hue].min() if vmin is None else vmin
-            vmax_i = df[hue].max() if vmax is None else vmax
-            if hue in dict_drawing_order.keys():
-                param_drawing_order = dict_drawing_order[hue]
+            if(is_string_dtype(df[hue]) or is_categorical_dtype(df[hue])):
+                if hue in hue_palette.keys():
+                    palette = hue_palette[hue]
+                else:
+                    palette = None
+                if hue in dict_drawing_order.keys():
+                    param_drawing_order = dict_drawing_order[hue]
+                else:
+                    param_drawing_order = drawing_order
+                if param_drawing_order == 'sorted':
+                    df_updated = df.sort_values(by=hue)
+                elif param_drawing_order == 'random':
+                    df_updated = df.sample(frac=1, random_state=100)
+                else:
+                    df_updated = df
+                sc_i = sns.scatterplot(ax=ax_i,
+                                       x=x,
+                                       y=y,
+                                       hue=hue,
+                                       hue_order=legend_order[hue],
+                                       data=df_updated,
+                                       alpha=alpha,
+                                       linewidth=0,
+                                       palette=palette,
+                                       s=size,
+                                       **kwargs)
+                ax_i.legend(bbox_to_anchor=(1, 0.5),
+                            loc='center left',
+                            ncol=fig_legend_ncol,
+                            frameon=False,
+                            )
             else:
-                param_drawing_order = drawing_order
-            if param_drawing_order == 'sorted':
-                df_updated = df.sort_values(by=hue)
-            elif param_drawing_order == 'random':
-                df_updated = df.sample(frac=1, random_state=100)
-            else:
-                df_updated = df
-            sc_i = ax_i.scatter(df_updated[x],
-                                df_updated[y],
-                                c=df_updated[hue],
-                                vmin=vmin_i,
-                                vmax=vmax_i,
-                                alpha=alpha,
-                                s=size)
-            cbar = plt.colorbar(sc_i,
-                                ax=ax_i,
-                                pad=0.01,
-                                fraction=0.05,
-                                aspect=40)
-            cbar.solids.set_edgecolor("face")
-            cbar.ax.locator_params(nbins=5)
+                vmin_i = df[hue].min() if vmin is None else vmin
+                vmax_i = df[hue].max() if vmax is None else vmax
+                if hue in dict_drawing_order.keys():
+                    param_drawing_order = dict_drawing_order[hue]
+                else:
+                    param_drawing_order = drawing_order
+                if param_drawing_order == 'sorted':
+                    df_updated = df.sort_values(by=hue)
+                elif param_drawing_order == 'random':
+                    df_updated = df.sample(frac=1, random_state=100)
+                else:
+                    df_updated = df
+                sc_i = ax_i.scatter(df_updated[x],
+                                    df_updated[y],
+                                    c=df_updated[hue],
+                                    vmin=vmin_i,
+                                    vmax=vmax_i,
+                                    alpha=alpha,
+                                    s=size)
+                cbar = plt.colorbar(sc_i,
+                                    ax=ax_i,
+                                    pad=0.01,
+                                    fraction=0.05,
+                                    aspect=40)
+                cbar.solids.set_edgecolor("face")
+                cbar.ax.locator_params(nbins=5)
         if show_texts:
             if texts is not None:
-                plt_texts = [plt.text(df_updated[x][t],
-                                      df_updated[y][t],
+                plt_texts = [plt.text(df[x][t],
+                                      df[y][t],
                                       t,
                                       fontdict={'family': 'serif',
                                                 'color': 'black',
@@ -587,14 +601,17 @@ def _scatterplot2d(df,
         ax_i.locator_params(axis='y', nbins=5)
         ax_i.tick_params(axis="both", labelbottom=True, labelleft=True)
         ax_i.set_title(hue)
+        list_ax.append(ax_i)
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
-    if(save_fig):
+    if save_fig:
         if(not os.path.exists(fig_path)):
             os.makedirs(fig_path)
         plt.savefig(os.path.join(fig_path, fig_name),
                     pad_inches=1,
                     bbox_inches='tight')
         plt.close(fig)
+    if copy:
+        return list_ax
 
 
 def _scatterplot2d_plotly(df,
@@ -823,15 +840,30 @@ def umap(adata,
 
     if dict_palette is None:
         dict_palette = dict()
+    df_plot = pd.DataFrame(index=adata.obs.index,
+                           data=adata.obsm['X_umap'],
+                           columns=['UMAP'+str(x+1) for x in
+                                    range(adata.obsm['X_umap'].shape[1])])
     if color is None:
-        color = []
-        return "No `color` is specified"
+        _scatterplot2d(df_plot,
+                       x='UMAP1',
+                       y='UMAP2',
+                       drawing_order=drawing_order,
+                       size=size,
+                       show_texts=show_texts,
+                       text_size=text_size,
+                       texts=texts,
+                       fig_size=fig_size,
+                       alpha=alpha,
+                       pad=pad,
+                       w_pad=w_pad,
+                       h_pad=h_pad,
+                       save_fig=save_fig,
+                       fig_path=fig_path,
+                       fig_name=fig_name,
+                       **kwargs)
     else:
         color = list(dict.fromkeys(color))  # remove duplicate keys
-        df_plot = pd.DataFrame(index=adata.obs.index,
-                               data=adata.obsm['X_umap'],
-                               columns=['UMAP'+str(x+1) for x in
-                                        range(adata.obsm['X_umap'].shape[1])])
         for ann in color:
             if(ann in adata.obs_keys()):
                 df_plot[ann] = adata.obs[ann]
@@ -862,46 +894,46 @@ def umap(adata,
             else:
                 raise ValueError(f"could not find {ann} in `adata.obs.columns`"
                                  " and `adata.var_names`")
-    if plolty:
-        _scatterplot2d_plotly(df_plot,
-                              x='UMAP1',
-                              y='UMAP2',
-                              list_hue=color,
-                              hue_palette=dict_palette,
-                              drawing_order=drawing_order,
-                              fig_size=fig_size,
-                              fig_ncol=fig_ncol,
-                              fig_legend_order=fig_legend_order,
-                              alpha=alpha,
-                              save_fig=save_fig,
-                              fig_path=fig_path,
-                              **kwargs)
-    else:
-        _scatterplot2d(df_plot,
-                       x='UMAP1',
-                       y='UMAP2',
-                       list_hue=color,
-                       hue_palette=dict_palette,
-                       drawing_order=drawing_order,
-                       dict_drawing_order=dict_drawing_order,
-                       size=size,
-                       show_texts=show_texts,
-                       text_size=text_size,
-                       texts=texts,
-                       fig_size=fig_size,
-                       fig_ncol=fig_ncol,
-                       fig_legend_ncol=fig_legend_ncol,
-                       fig_legend_order=fig_legend_order,
-                       vmin=vmin,
-                       vmax=vmax,
-                       alpha=alpha,
-                       pad=pad,
-                       w_pad=w_pad,
-                       h_pad=h_pad,
-                       save_fig=save_fig,
-                       fig_path=fig_path,
-                       fig_name=fig_name,
-                       **kwargs)
+        if plolty:
+            _scatterplot2d_plotly(df_plot,
+                                  x='UMAP1',
+                                  y='UMAP2',
+                                  list_hue=color,
+                                  hue_palette=dict_palette,
+                                  drawing_order=drawing_order,
+                                  fig_size=fig_size,
+                                  fig_ncol=fig_ncol,
+                                  fig_legend_order=fig_legend_order,
+                                  alpha=alpha,
+                                  save_fig=save_fig,
+                                  fig_path=fig_path,
+                                  **kwargs)
+        else:
+            _scatterplot2d(df_plot,
+                           x='UMAP1',
+                           y='UMAP2',
+                           list_hue=color,
+                           hue_palette=dict_palette,
+                           drawing_order=drawing_order,
+                           dict_drawing_order=dict_drawing_order,
+                           size=size,
+                           show_texts=show_texts,
+                           text_size=text_size,
+                           texts=texts,
+                           fig_size=fig_size,
+                           fig_ncol=fig_ncol,
+                           fig_legend_ncol=fig_legend_ncol,
+                           fig_legend_order=fig_legend_order,
+                           vmin=vmin,
+                           vmax=vmax,
+                           alpha=alpha,
+                           pad=pad,
+                           w_pad=w_pad,
+                           h_pad=h_pad,
+                           save_fig=save_fig,
+                           fig_path=fig_path,
+                           fig_name=fig_name,
+                           **kwargs)
 
 
 def discretize(adata,

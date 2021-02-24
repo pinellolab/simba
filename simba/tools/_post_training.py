@@ -3,13 +3,14 @@
 import numpy as np
 import anndata as ad
 from scipy.stats import entropy
+from sklearn.neighbors import KDTree
 
 from ._utils import _gini
 
 
 def softmax(adata_ref,
             adata_query,
-            T=0.3,
+            T=0.5,
             n_top=None,
             percentile=50):
     """Softmax-based transformation
@@ -70,9 +71,9 @@ class SimbaEmbed:
     def __init__(self,
                  adata_ref,
                  list_adata_query,
-                 T=0.3,
+                 T=0.5,
                  list_T=None,
-                 percentile=90,
+                 percentile=50,
                  n_top=None,
                  list_percentile=None,
                  use_precomputed=True,
@@ -191,9 +192,9 @@ class SimbaEmbed:
 
 def embed(adata_ref,
           list_adata_query,
-          T=0.3,
+          T=0.5,
           list_T=None,
-          percentile=90,
+          percentile=50,
           n_top=None,
           list_percentile=None,
           use_precomputed=True):
@@ -291,3 +292,79 @@ def compare_entities(adata_ref,
                                       for i in np.arange(X_cmp.shape[1])])
     adata_cmp.var['entropy'] = entropy(adata_cmp.layers['softmax'])
     return adata_cmp
+
+
+def query(adata,
+          obsm='X_umap',
+          layer=None,
+          metric='euclidean',
+          filters=None,
+          anno_filters=None,
+          entity=None,
+          pin=None,
+          k=20,
+          use_radius=False,
+          r=None,
+          **kwargs
+          ):
+    """Query the "database" of entites
+    """
+    if(sum(list(map(lambda x: x is None,
+                    [entity, pin]))) == 2):
+        raise ValueError("One of `entity` and `pin` must be specified")
+    if(sum(list(map(lambda x: x is not None,
+                    [entity, pin]))) == 2):
+        print("`entity` will be ignored.")
+
+    if(sum(list(map(lambda x: x is not None,
+                    [layer, obsm]))) == 2):
+        raise ValueError("Only one of `layer` and `obsm` can be used")
+    elif(obsm is not None):
+        X = adata.obsm[obsm]
+        if pin is None:
+            pin = adata[entity, :].obsm[obsm].copy()
+    elif(layer is not None):
+        X = adata.layers[layer]
+        if pin is None:
+            pin = adata[entity, :].layers[layer].copy()
+    else:
+        X = adata.X
+        if pin is None:
+            pin = adata[entity, :].X.copy()
+    pin = np.reshape(np.array(pin), [-1, 2])
+    kdt = KDTree(X, metric=metric, **kwargs)
+    if use_radius:
+        if r is None:
+            r = np.mean(X.max(axis=0) - X.min(axis=0))/5
+        ind, dist = kdt.query_radius(pin,
+                                     r=r,
+                                     sort_results=True,
+                                     return_distance=True)
+        ind = ind[0].flatten()
+        dist = dist[0].flatten()
+    else:
+        dist, ind = kdt.query(pin,
+                              k=k+1,
+                              sort_results=True,
+                              return_distance=True)
+        ind = ind.flatten()
+        dist = dist.flatten()
+    df_output = adata.obs.iloc[ind, ].copy()
+    df_output['distance'] = dist
+    if anno_filters is not None:
+        if anno_filters in adata.obs_keys():
+            if filters is None:
+                filters = df_output[anno_filters].unique().tolist()
+            df_output.query(f'{anno_filters} == @filters', inplace=True)
+        else:
+            raise ValueError(f'could not find {anno_filters}')
+    adata.uns['query'] = dict()
+    adata.uns['query']['params'] = {'obsm': obsm,
+                                    'layer': layer,
+                                    'entity': entity,
+                                    'pin': pin,
+                                    'k': k,
+                                    'use_radius': use_radius,
+                                    'r': r}
+    adata.uns['query']['output'] = df_output.copy()
+    return df_output

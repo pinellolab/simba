@@ -8,6 +8,9 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from adjustText import adjust_text
+from pandas.api.types import (
+    is_numeric_dtype
+)
 from scipy.stats import rankdata
 
 from ._utils import (
@@ -15,6 +18,7 @@ from ._utils import (
     generate_palette
 )
 from .._settings import settings
+from ._plot import _scatterplot2d
 
 
 def pbg_metrics(metrics=['mrr'],
@@ -317,6 +321,179 @@ def entity_barcode(adata_cmp,
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
     if(save_fig):
         plt.savefig(os.path.join(fig_path, fig_name),
+                    pad_inches=1,
+                    bbox_inches='tight')
+        plt.close(fig)
+
+
+def query(adata,
+          comp1=1,
+          comp2=2,
+          color=None,
+          dict_palette=None,
+          size=8,
+          drawing_order='random',
+          dict_drawing_order=None,
+          show_texts=False,
+          texts=None,
+          text_size=10,
+          n_texts=8,
+          fig_size=None,
+          fig_ncol=3,
+          fig_legend_ncol=1,
+          fig_legend_order=None,
+          alpha=0.8,
+          alpha_bg=0.5,
+          pad=1.08,
+          w_pad=None,
+          h_pad=None,
+          save_fig=None,
+          fig_path=None,
+          fig_name='plot_query.pdf',
+          vmin=None,
+          vmax=None,
+          **kwargs):
+    """Plot query output
+    """
+    if fig_size is None:
+        fig_size = mpl.rcParams['figure.figsize']
+    if save_fig is None:
+        save_fig = settings.save_fig
+    if fig_path is None:
+        fig_path = os.path.join(settings.workdir, 'figures')
+
+    if dict_palette is None:
+        dict_palette = dict()
+
+    query_output = adata.uns['query']['output']
+    nn = query_output.index.tolist()  # nearest neighbors
+    query_params = adata.uns['query']['params']
+    obsm = query_params['obsm']
+    layer = query_params['layer']
+    pin = query_params['pin']
+    use_radius = query_params['use_radius']
+    r = query_params['r']
+    if(obsm is not None):
+        X = adata.obsm[obsm].copy()
+        X_nn = adata[nn, :].obsm[obsm].copy()
+    elif(layer is not None):
+        X = adata.layers[layer].copy()
+        X_nn = adata[nn, :].layers[layer].copy()
+    else:
+        X = adata.X.copy()
+        X_nn = adata[nn, :].X.copy()
+    df_plot = pd.DataFrame(index=adata.obs.index,
+                           data=X[:, [comp1-1, comp2-1]],
+                           columns=[f'Dim {comp1}', f'Dim {comp2}'])
+    df_plot_nn = pd.DataFrame(index=adata[nn, :].obs.index,
+                              data=X_nn[:, [comp1-1, comp2-1]],
+                              columns=[f'Dim {comp1}', f'Dim {comp2}'])
+    if show_texts:
+        if texts is None:
+            texts = nn[:n_texts]
+    if color is None:
+        list_ax = _scatterplot2d(df_plot,
+                                 x=f'Dim {comp1}',
+                                 y=f'Dim {comp2}',
+                                 drawing_order=drawing_order,
+                                 size=size,
+                                 fig_size=fig_size,
+                                 alpha=alpha_bg,
+                                 pad=pad,
+                                 w_pad=w_pad,
+                                 h_pad=h_pad,
+                                 save_fig=False,
+                                 copy=True,
+                                 **kwargs)
+    else:
+        color = list(dict.fromkeys(color))  # remove duplicate keys
+        for ann in color:
+            if(ann in adata.obs_keys()):
+                df_plot[ann] = adata.obs[ann]
+                if(not is_numeric_dtype(df_plot[ann])):
+                    if 'color' not in adata.uns_keys():
+                        adata.uns['color'] = dict()
+
+                    if ann not in dict_palette.keys():
+                        if (ann+'_color' in adata.uns['color'].keys()) \
+                            and \
+                            (all(np.isin(np.unique(df_plot[ann]),
+                                         list(adata.uns['color']
+                                         [ann+'_color'].keys())))):
+                            dict_palette[ann] = \
+                                adata.uns['color'][ann+'_color']
+                        else:
+                            dict_palette[ann] = \
+                                generate_palette(adata.obs[ann])
+                            adata.uns['color'][ann+'_color'] = \
+                                dict_palette[ann].copy()
+                    else:
+                        if ann+'_color' not in adata.uns['color'].keys():
+                            adata.uns['color'][ann+'_color'] = \
+                                dict_palette[ann].copy()
+
+            elif(ann in adata.var_names):
+                df_plot[ann] = adata.obs_vector(ann)
+            else:
+                raise ValueError(f"could not find {ann} in `adata.obs.columns`"
+                                 " and `adata.var_names`")
+        list_ax = _scatterplot2d(df_plot,
+                                 x=f'Dim {comp1}',
+                                 y=f'Dim {comp2}',
+                                 list_hue=color,
+                                 hue_palette=dict_palette,
+                                 drawing_order=drawing_order,
+                                 dict_drawing_order=dict_drawing_order,
+                                 size=size,
+                                 fig_size=fig_size,
+                                 fig_ncol=fig_ncol,
+                                 fig_legend_ncol=fig_legend_ncol,
+                                 fig_legend_order=fig_legend_order,
+                                 vmin=vmin,
+                                 vmax=vmax,
+                                 alpha=alpha_bg,
+                                 pad=pad,
+                                 w_pad=w_pad,
+                                 h_pad=h_pad,
+                                 save_fig=False,
+                                 copy=True,
+                                 **kwargs)
+    for ax in list_ax:
+        ax.scatter(df_plot_nn[f'Dim {comp1}'],
+                   df_plot_nn[f'Dim {comp2}'],
+                   s=size,
+                   color='#B33831',
+                   alpha=alpha,
+                   lw=0)
+        ax.scatter(pin[:, 0],
+                   pin[:, 1],
+                   s=20*size,
+                   marker='+',
+                   color='#B33831')
+        if use_radius:
+            circle = plt.Circle((pin[:, 0],
+                                 pin[:, 1]),
+                                radius=r,
+                                color='#B33831',
+                                fill=False)
+            ax.add_artist(circle)
+        if show_texts:
+            plt_texts = [ax.text(df_plot_nn[f'Dim {comp1}'][t],
+                                 df_plot_nn[f'Dim {comp2}'][t],
+                                 t,
+                                 fontdict={'family': 'serif',
+                                           'color': 'black',
+                                           'weight': 'normal',
+                                           'size': text_size})
+                         for t in texts]
+            adjust_text(plt_texts,
+                        ax=ax,
+                        arrowprops=dict(arrowstyle='->', color='black'))
+    if save_fig:
+        fig = plt.gcf()
+        if(not os.path.exists(fig_path)):
+            os.makedirs(fig_path)
+        fig.savefig(os.path.join(fig_path, fig_name),
                     pad_inches=1,
                     bbox_inches='tight')
         plt.close(fig)

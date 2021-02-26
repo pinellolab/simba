@@ -569,14 +569,23 @@ def pbg_train(dirname=None,
 
     if auto_wd:
         # empirical numbers from simulation experiments
-        # optimial wd (8e-4) for sample size (36050102)
-        wd = np.around(
-            8e-4 * 36050102 / settings.graph_stats[
-                os.path.basename(filepath)]['n_edges'],
-            decimals=6)
+        if settings.graph_stats[
+                os.path.basename(filepath)]['n_edges'] < 5e7:
+            # optimial wd (0.013) for sample size (2725781)
+            wd = np.around(
+                0.013 * 2725781 / settings.graph_stats[
+                    os.path.basename(filepath)]['n_edges'],
+                decimals=6)
+        else:
+            # optimial wd (0.0004) for sample size (59103481)
+            wd = np.around(
+                0.0004 * 59103481 / settings.graph_stats[
+                    os.path.basename(filepath)]['n_edges'],
+                decimals=6)
         pbg_params['wd'] = wd
         if save_wd:
             settings.pbg_params['wd'] = pbg_params['wd']
+            print(f"`.settings.pbg_params['wd']` has been updated to {wd}")
         print(f'Auto-estimated weight decay is {wd}')
 
     # to avoid oversubscription issues in workloads

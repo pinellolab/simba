@@ -115,6 +115,7 @@ def infer_edges(adata_ref,
 
     sum_conn_ref_query = knn_conn_ref_query + knn_conn_query_ref.T
     id_x, id_y, values = find(sum_conn_ref_query > 1)
+    print(f'{len(id_x)} edges are selected')
     conn_ref_query = csr_matrix(
         (values*1, (id_x, id_y)),
         shape=(knn_conn_ref_query.shape))

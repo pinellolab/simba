@@ -196,7 +196,7 @@ def embed(adata_ref,
           percentile=0,
           n_top=None,
           list_percentile=None,
-          use_precomputed=True):
+          use_precomputed=False):
     """Embed a list of query datasets along with reference dataset
     into the same space
 

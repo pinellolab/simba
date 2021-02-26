@@ -9,7 +9,7 @@ from ._plot import (
     umap,
     discretize,
     node_similarity,
-    cca_nodes,
+    svd_nodes,
 )
 from ._post_training import (
     pbg_metrics,

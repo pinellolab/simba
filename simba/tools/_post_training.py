@@ -12,7 +12,7 @@ def softmax(adata_ref,
             adata_query,
             T=0.5,
             n_top=None,
-            percentile=50):
+            percentile=0):
     """Softmax-based transformation
 
     This will transform query data to reference-comparable data
@@ -44,7 +44,6 @@ def softmax(adata_ref,
     scores_ref_query = scores_ref_query - scores_ref_query.max()
     scores_softmax = np.exp(scores_ref_query/T) / \
         (np.exp(scores_ref_query/T).sum(axis=0))[None, :]
-    print(n_top)
     if n_top is None:
         thresh = np.percentile(scores_softmax, q=percentile, axis=0)
     else:
@@ -194,7 +193,7 @@ def embed(adata_ref,
           list_adata_query,
           T=0.5,
           list_T=None,
-          percentile=50,
+          percentile=0,
           n_top=None,
           list_percentile=None,
           use_precomputed=True):

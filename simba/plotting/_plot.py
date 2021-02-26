@@ -1041,7 +1041,7 @@ def node_similarity(adata,
                 cutoff = \
                     np.partition(mat_sim.data,
                                  (mat_sim.size-n_edges))[mat_sim.size-n_edges]
-        id_x, id_y, _ = find(mat_sim >= cutoff)
+        id_x, id_y, _ = find(mat_sim > cutoff)
         print(f'#selected edges: {len(id_x)}')
         plt.axvline(cutoff, ls='--', c='red')
     ax.set_xlabel('similariy scores')
@@ -1056,7 +1056,7 @@ def node_similarity(adata,
         plt.close(fig)
 
 
-def cca_nodes(adata,
+def svd_nodes(adata,
               comp1=1,
               comp2=2,
               color=None,
@@ -1076,11 +1076,11 @@ def cca_nodes(adata,
               h_pad=None,
               save_fig=None,
               fig_path=None,
-              fig_name='plot_cca_nodes.pdf',
+              fig_name='plot_svd_nodes.pdf',
               vmin=None,
               vmax=None,
               **kwargs):
-    """Plot CCA coordinates
+    """Plot SVD coordinates
 
     Parameters
     ----------
@@ -1105,20 +1105,20 @@ def cca_nodes(adata,
             cutoff = \
                 np.partition(mat_sim.data,
                              (mat_sim.size-n_edges))[mat_sim.size-n_edges]
-    id_x, id_y, _ = find(mat_sim >= cutoff)
+    id_x, id_y, _ = find(mat_sim > cutoff)
 
-    X_cca_ref = adata.obsm['cca']
-    X_cca_query = adata.varm['cca']
+    X_cca_ref = adata.obsm['svd']
+    X_cca_query = adata.varm['svd']
 
     df_plot_ref = pd.DataFrame(data=X_cca_ref[:, [comp1-1, comp2-1]],
                                index=adata.obs.index,
-                               columns=[f'CCA {comp1}', f'CCA {comp2}'])
+                               columns=[f'Dim {comp1}', f'Dim {comp2}'])
     df_plot_ref['group'] = 'ref'
     df_plot_ref['selected'] = 'no'
     df_plot_ref.loc[df_plot_ref.index[id_x], 'selected'] = 'yes'
     df_plot_query = pd.DataFrame(data=X_cca_query[:, [comp1-1, comp2-1]],
                                  index=adata.var.index,
-                                 columns=[f'CCA {comp1}', f'CCA {comp2}'])
+                                 columns=[f'Dim {comp1}', f'Dim {comp2}'])
     df_plot_query['group'] = 'query'
     df_plot_query['selected'] = 'no'
     df_plot_query.loc[df_plot_query.index[id_y], 'selected'] = 'yes'
@@ -1165,8 +1165,8 @@ def cca_nodes(adata,
                              " and `adata.var.columns`")
     color = ['group', 'selected'] + color
     _scatterplot2d(df_plot,
-                   x=f'CCA {comp1}',
-                   y=f'CCA {comp2}',
+                   x=f'Dim {comp1}',
+                   y=f'Dim {comp2}',
                    list_hue=color,
                    hue_palette=dict_palette,
                    drawing_order=drawing_order,

@@ -127,7 +127,7 @@ class SimbaConfig:
                 comparator='dot',
 
                 # Training
-                num_epochs=30,
+                num_epochs=10,
                 workers=12,
                 num_batch_negs=50,
                 num_uniform_negs=50,
@@ -137,7 +137,7 @@ class SimbaConfig:
                 early_stopping=False,
                 regularization_coef=0.0,
                 wd=0.0,
-                wd_interval=30,
+                wd_interval=50,
 
                 # Evaluation during training
                 eval_fraction=0.05,

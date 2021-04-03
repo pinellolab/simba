@@ -361,7 +361,8 @@ def gen_graph(list_CP=None,
                 if set(adata.obs_names) <= set(df_cells.index):
                     break
             expr_level = np.unique(adata.layers['disc'].data)
-            for lvl in expr_level:
+            expr_weight = np.linspace(start=1, stop=5, num=len(expr_level))
+            for i_lvl, lvl in enumerate(expr_level):
                 df_edges_x = pd.DataFrame(columns=col_names)
                 df_edges_x['source'] = df_cells.loc[
                     adata.obs_names[(adata.layers['disc'] == lvl)
@@ -387,7 +388,7 @@ def gen_graph(list_CP=None,
                      'lhs': f'{key}',
                      'rhs': f'{prefix_G}',
                      'operator': 'none',
-                     'weight': 1.0
+                     'weight': round(expr_weight[i_lvl], 2),
                      })
                 id_r += 1
             adata_ori.obs['pbg_id'] = ""

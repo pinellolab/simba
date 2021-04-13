@@ -6,6 +6,10 @@ from sklearn import preprocessing
 from ._utils import (
     cal_tf_idf
 )
+from scipy.sparse import (
+    issparse,
+    csr_matrix,
+)
 
 
 def log_transform(adata):
@@ -21,7 +25,8 @@ def log_transform(adata):
     X: `numpy.ndarray` (`adata.X`)
         Store #observations × #var_genes logarithmized data matrix.
     """
-
+    if(not issparse(adata.X)):
+        adata.X = csr_matrix(adata.X)
     adata.X = np.log1p(adata.X)
     return None
 
@@ -31,6 +36,8 @@ def binarize(adata,
              copy=True):
     """Binarize an array.
     """
+    if(not issparse(adata.X)):
+        adata.X = csr_matrix(adata.X)
     adata.X = preprocessing.binarize(adata.X,
                                      threshold=threshold,
                                      copy=copy)
@@ -56,6 +63,8 @@ def normalize(adata, method='lib_size', scale_factor=1e4, save_raw=True):
     """
     if(method not in ['lib_size', 'tf_idf']):
         raise ValueError("unrecognized method '%s'" % method)
+    if(not issparse(adata.X)):
+        adata.X = csr_matrix(adata.X)
     if(save_raw):
         adata.layers['raw'] = adata.X.copy()
     if(method == 'lib_size'):

@@ -39,6 +39,9 @@ def gen_graph(list_CP=None,
               dirname='graph0',
               use_highly_variable=True,
               use_top_pcs=True,
+              use_top_pcs_CP=None,
+              use_top_pcs_PM=None,
+              use_top_pcs_PK=None,
               ):
     """Generate graph for PBG training based on indices of obs and var
     It also generates an accompanying file 'entity_alias.tsv' to map
@@ -66,7 +69,16 @@ def gen_graph(list_CP=None,
     use_highly_variable: `bool`, optional (default: True)
         Use highly variable genes
     use_top_pcs: `bool`, optional (default: True)
-        Use top-PCs-associated features
+        Use top-PCs-associated features for CP, PM, PK
+    use_top_pcs_CP: `bool`, optional (default: None)
+        Use top-PCs-associated features for CP
+        Once specified, it will overwrite `use_top_pcs`
+    use_top_pcs_PM: `bool`, optional (default: None)
+        Use top-PCs-associated features for PM
+        Once specified, it will overwrite `use_top_pcs`
+    use_top_pcs_PK: `bool`, optional (default: None)
+        Use top-PCs-associated features for PK
+        Once specified, it will overwrite `use_top_pcs`
     copy: `bool`, optional (default: False)
         If True, it returns the graph file as a data frame
 
@@ -120,7 +132,11 @@ def gen_graph(list_CP=None,
 
     if list_CP is not None:
         for adata_ori in list_CP:
-            if use_top_pcs:
+            if use_top_pcs_CP is None:
+                flag_top_pcs = use_top_pcs
+            else:
+                flag_top_pcs = use_top_pcs_CP
+            if flag_top_pcs:
                 adata = adata_ori[:, adata_ori.var['top_pcs']].copy()
             else:
                 adata = adata_ori.copy()
@@ -142,7 +158,11 @@ def gen_graph(list_CP=None,
             ids_peaks = ids_peaks.union(adata.var.index)
     if list_PM is not None:
         for adata_ori in list_PM:
-            if use_top_pcs:
+            if use_top_pcs_PM is None:
+                flag_top_pcs = use_top_pcs
+            else:
+                flag_top_pcs = use_top_pcs_PM
+            if flag_top_pcs:
                 adata = adata_ori[:, adata_ori.var['top_pcs']].copy()
             else:
                 adata = adata_ori.copy()
@@ -150,7 +170,11 @@ def gen_graph(list_CP=None,
             ids_motifs = ids_motifs.union(adata.var.index)
     if list_PK is not None:
         for adata_ori in list_PK:
-            if use_top_pcs:
+            if use_top_pcs_PK is None:
+                flag_top_pcs = use_top_pcs
+            else:
+                flag_top_pcs = use_top_pcs_PK
+            if flag_top_pcs:
                 adata = adata_ori[:, adata_ori.var['top_pcs']].copy()
             else:
                 adata = adata_ori.copy()

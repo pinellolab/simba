@@ -118,13 +118,15 @@ def pbg_metrics(metrics=['mrr'],
 def entity_metrics(adata_cmp,
                    x,
                    y,
-                   text_size=10,
                    show_texts=True,
                    show_cutoff=False,
                    cutoff_x=0,
                    cutoff_y=0,
                    n_texts=10,
+                   size=8,
                    texts=None,
+                   text_size=10,
+                   text_expand=(1.05, 1.2),
                    fig_size=None,
                    save_fig=None,
                    fig_path=None,
@@ -173,6 +175,7 @@ def entity_metrics(adata_cmp,
     fig, ax = plt.subplots(figsize=fig_size)
     ax.scatter(adata_cmp.var[x],
                adata_cmp.var[y],
+               s=size,
                **kwargs)
     if show_texts:
         if texts is not None:
@@ -203,10 +206,13 @@ def entity_metrics(adata_cmp,
                                    'size': text_size})
                          for i in ids]
         adjust_text(plt_texts,
+                    expand_text=text_expand,
+                    expand_points=text_expand,
+                    expand_objects=text_expand,
                     arrowprops=dict(arrowstyle='-', color='black'))
     if show_cutoff:
-        ax.axvline(x=cutoff_x, linestyle='--')
-        ax.axhline(y=cutoff_y, linestyle='--')
+        ax.axvline(x=cutoff_x, linestyle='--', color='#CE3746')
+        ax.axhline(y=cutoff_y, linestyle='--', color='#CE3746')
     ax.set_xlabel(x)
     ax.set_ylabel(y)
     ax.locator_params(axis='x', tight=True)

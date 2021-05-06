@@ -6,6 +6,7 @@ import pandas as pd
 import json
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import seaborn as sns
 from matplotlib.collections import LineCollection
 from adjustText import adjust_text
 from pandas.api.types import (
@@ -120,6 +121,9 @@ def entity_metrics(adata_cmp,
                    y,
                    show_texts=True,
                    show_cutoff=False,
+                   show_contour=True,
+                   levels=4,
+                   thresh=0.05,
                    cutoff_x=0,
                    cutoff_y=0,
                    n_texts=10,
@@ -152,9 +156,12 @@ def entity_metrics(adata_cmp,
         based on softmax probability)
         - entropy (The entropy of reference entities,
         based on softmax probability)
-    texts: `list` optional(default: None)
+    texts: `list` optional (default: None)
         Entity names to plot
-
+    levels: `int`, optional (default: 6)
+        Number of contour levels or values to draw contours at
+    thresh: `float`, optional ([0, 1], default: 0.05)
+        Lowest iso-proportion level at which to draw a contour line.
     Returns
     -------
     None
@@ -213,6 +220,15 @@ def entity_metrics(adata_cmp,
     if show_cutoff:
         ax.axvline(x=cutoff_x, linestyle='--', color='#CE3746')
         ax.axhline(y=cutoff_y, linestyle='--', color='#CE3746')
+    if show_contour:
+        sns.kdeplot(ax=ax,
+                    data=adata_cmp.var,
+                    x=x,
+                    y=y,
+                    alpha=0.7,
+                    color='black',
+                    levels=levels,
+                    thresh=thresh)
     ax.set_xlabel(x)
     ax.set_ylabel(y)
     ax.locator_params(axis='x', tight=True)

@@ -319,20 +319,21 @@ def query(adata,
                     [layer, obsm]))) == 2):
         raise ValueError("Only one of `layer` and `obsm` can be used")
     elif(obsm is not None):
-        X = adata.obsm[obsm]
+        X = adata.obsm[obsm].copy()
         if pin is None:
             pin = adata[entity, :].obsm[obsm].copy()
     elif(layer is not None):
-        X = adata.layers[layer]
+        X = adata.layers[layer].copy()
         if pin is None:
             pin = adata[entity, :].layers[layer].copy()
     else:
-        X = adata.X
+        X = adata.X.copy()
         if pin is None:
             pin = adata[entity, :].X.copy()
-    pin = np.reshape(np.array(pin), [-1, 2])
-    kdt = KDTree(X, metric=metric, **kwargs)
+    pin = np.reshape(np.array(pin), [-1, X.shape[1]])
+
     if use_radius:
+        kdt = KDTree(X, metric=metric, **kwargs)
         if r is None:
             r = np.mean(X.max(axis=0) - X.min(axis=0))/5
         ind, dist = kdt.query_radius(pin,
@@ -341,22 +342,35 @@ def query(adata,
                                      return_distance=True)
         ind = ind[0].flatten()
         dist = dist[0].flatten()
+        df_output = adata.obs.iloc[ind, ].copy()
+        df_output['distance'] = dist
+        if anno_filters is not None:
+            if anno_filters in adata.obs_keys():
+                if filters is None:
+                    filters = df_output[anno_filters].unique().tolist()
+                df_output.query(f'{anno_filters} == @filters', inplace=True)
+            else:
+                raise ValueError(f'could not find {anno_filters}')
     else:
+        if anno_filters is not None:
+            if anno_filters in adata.obs_keys():
+                if filters is None:
+                    filters = adata.obs[anno_filters].unique().tolist()
+                ids_filters = \
+                    np.where(np.isin(adata.obs[anno_filters], filters))[0]
+            else:
+                raise ValueError(f'could not find {anno_filters}')
+
+        kdt = KDTree(X[ids_filters, :], metric=metric, **kwargs)
         dist, ind = kdt.query(pin,
-                              k=k+1,
+                              k=k,
                               sort_results=True,
                               return_distance=True)
         ind = ind.flatten()
         dist = dist.flatten()
-    df_output = adata.obs.iloc[ind, ].copy()
-    df_output['distance'] = dist
-    if anno_filters is not None:
-        if anno_filters in adata.obs_keys():
-            if filters is None:
-                filters = df_output[anno_filters].unique().tolist()
-            df_output.query(f'{anno_filters} == @filters', inplace=True)
-        else:
-            raise ValueError(f'could not find {anno_filters}')
+        df_output = adata.obs.iloc[ids_filters, ].iloc[ind, ].copy()
+        df_output['distance'] = dist
+
     adata.uns['query'] = dict()
     adata.uns['query']['params'] = {'obsm': obsm,
                                     'layer': layer,

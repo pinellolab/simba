@@ -1,6 +1,7 @@
 """Functions and classes for the analysis after PBG training"""
 
 import numpy as np
+import pandas as pd
 import anndata as ad
 from scipy.stats import entropy
 from sklearn.neighbors import KDTree
@@ -314,6 +315,8 @@ def query(adata,
     if(sum(list(map(lambda x: x is not None,
                     [entity, pin]))) == 2):
         print("`entity` will be ignored.")
+    if entity is not None:
+        entity = np.array(entity).flatten()
 
     if(sum(list(map(lambda x: x is not None,
                     [layer, obsm]))) == 2):
@@ -340,10 +343,13 @@ def query(adata,
                                      r=r,
                                      sort_results=True,
                                      return_distance=True)
-        ind = ind[0].flatten()
-        dist = dist[0].flatten()
-        df_output = adata.obs.iloc[ind, ].copy()
-        df_output['distance'] = dist
+        df_output = pd.DataFrame()
+        for ii in np.arange(pin.shape[0]):
+            df_output_ii = adata.obs.iloc[ind[ii], ].copy()
+            df_output_ii['distance'] = dist[ii]
+            if entity is not None:
+                df_output_ii['query'] = entity[ii]
+            df_output = df_output.append(df_output_ii)
         if anno_filters is not None:
             if anno_filters in adata.obs_keys():
                 if filters is None:
@@ -351,6 +357,7 @@ def query(adata,
                 df_output.query(f'{anno_filters} == @filters', inplace=True)
             else:
                 raise ValueError(f'could not find {anno_filters}')
+        df_output = df_output.sort_values(by='distance')
     else:
         if anno_filters is not None:
             if anno_filters in adata.obs_keys():
@@ -366,10 +373,15 @@ def query(adata,
                               k=k,
                               sort_results=True,
                               return_distance=True)
-        ind = ind.flatten()
-        dist = dist.flatten()
-        df_output = adata.obs.iloc[ids_filters, ].iloc[ind, ].copy()
-        df_output['distance'] = dist
+        df_output = pd.DataFrame()
+        for ii in np.arange(pin.shape[0]):
+            df_output_ii = \
+                adata.obs.iloc[ids_filters, ].iloc[ind[ii, ], ].copy()
+            df_output_ii['distance'] = dist[ii, ]
+            if entity is not None:
+                df_output_ii['query'] = entity[ii]
+            df_output = df_output.append(df_output_ii)
+        df_output = df_output.sort_values(by='distance')
 
     adata.uns['query'] = dict()
     adata.uns['query']['params'] = {'obsm': obsm,

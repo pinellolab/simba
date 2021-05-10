@@ -393,3 +393,85 @@ def query(adata,
                                     'r': r}
     adata.uns['query']['output'] = df_output.copy()
     return df_output
+
+
+def find_target_genes(name_motif,
+                      adata,
+                      adata_CP,
+                      adata_PM,
+                      obsm=None,
+                      layer=None,
+                      metric='euclidean',
+                      anno_filters='entity_anno',
+                      k_gene=200,
+                      k_peak=1000,
+                      **kwargs
+                      ):
+    """For a given TF, infer its target genes
+    """
+    if(sum(list(map(lambda x: x is not None,
+                    [layer, obsm]))) == 2):
+        raise ValueError("Only one of `layer` and `obsm` can be used")
+
+    if 'gene_scores' not in adata_CP.uns_keys():
+        print('Please run "si.tl.gene_scores(adata_CP)" first.')
+    else:
+        overlap_PG = adata_CP.uns['gene_scores']['overlap'].copy()
+        overlap_PG['peak'] = \
+            overlap_PG[['chr_p', 'start_p', 'end_p']].apply(
+                lambda row: '_'.join(row.values.astype(str)), axis=1)
+
+    # nearest neighbor genes
+    print('searching for neighbor genes ...')
+    nn_genes = query(adata,
+                     entity=name_motif,
+                     metric=metric,
+                     use_radius=False,
+                     k=k_gene,
+                     obsm=obsm,
+                     layer=layer,
+                     anno_filters=anno_filters,
+                     filters=['gene'],
+                     **kwargs)
+    print(f'Initial #genes is {nn_genes.shape}')
+
+    # search for peaks around each gene (including motif itself)
+    print('searching for neighbor peaks ...')
+    nn_genes['has_peak'] = ''
+    nn_genes['has_motif'] = ''
+    nn_peaks = query(adata,
+                     entity=[name_motif] + nn_genes.index.tolist(),
+                     metric=metric,
+                     use_radius=False,
+                     k=k_peak,
+                     obsm=obsm,
+                     layer=layer,
+                     anno_filters=anno_filters,
+                     filters=['peak'],
+                     **kwargs)
+
+    # check if peaks overlap genes and
+    # if TF is present in the peaks overlapping this specific gene
+
+    def isin(a, b):
+        return np.array([item in b for item in a])
+    print('pruning candidate genes ...')
+    # peaks associated with motif and its neighbor genes
+    overlap_PG_m = overlap_PG[isin(overlap_PG['peak'], nn_peaks.index)]
+    for g in nn_genes.index:
+        nn_peaks_i = nn_peaks[isin(nn_peaks['query'], [name_motif, g])]
+        overlap_PG_m_i = \
+            overlap_PG_m[isin(overlap_PG_m['peak'], nn_peaks_i.index)]
+        if g in set(overlap_PG_m_i['symbol_g']):
+            nn_genes.loc[g, 'has_peak'] = 'yes'
+            g_peaks = overlap_PG_m_i[overlap_PG_m_i['symbol_g'] == g]['peak']
+            if np.sum(adata_PM[g_peaks, name_motif].X) > 0:
+                nn_genes.loc[g, 'has_motif'] = 'yes'
+            else:
+                nn_genes.loc[g, 'has_motif'] = 'no'
+        else:
+            nn_genes.loc[g, 'has_peak'] = 'no'
+    nn_genes = nn_genes[nn_genes['has_motif'] == 'yes'][
+        [anno_filters, 'distance']].copy()
+    print(f'Final #genes is {nn_genes.shape}')
+    return nn_genes

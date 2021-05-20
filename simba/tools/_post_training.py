@@ -412,6 +412,113 @@ def query(adata,
     return df_output
 
 
+def find_master_regulators(adata_all,
+                           list_tf_motif=None,
+                           list_tf_gene=None,
+                           metric='euclidean',
+                           anno_filter='entity_anno',
+                           filter_gene='gene',
+                           metrics_gene=None,
+                           metrics_motif=None,
+                           cutoff_gene_max=1.5,
+                           cutoff_gene_gini=0.3,
+                           cutoff_gene_std=None,
+                           cutoff_gene_entropy=None,
+                           cutoff_motif_max=1.5,
+                           cutoff_motif_gini=0.3,
+                           cutoff_motif_std=None,
+                           cutoff_motif_entropy=None,
+                           ):
+    """Find all the master regulators
+    """
+    if(sum(list(map(lambda x: x is None,
+                    [list_tf_motif, list_tf_gene]))) > 0):
+        return("Please specify both `list_tf_motif` and `list_tf_gene`")
+
+    assert isinstance(list_tf_motif, list), \
+        "`list_tf_motif` must be list"
+    assert isinstance(list_tf_gene, list), \
+        "`list_tf_gene` must be list"
+    assert len(list_tf_motif) == len(list_tf_gene), \
+        "`list_tf_motif` and `list_tf_gene` must have the same length"
+    assert len(list_tf_motif) == len(set(list_tf_motif)), \
+        "Duplicates are found in `list_tf_motif`"
+
+    genes = adata_all[adata_all.obs[anno_filter] == filter_gene].\
+        obs_names.tolist().copy()
+    # Master Regulator
+    df_MR = pd.DataFrame(list(zip(list_tf_motif, list_tf_gene)),
+                         columns=['motif', 'gene'])
+
+    if metrics_motif is not None:
+        print('Adding motif metrics ...')
+        assert isinstance(metrics_motif, pd.DataFrame), \
+            "`metrics_motif` must be pd.DataFrame"
+        df_metrics_motif = metrics_motif.loc[list_tf_motif, ].copy()
+        df_metrics_motif.columns = df_metrics_motif.columns + '_motif'
+        df_MR = df_MR.merge(df_metrics_motif,
+                            how='left',
+                            left_on='motif',
+                            right_index=True)
+
+    if metrics_gene is not None:
+        print('Adding gene metrics ...')
+        assert isinstance(metrics_gene, pd.DataFrame), \
+            "`metrics_gene` must be pd.DataFrame"
+        df_metrics_gene = metrics_gene.loc[list_tf_gene, ].copy()
+        df_metrics_gene.index = list_tf_motif  # avoid duplicate genes
+        df_metrics_gene.columns = df_metrics_gene.columns + '_gene'
+        df_MR = df_MR.merge(df_metrics_gene,
+                            how='left',
+                            left_on='motif',
+                            right_index=True)
+    print('Computing distances between TF motifs and genes ...')
+    dist_MG = distance.cdist(adata_all[df_MR['motif'], ].X,
+                             adata_all[genes, ].X,
+                             metric=metric)
+    dist_MG = pd.DataFrame(dist_MG,
+                           index=df_MR['motif'].tolist(),
+                           columns=genes)
+    df_MR.insert(2, 'rank', -1)
+    df_MR.insert(3, 'dist', -1)
+    for i in np.arange(df_MR.shape[0]):
+        x_motif = df_MR['motif'].iloc[i]
+        x_gene = df_MR['gene'].iloc[i]
+        df_MR.loc[i, 'rank'] = dist_MG.loc[x_motif, ].rank()[x_gene]
+        df_MR.loc[i, 'dist'] = dist_MG.loc[x_motif, x_gene]
+
+    if metrics_gene is not None:
+        print('filtering master regulators based on gene metrics:')
+        if cutoff_gene_entropy is not None:
+            print('entropy')
+            df_MR = df_MR[df_MR['entropy_gene'] > cutoff_gene_entropy]
+        if cutoff_gene_gini is not None:
+            print('Gini index')
+            df_MR = df_MR[df_MR['gini_gene'] > cutoff_gene_gini]
+        if cutoff_gene_max is not None:
+            print('max')
+            df_MR = df_MR[df_MR['max_gene'] > cutoff_gene_max]
+        if cutoff_gene_std is not None:
+            print('standard deviation')
+            df_MR = df_MR[df_MR['std_gene'] > cutoff_gene_std]
+    if metrics_motif is not None:
+        print('filtering master regulators based on motif metrics:')
+        if cutoff_motif_entropy is not None:
+            print('entropy')
+            df_MR = df_MR[df_MR['entropy_motif'] > cutoff_motif_entropy]
+        if cutoff_motif_gini is not None:
+            print('Gini index')
+            df_MR = df_MR[df_MR['gini_motif'] > cutoff_motif_gini]
+        if cutoff_motif_max is not None:
+            print('max')
+            df_MR = df_MR[df_MR['max_motif'] > cutoff_motif_max]
+        if cutoff_motif_std is not None:
+            print('standard deviation')
+            df_MR = df_MR[df_MR['std_motif'] > cutoff_motif_std]
+    df_MR = df_MR.sort_values(by='rank', ignore_index=True)
+    return df_MR
+
+
 def find_target_genes(adata_all,
                       adata_PM,
                       list_tf_motif=None,

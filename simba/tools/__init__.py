@@ -18,5 +18,6 @@ from ._post_training import (
     embed,
     compare_entities,
     query,
-    find_target_genes
+    find_master_regulators,
+    find_target_genes,
 )

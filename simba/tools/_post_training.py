@@ -5,6 +5,8 @@ import pandas as pd
 import anndata as ad
 from scipy.stats import entropy
 from sklearn.neighbors import KDTree
+from scipy.spatial import distance
+# import faiss
 
 from ._utils import _gini
 
@@ -299,7 +301,7 @@ def query(adata,
           layer=None,
           metric='euclidean',
           filters=None,
-          anno_filters=None,
+          anno_filter=None,
           entity=None,
           pin=None,
           k=20,
@@ -350,29 +352,44 @@ def query(adata,
             if entity is not None:
                 df_output_ii['query'] = entity[ii]
             df_output = df_output.append(df_output_ii)
-        if anno_filters is not None:
-            if anno_filters in adata.obs_keys():
+        if anno_filter is not None:
+            if anno_filter in adata.obs_keys():
                 if filters is None:
-                    filters = df_output[anno_filters].unique().tolist()
-                df_output.query(f'{anno_filters} == @filters', inplace=True)
+                    filters = df_output[anno_filter].unique().tolist()
+                df_output.query(f'{anno_filter} == @filters', inplace=True)
             else:
-                raise ValueError(f'could not find {anno_filters}')
+                raise ValueError(f'could not find {anno_filter}')
         df_output = df_output.sort_values(by='distance')
     else:
-        if anno_filters is not None:
-            if anno_filters in adata.obs_keys():
+        assert (metric in ['euclidean', 'dot_product']),\
+                    "`metric` must be one of ['euclidean','dot_product']"
+        if anno_filter is not None:
+            if anno_filter in adata.obs_keys():
                 if filters is None:
-                    filters = adata.obs[anno_filters].unique().tolist()
+                    filters = adata.obs[anno_filter].unique().tolist()
                 ids_filters = \
-                    np.where(np.isin(adata.obs[anno_filters], filters))[0]
+                    np.where(np.isin(adata.obs[anno_filter], filters))[0]
             else:
-                raise ValueError(f'could not find {anno_filters}')
+                raise ValueError(f'could not find {anno_filter}')
 
         kdt = KDTree(X[ids_filters, :], metric=metric, **kwargs)
         dist, ind = kdt.query(pin,
                               k=k,
                               sort_results=True,
                               return_distance=True)
+
+        # use faiss
+        # X = X.astype('float32')
+        # if metric == 'euclidean':
+        #     faiss_index = faiss.IndexFlatL2(X.shape[1])   # build the index
+        #     faiss_index.add(X[ids_filters, :])
+        #     dist, ind = faiss_index.search(pin, k)
+        # if metric == 'dot_product':
+        #     faiss_index = faiss.IndexFlatIP(X.shape[1])   # build the index
+        #     faiss_index.add(X[ids_filters, :])
+        #     sim, ind = faiss_index.search(pin, k)
+        #     dist = -sim
+
         df_output = pd.DataFrame()
         for ii in np.arange(pin.shape[0]):
             df_output_ii = \
@@ -395,83 +412,186 @@ def query(adata,
     return df_output
 
 
-def find_target_genes(name_motif,
-                      adata,
-                      adata_CP,
+def find_target_genes(adata_all,
                       adata_PM,
-                      obsm=None,
-                      layer=None,
+                      list_tf_motif=None,
+                      list_tf_gene=None,
+                      adata_CP=None,
                       metric='euclidean',
-                      anno_filters='entity_anno',
-                      k_gene=200,
-                      k_peak=1000,
-                      **kwargs
+                      anno_filter='entity_anno',
+                      filter_peak='peak',
+                      filter_gene='gene',
+                      n_genes=200,
+                      cutoff_gene=None,
+                      cutoff_peak=1000,
+                      use_precomputed=True,
                       ):
     """For a given TF, infer its target genes
     """
-    if(sum(list(map(lambda x: x is not None,
-                    [layer, obsm]))) == 2):
-        raise ValueError("Only one of `layer` and `obsm` can be used")
+    if(sum(list(map(lambda x: x is None,
+                    [list_tf_motif, list_tf_gene]))) > 0):
+        return("Please specify both `list_tf_motif` and `list_tf_gene`")
 
-    if 'gene_scores' not in adata_CP.uns_keys():
-        print('Please run "si.tl.gene_scores(adata_CP)" first.')
-    else:
-        overlap_PG = adata_CP.uns['gene_scores']['overlap'].copy()
-        overlap_PG['peak'] = \
-            overlap_PG[['chr_p', 'start_p', 'end_p']].apply(
-                lambda row: '_'.join(row.values.astype(str)), axis=1)
-
-    # nearest neighbor genes
-    print('searching for neighbor genes ...')
-    nn_genes = query(adata,
-                     entity=name_motif,
-                     metric=metric,
-                     use_radius=False,
-                     k=k_gene,
-                     obsm=obsm,
-                     layer=layer,
-                     anno_filters=anno_filters,
-                     filters=['gene'],
-                     **kwargs)
-    print(f'Initial #genes is {nn_genes.shape}')
-
-    # search for peaks around each gene (including motif itself)
-    print('searching for neighbor peaks ...')
-    nn_genes['has_peak'] = ''
-    nn_genes['has_motif'] = ''
-    nn_peaks = query(adata,
-                     entity=[name_motif] + nn_genes.index.tolist(),
-                     metric=metric,
-                     use_radius=False,
-                     k=k_peak,
-                     obsm=obsm,
-                     layer=layer,
-                     anno_filters=anno_filters,
-                     filters=['peak'],
-                     **kwargs)
-
-    # check if peaks overlap genes and
-    # if TF is present in the peaks overlapping this specific gene
+    assert isinstance(list_tf_motif, list), \
+        "`list_tf_motif` must be list"
+    assert isinstance(list_tf_gene, list), \
+        "`list_tf_gene` must be list"
+    assert len(list_tf_motif) == len(list_tf_gene), \
+        "`list_tf_motif` and `list_tf_gene` must have the same length"
 
     def isin(a, b):
         return np.array([item in b for item in a])
-    print('pruning candidate genes ...')
-    # peaks associated with motif and its neighbor genes
-    overlap_PG_m = overlap_PG[isin(overlap_PG['peak'], nn_peaks.index)]
-    for g in nn_genes.index:
-        nn_peaks_i = nn_peaks[isin(nn_peaks['query'], [name_motif, g])]
-        overlap_PG_m_i = \
-            overlap_PG_m[isin(overlap_PG_m['peak'], nn_peaks_i.index)]
-        if g in set(overlap_PG_m_i['symbol_g']):
-            nn_genes.loc[g, 'has_peak'] = 'yes'
-            g_peaks = overlap_PG_m_i[overlap_PG_m_i['symbol_g'] == g]['peak']
-            if np.sum(adata_PM[g_peaks, name_motif].X) > 0:
-                nn_genes.loc[g, 'has_motif'] = 'yes'
-            else:
-                nn_genes.loc[g, 'has_motif'] = 'no'
+
+    print('Preprocessing ...')
+    if use_precomputed and 'tf_targets' in adata_all.uns_keys():
+        print('importing precomputed variables ...')
+        genes = adata_all.uns['tf_targets']['genes']
+        peaks = adata_all.uns['tf_targets']['peaks']
+        peaks_in_genes = adata_all.uns['tf_targets']['peaks_in_genes']
+        dist_PG = adata_all.uns['tf_targets']['dist_PG']
+        overlap_PG = adata_all.uns['tf_targets']['overlap']
+    else:
+        assert (adata_CP is not None), \
+            '`adata_CP` needs to be specified '\
+            'when no precomputed variable is stored'
+        if 'gene_scores' not in adata_CP.uns_keys():
+            print('Please run "si.tl.gene_scores(adata_CP)" first.')
         else:
-            nn_genes.loc[g, 'has_peak'] = 'no'
-    nn_genes = nn_genes[nn_genes['has_motif'] == 'yes'][
-        [anno_filters, 'distance']].copy()
-    print(f'Final #genes is {nn_genes.shape}')
-    return nn_genes
+            overlap_PG = adata_CP.uns['gene_scores']['overlap'].copy()
+            overlap_PG['peak'] = \
+                overlap_PG[['chr_p', 'start_p', 'end_p']].apply(
+                    lambda row: '_'.join(row.values.astype(str)), axis=1)
+            tuples = list(zip(overlap_PG['symbol_g'], overlap_PG['peak']))
+            multi_indices = pd.MultiIndex.from_tuples(
+                tuples, names=["gene", "peak"])
+            overlap_PG.index = multi_indices
+
+        genes = adata_all[adata_all.obs[anno_filter] == filter_gene].\
+            obs_names.tolist().copy()
+        peaks = adata_all[adata_all.obs[anno_filter] == filter_peak].\
+            obs_names.tolist().copy()
+        peaks_in_genes = list(set(overlap_PG['peak']))
+
+        print(f'#genes: {len(genes)}')
+        print(f'#peaks: {len(peaks)}')
+        print(f'#genes-associated peaks: {len(peaks_in_genes)}')
+        print('computing distances between genes '
+              'and genes-associated peaks ...')
+        dist_PG = distance.cdist(
+            adata_all[peaks_in_genes, ].X,
+            adata_all[genes, ].X,
+            metric=metric,
+            )
+        dist_PG = pd.DataFrame(dist_PG, index=peaks_in_genes, columns=[genes])
+        print("Saving variables into `.uns['tf_targets']` ...")
+        adata_all.uns['tf_targets'] = dict()
+        adata_all.uns['tf_targets']['overlap'] = overlap_PG
+        adata_all.uns['tf_targets']['dist_PG'] = dist_PG
+        adata_all.uns['tf_targets']['peaks_in_genes'] = peaks_in_genes
+        adata_all.uns['tf_targets']['genes'] = genes
+        adata_all.uns['tf_targets']['peaks'] = peaks
+        adata_all.uns['tf_targets']['peaks_in_genes'] = peaks_in_genes
+
+    dict_tf_targets = dict()
+    for tf_motif, tf_gene in zip(list_tf_motif, list_tf_gene):
+
+        print(f'searching for target genes of {tf_motif}')
+        motif_peaks = adata_PM.obs_names[adata_PM[:, tf_motif].X.nonzero()[0]]
+        motif_genes = list(
+            set(overlap_PG[isin(overlap_PG['peak'], motif_peaks)]['symbol_g'])
+            .intersection(genes))
+
+        # rank of the distances from genes to tf_motif
+        dist_GM_motif = distance.cdist(adata_all[genes, ].X,
+                                       adata_all[tf_motif, ].X,
+                                       metric=metric)
+        dist_GM_motif = pd.DataFrame(dist_GM_motif,
+                                     index=genes,
+                                     columns=[tf_motif])
+        rank_GM_motif = dist_GM_motif.rank(axis=0)
+
+        # rank of the distances from genes to tf_gene
+        dist_GG_motif = distance.cdist(adata_all[genes, ].X,
+                                       adata_all[tf_gene, ].X,
+                                       metric=metric)
+        dist_GG_motif = pd.DataFrame(dist_GG_motif,
+                                     index=genes,
+                                     columns=[tf_gene])
+        rank_GG_motif = dist_GG_motif.rank(axis=0)
+
+        # rank of the distances from peaks to tf_motif
+        dist_PM_motif = distance.cdist(
+            adata_all[peaks_in_genes, ].X,
+            adata_all[tf_motif, ].X,
+            metric=metric)
+        dist_PM_motif = pd.DataFrame(dist_PM_motif,
+                                     index=peaks_in_genes,
+                                     columns=[tf_motif])
+        rank_PM_motif = dist_PM_motif.rank(axis=0)
+
+        # rank of the distances from peaks to candidate genes
+        cand_genes = \
+            dist_GG_motif[tf_gene].nsmallest(n_genes).index.tolist()\
+            + dist_GM_motif[tf_motif].nsmallest(n_genes).index.tolist()
+        print(f'#candinate genes is {len(cand_genes)}')
+        print('removing duplicate genes ...')
+        print('removing genes that do not contain TF motif ...')
+        cand_genes = list(set(cand_genes).intersection(set(motif_genes)))
+        print(f'#candinate genes is {len(cand_genes)}')
+        dist_PG_motif = distance.cdist(
+            adata_all[peaks_in_genes, ].X,
+            adata_all[cand_genes, ].X,
+            metric=metric
+            )
+        dist_PG_motif = pd.DataFrame(dist_PG_motif,
+                                     index=peaks_in_genes,
+                                     columns=cand_genes)
+        rank_PG_motif = dist_PG_motif.rank(axis=0)
+
+        df_tf_targets = pd.DataFrame(index=cand_genes)
+        df_tf_targets['average_rank'] = -1
+        df_tf_targets['has_motif'] = 'no'
+        df_tf_targets['rank_gene_to_TFmotif'] = -1
+        df_tf_targets['rank_gene_to_TFgene'] = -1
+        df_tf_targets['rank_peak_to_TFmotif'] = -1
+        df_tf_targets['rank_peak2_to_TFmotif'] = -1
+        df_tf_targets['rank_peak_to_gene'] = -1
+        df_tf_targets['rank_peak2_to_gene'] = -1
+        for i, g in enumerate(cand_genes):
+            g_peaks = list(set(overlap_PG.loc[[g]]['peak']))
+            g_motif_peaks = list(set(g_peaks).intersection(motif_peaks))
+            if len(g_motif_peaks) > 0:
+                df_tf_targets.loc[g, 'has_motif'] = 'yes'
+                df_tf_targets.loc[g, 'rank_gene_to_TFmotif'] = \
+                    rank_GM_motif[tf_motif][g]
+                df_tf_targets.loc[g, 'rank_gene_to_TFgene'] = \
+                    rank_GG_motif[tf_gene][g]
+                df_tf_targets.loc[g, 'rank_peak_to_TFmotif'] = \
+                    rank_PM_motif.loc[g_peaks, tf_motif].min()
+                df_tf_targets.loc[g, 'rank_peak2_to_TFmotif'] = \
+                    rank_PM_motif.loc[g_motif_peaks, tf_motif].min()
+                df_tf_targets.loc[g, 'rank_peak_to_gene'] = \
+                    rank_PG_motif.loc[g_peaks, g].min()
+                df_tf_targets.loc[g, 'rank_peak2_to_gene'] = \
+                    rank_PG_motif.loc[g_peaks, g].min()
+            if i % int(len(cand_genes)/5) == 0:
+                print(f'completed: {i/len(cand_genes):.1%}')
+        df_tf_targets['average_rank'] = \
+            df_tf_targets[['rank_gene_to_TFmotif',
+                           'rank_gene_to_TFgene']].mean(axis=1)
+        targets_filtered = df_tf_targets.index.tolist()
+        if cutoff_peak is not None:
+            print('Pruning candidate genes based on nearby peaks ...')
+            targets_filtered = df_tf_targets.index[
+                (df_tf_targets.loc[
+                    targets_filtered,
+                    ['rank_peak_to_TFmotif', 'rank_peak_to_gene']]
+                    < cutoff_peak).sum(axis=1) > 0].tolist()
+        if cutoff_gene is not None:
+            print('Pruning candidate genes based on average rank ...')
+            targets_filtered = df_tf_targets.index[
+                df_tf_targets['average_rank'] < cutoff_gene].tolist()
+        dict_tf_targets[tf_motif] = \
+            df_tf_targets.loc[targets_filtered, ].sort_values(
+                by='average_rank').copy()
+    return dict_tf_targets

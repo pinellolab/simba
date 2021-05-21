@@ -686,19 +686,17 @@ def find_target_genes(adata_all,
         df_tf_targets['average_rank'] = \
             df_tf_targets[['rank_gene_to_TFmotif',
                            'rank_gene_to_TFgene']].mean(axis=1)
-        targets_filtered = df_tf_targets.index.tolist()
         if cutoff_peak is not None:
             print('Pruning candidate genes based on nearby peaks ...')
-            targets_filtered = df_tf_targets.index[
-                (df_tf_targets.loc[
-                    targets_filtered,
-                    ['rank_peak_to_TFmotif', 'rank_peak_to_gene']]
-                    < cutoff_peak).sum(axis=1) > 0].tolist()
+            df_tf_targets = df_tf_targets[
+                (df_tf_targets[[
+                    'rank_peak_to_TFmotif',
+                    'rank_peak_to_gene']]
+                    < cutoff_peak).sum(axis=1) > 0]
         if cutoff_gene is not None:
             print('Pruning candidate genes based on average rank ...')
-            targets_filtered = df_tf_targets.index[
-                df_tf_targets['average_rank'] < cutoff_gene].tolist()
+            df_tf_targets = df_tf_targets[
+                df_tf_targets['average_rank'] < cutoff_gene]
         dict_tf_targets[tf_motif] = \
-            df_tf_targets.loc[targets_filtered, ].sort_values(
-                by='average_rank').copy()
+            df_tf_targets.sort_values(by='average_rank').copy()
     return dict_tf_targets

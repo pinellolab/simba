@@ -351,6 +351,8 @@ def query(adata,
             df_output_ii['distance'] = dist[ii]
             if entity is not None:
                 df_output_ii['query'] = entity[ii]
+            else:
+                df_output_ii['query'] = ii
             df_output = df_output.append(df_output_ii)
         if anno_filter is not None:
             if anno_filter in adata.obs_keys():
@@ -397,6 +399,8 @@ def query(adata,
             df_output_ii['distance'] = dist[ii, ]
             if entity is not None:
                 df_output_ii['query'] = entity[ii]
+            else:
+                df_output_ii['query'] = ii
             df_output = df_output.append(df_output_ii)
         df_output = df_output.sort_values(by='distance')
 

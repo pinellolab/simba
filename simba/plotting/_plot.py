@@ -576,7 +576,8 @@ def _scatterplot2d(df,
                                     vmin=vmin_i,
                                     vmax=vmax_i,
                                     alpha=alpha,
-                                    s=size)
+                                    s=size,
+                                    **kwargs)
                 cbar = plt.colorbar(sc_i,
                                     ax=ax_i,
                                     pad=0.01,

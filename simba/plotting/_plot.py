@@ -233,10 +233,11 @@ def pca_variance_ratio(adata,
                        fig_size=(4, 4),
                        save_fig=None,
                        fig_path=None,
-                       fig_name='qc.pdf',
+                       fig_name='variance_ratio.pdf',
                        pad=1.08,
                        w_pad=None,
-                       h_pad=None):
+                       h_pad=None,
+                       **kwargs):
     """Plot the variance ratio.
     """
 
@@ -252,10 +253,12 @@ def pca_variance_ratio(adata,
     fig = plt.figure(figsize=fig_size)
     if(log):
         plt.plot(range(n_components),
-                 np.log(adata.uns['pca']['variance_ratio']))
+                 np.log(adata.uns['pca']['variance_ratio']),
+                 **kwargs)
     else:
         plt.plot(range(n_components),
-                 adata.uns['pca']['variance_ratio'])
+                 adata.uns['pca']['variance_ratio'],
+                 **kwargs)
     if(show_cutoff):
         n_pcs = adata.uns['pca']['n_pcs']
         print(f'the number of selected PC is: {n_pcs}')
@@ -282,10 +285,11 @@ def pcs_features(adata,
                  fig_ncol=3,
                  save_fig=None,
                  fig_path=None,
-                 fig_name='qc.pdf',
+                 fig_name='pcs_features.pdf',
                  pad=1.08,
                  w_pad=None,
-                 h_pad=None):
+                 h_pad=None,
+                 **kwargs):
     """Plot features that contribute to the top PCs.
     """
 
@@ -308,12 +312,14 @@ def pcs_features(adata,
             ax_i.scatter(range(n_features),
                          np.log(np.sort(
                              np.abs(adata.uns['pca']['PCs'][:, i],))[::-1]),
-                         s=size)
+                         s=size,
+                         **kwargs)
         else:
             ax_i.scatter(range(n_features),
                          np.sort(
                              np.abs(adata.uns['pca']['PCs'][:, i],))[::-1],
-                         s=size)
+                         s=size,
+                         **kwargs)
         n_ft_selected_i = len(adata.uns['pca']['features'][f'pc_{i}'])
         if(show_cutoff):
             ax_i.axvline(n_ft_selected_i, ls='--', c='red')
@@ -344,7 +350,8 @@ def variable_genes(adata,
                    fig_name='plot_variable_genes.pdf',
                    pad=1.08,
                    w_pad=None,
-                   h_pad=None):
+                   h_pad=None,
+                   **kwargs):
     """Plot highly variable genes.
     """
 
@@ -364,11 +371,13 @@ def variable_genes(adata,
     ax.scatter(means[~mask],
                variances_norm[~mask],
                s=size,
-               c='#1F2433')
+               c='#1F2433',
+               **kwargs)
     ax.scatter(means[mask],
                variances_norm[mask],
                s=size,
-               c='#ce3746')
+               c='#ce3746',
+               **kwargs)
     ax.set_xscale(value='log')
 
     if show_texts:

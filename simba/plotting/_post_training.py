@@ -342,6 +342,8 @@ def entity_barcode(adata_cmp,
                          linestyle='--')
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
     if(save_fig):
+        if(not os.path.exists(fig_path)):
+            os.makedirs(fig_path)
         plt.savefig(os.path.join(fig_path, fig_name),
                     pad_inches=1,
                     bbox_inches='tight')

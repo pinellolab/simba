@@ -243,7 +243,8 @@ def embed(adata_ref,
 
 def compare_entities(adata_ref,
                      adata_query,
-                     n_top_cells=50):
+                     n_top_cells=50,
+                     T=1):
     """Compare the embeddings of two entities by calculating
     the following values between reference and query entities:
     - dot product
@@ -268,6 +269,13 @@ def compare_entities(adata_ref,
             Query entity anndata.
         n_top_cells: `int`, optional (default: 50)
             The number of cells to consider when calculating the metric 'max'
+        T: `float`
+            Temperature parameter for softmax.
+            It controls the output probability distribution.
+            When T goes to inf, it becomes a discrete uniform distribution,
+            each query becomes the average of reference;
+            When T goes to zero, softargmax converges to arg max,
+            each query is approximately the best of reference.
 
     Returns
     -------
@@ -283,8 +291,8 @@ def compare_entities(adata_ref,
                            var=adata_query.obs)
     adata_cmp.layers['norm'] = X_cmp \
         - np.log(np.exp(X_cmp).mean(axis=0)).reshape(1, -1)
-    adata_cmp.layers['softmax'] = np.exp(X_cmp) \
-        / np.exp(X_cmp).sum(axis=0).reshape(1, -1)
+    adata_cmp.layers['softmax'] = np.exp(X_cmp/T) \
+        / np.exp(X_cmp/T).sum(axis=0).reshape(1, -1)
     adata_cmp.var['max'] = \
         np.clip(np.sort(adata_cmp.layers['norm'], axis=0)[-n_top_cells:, ],
                 a_min=0,

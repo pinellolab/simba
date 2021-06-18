@@ -3,25 +3,32 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to SIMBA's documentation!
-=================================
+**SIMBA**: **SI**\ ngle-cell e\ **MB**\ edding **A**\ long with features
+========================================================================
+
+SIMBA is a method to embed cells along with their defining features such as gene expression, transcription factor binding sequences and chromatin accessibility peaks into the same latent space. The joint embedding of cells and features allows SIMBA to perform various types of single cell tasks, including but not limited to single-modal analysis (e.g. scRNA-seq and scATAC-seq analysis), multimodal analysis, batch correction, and multi-omic integration.
 
 
+.. image:: _static/img/Figure1.png
+   :align: center
+   :width: 600
+   :alt: SIMBA overview
 
-Contents
-========
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Get started
 
-   Introduction
    Installation
-   Tutorials
+   API
 
-Indices and tables
-==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. toctree::
+   :maxdepth: 2
+   :caption: Tutorials
+
+   scRNA-seq analysis
+   scATAC-seq analysis
+   Multimodal analysis
+   Batch correction
+   Multi-omics integration

@@ -1,0 +1,28 @@
+{
+    "n_edges": 1075,
+    "relation0": {
+        "destination": "G",
+        "n_edges": 153,
+        "source": "C"
+    },
+    "relation1": {
+        "destination": "G",
+        "n_edges": 369,
+        "source": "C"
+    },
+    "relation2": {
+        "destination": "G",
+        "n_edges": 301,
+        "source": "C"
+    },
+    "relation3": {
+        "destination": "G",
+        "n_edges": 166,
+        "source": "C"
+    },
+    "relation4": {
+        "destination": "G",
+        "n_edges": 86,
+        "source": "C"
+    }
+}

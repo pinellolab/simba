@@ -1,0 +1,102 @@
+{
+    "entities": {
+        "C": {
+            "num_partitions": 1,
+            "featurized": false,
+            "dimension": null
+        },
+        "G": {
+            "num_partitions": 1,
+            "featurized": false,
+            "dimension": null
+        }
+    },
+    "relations": [
+        {
+            "name": "r0",
+            "lhs": "C",
+            "rhs": "G",
+            "weight": 1.0,
+            "operator": "none",
+            "all_negs": false
+        },
+        {
+            "name": "r1",
+            "lhs": "C",
+            "rhs": "G",
+            "weight": 2.0,
+            "operator": "none",
+            "all_negs": false
+        },
+        {
+            "name": "r2",
+            "lhs": "C",
+            "rhs": "G",
+            "weight": 3.0,
+            "operator": "none",
+            "all_negs": false
+        },
+        {
+            "name": "r3",
+            "lhs": "C",
+            "rhs": "G",
+            "weight": 4.0,
+            "operator": "none",
+            "all_negs": false
+        },
+        {
+            "name": "r4",
+            "lhs": "C",
+            "rhs": "G",
+            "weight": 5.0,
+            "operator": "none",
+            "all_negs": false
+        }
+    ],
+    "dimension": 50,
+    "init_scale": 0.001,
+    "max_norm": null,
+    "global_emb": false,
+    "comparator": "dot",
+    "bias": false,
+    "loss_fn": "softmax",
+    "margin": 0.1,
+    "regularization_coef": 0.0,
+    "regularizer": "N3",
+    "wd": 32.962933,
+    "wd_interval": 50,
+    "entity_path": "./result_simba/pbg/graph0/input/entity",
+    "edge_paths": [
+        "./result_simba/pbg/graph0/input/edge"
+    ],
+    "checkpoint_path": "result_simba/pbg/graph0/model",
+    "init_path": null,
+    "checkpoint_preservation_interval": null,
+    "num_epochs": 10,
+    "num_edge_chunks": null,
+    "max_edges_per_chunk": 1000000000,
+    "bucket_order": "inside_out",
+    "workers": 12,
+    "batch_size": 1000,
+    "num_batch_negs": 50,
+    "num_uniform_negs": 50,
+    "disable_lhs_negs": false,
+    "disable_rhs_negs": false,
+    "lr": 0.1,
+    "relation_lr": null,
+    "eval_fraction": 0.05,
+    "eval_num_batch_negs": 50,
+    "eval_num_uniform_negs": 50,
+    "early_stopping": false,
+    "background_io": false,
+    "verbose": 0,
+    "hogwild_delay": 2.0,
+    "dynamic_relations": false,
+    "num_machines": 1,
+    "num_partition_servers": -1,
+    "distributed_init_method": null,
+    "distributed_tree_init_order": true,
+    "num_gpus": 0,
+    "num_groups_for_partition_server": 16,
+    "half_precision": false
+}

@@ -7,3 +7,8 @@ from . import plotting as pl
 from .readwrite import *
 
 __version__ = "0.1a"
+
+import sys
+# needed when building doc (borrowed from scanpy)
+sys.modules.update(
+    {f'{__name__}.{m}': globals()[m] for m in ['tl', 'pp', 'pl']})

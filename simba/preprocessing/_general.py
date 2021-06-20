@@ -14,6 +14,7 @@ from scipy.sparse import (
 
 def log_transform(adata):
     """Return the natural logarithm of one plus the input array, element-wise.
+
     Parameters
     ----------
     adata: AnnData
@@ -43,8 +44,12 @@ def binarize(adata,
                                      copy=copy)
 
 
-def normalize(adata, method='lib_size', scale_factor=1e4, save_raw=True):
+def normalize(adata,
+              method='lib_size',
+              scale_factor=1e4,
+              save_raw=True):
     """Normalize count matrix.
+
     Parameters
     ----------
     adata: AnnData
@@ -54,7 +59,8 @@ def normalize(adata, method='lib_size', scale_factor=1e4, save_raw=True):
         Method used for dimension reduction.
         'lib_size': Total-count normalize (library-size correct)
         'tf_idf': TF-IDF (term frequency–inverse document frequency)
-                  transformation
+        transformation
+
     Returns
     -------
     updates `adata` with the following fields.

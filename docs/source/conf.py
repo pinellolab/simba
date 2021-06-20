@@ -13,6 +13,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../simba'))
+import simba
 
 
 # -- Project information -----------------------------------------------------
@@ -34,11 +35,18 @@ release = '0.1.0'
 needs_sphinx = "3.0"
 
 extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     'sphinx.ext.napoleon',
     "sphinx.ext.intersphinx",
-    "sphinx.ext.autodoc",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode"]
+
+autosummary_generate = True
+
+# Napoleon settings
+napoleon_google_docstring = False
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

@@ -7,12 +7,15 @@ Import simba as::
 
    import simba as si
 
-.. Configuration for SIMBA
-.. ~~~~~~~~~~~~~~~~~~~~~~~
-.. .. autoclass:: settings
-..     :members:
-..     :undoc-members:
-..     :show-inheritance:
+Configuration for SIMBA
+~~~~~~~~~~~~~~~~~~~~~~~
+.. autosummary::
+   :toctree: _autosummary
+
+   settings.set_figure_params
+   settings.set_pbg_params
+   settings.set_workdir
+
 
 Reading
 ~~~~~~~
@@ -69,3 +72,24 @@ Tools
    tl.query
    tl.find_master_regulators
    tl.find_target_genes
+
+
+Plotting
+~~~~~~~~
+
+.. autosummary::
+   :toctree: _autosummary
+
+   pl.pca_variance_ratio
+   pl.pcs_features
+   pl.variable_genes
+   pl.violin
+   pl.hist
+   pl.umap
+   pl.discretize
+   pl.node_similarity
+   pl.svd_nodes
+   pl.pbg_metrics
+   pl.entity_metrics
+   pl.entity_barcode
+   pl.query

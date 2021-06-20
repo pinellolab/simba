@@ -966,7 +966,7 @@ def discretize(adata,
                fig_name='plot_discretize.pdf',
                **kwargs):
     """Plot original data VS discretized data
-        Parameters
+    Parameters
     ----------
 
 

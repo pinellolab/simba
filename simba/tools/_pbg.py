@@ -552,6 +552,7 @@ def pbg_train(dirname=None,
               auto_wd=True,
               save_wd=False):
     """PBG training
+
     Parameters
     ----------
     dirname: `str`, optional (default: None)
@@ -569,6 +570,7 @@ def pbg_train(dirname=None,
         Recommended for relative small training sample size (<1e7)
     save_wd: `bool`, optional (default: False)
         If True, estimated `wd` will be saved to `settings.pbg_params['wd']`
+
     Returns
     -------
     updates `settings.pbg_params` with the following parameter

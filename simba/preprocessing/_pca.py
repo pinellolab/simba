@@ -17,6 +17,7 @@ def pca(adata,
         **kwargs,
         ):
     """perform Principal Component Analysis (PCA)
+
     Parameters
     ----------
     adata: AnnData
@@ -108,6 +109,8 @@ def select_pcs_features(adata,
                         **kwargs):
     """select features that contribute to the top PCs
 
+    Parameters
+    ----------
     S : `float`, optional (default: 10)
         Sensitivity
     min_elbow: `int`, optional (default: 0)
@@ -123,7 +126,8 @@ def select_pcs_features(adata,
         kneed will return first knee if False.
     **kwargs: `dict`, optional
         Extra arguments to KneeLocator.
-
+    Returns
+    -------
     """
     n_pcs = adata.uns['pca']['n_pcs']
     n_features = adata.uns['pca']['PCs'].shape[0]

@@ -16,7 +16,7 @@ SIMBA is a method to embed cells along with their defining features such as gene
 
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
    :caption: Get started
 
    Installation
@@ -32,6 +32,22 @@ SIMBA is a method to embed cells along with their defining features such as gene
    Multimodal analysis
    Batch correction
    Multi-omics integration
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Release notes
+
+   Version 1.0
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Citation
+
+   Citation
+
+
 
 Indices and tables
 ==================

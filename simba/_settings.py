@@ -30,6 +30,7 @@ class SimbaConfig:
                           fig_size=[5.4, 4.8],
                           rc=None):
         """ Set global parameters for figures. Modified from sns.set()
+
         Parameters
         ----------
         context : string or dict

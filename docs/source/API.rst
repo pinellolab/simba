@@ -93,3 +93,14 @@ Plotting
    pl.entity_metrics
    pl.entity_barcode
    pl.query
+
+
+Datasets
+~~~~~~~~
+
+.. autosummary::
+   :toctree: _autosummary
+
+   datasets.rna_10xpmbc3k
+   datasets.atac_buenrostro2018
+   datasets.multiome_ma2020_fig4

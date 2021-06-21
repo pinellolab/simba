@@ -305,7 +305,7 @@ def atac_cusanovich2018_subset():
     return adata
 
 
-def atac_chen2019_subset():
+def atac_chen2019():
     """simulated scATAC-seq bone marrow data with a noise level of 0.4
     and a coverage of 2500 fragments
 
@@ -318,7 +318,7 @@ def atac_chen2019_subset():
         Anndata object
     """
     url = 'https://www.dropbox.com/s/fthhh3mz5b39d4y/atac_seq.h5ad?dl=1'
-    filename = 'atac_chen2019_subset.h5ad'
+    filename = 'atac_chen2019.h5ad'
     filepath = os.path.join(settings.workdir, 'data')
     fullpath = os.path.join(filepath, filename)
     if(not os.path.exists(fullpath)):

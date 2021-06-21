@@ -5,6 +5,7 @@ from . import preprocessing as pp
 from . import tools as tl
 from . import plotting as pl
 from .readwrite import *
+from . import datasets
 
 __version__ = "0.1a"
 

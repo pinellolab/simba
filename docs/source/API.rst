@@ -101,18 +101,18 @@ Datasets
 .. autosummary::
    :toctree: _autosummary
 
-   datasets.rna_10xpmbc3k,
-   datasets.rna_han2018,
-   datasets.rna_tmc2018,
-   datasets.rna_baron2016,
-   datasets.rna_muraro2016,
-   datasets.rna_segerstolpe2016,
-   datasets.rna_wang2016,
-   datasets.rna_xin2016,
-   datasets.atac_buenrostro2018,
-   datasets.atac_10xpbmc5k,
-   datasets.atac_chen2019,
-   datasets.atac_cusanovich2018_subset,
-   datasets.multiome_ma2020_fig4,
-   datasets.multiome_chen2019,
+   datasets.rna_10xpmbc3k
+   datasets.rna_han2018
+   datasets.rna_tmc2018
+   datasets.rna_baron2016
+   datasets.rna_muraro2016
+   datasets.rna_segerstolpe2016
+   datasets.rna_wang2016
+   datasets.rna_xin2016
+   datasets.atac_buenrostro2018
+   datasets.atac_10xpbmc5k
+   datasets.atac_chen2019
+   datasets.atac_cusanovich2018_subset
+   datasets.multiome_ma2020_fig4
+   datasets.multiome_chen2019
    datasets.multiome_10xpbmc10k

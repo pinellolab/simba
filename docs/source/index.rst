@@ -1,7 +1,4 @@
-.. SIMBA documentation master file, created by
-   sphinx-quickstart on Mon Feb  1 17:17:45 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+|Docs|
 
 **SIMBA**: **SI**\ ngle-cell e\ **MB**\ edding **A**\ long with features
 ========================================================================
@@ -17,41 +14,34 @@ SIMBA is a method to embed cells along with their defining features such as gene
 
 .. toctree::
    :maxdepth: 2
-   :caption: Get started
+   :caption: Overview
+   :hidden:
 
+   About SIMBA
    Installation
    API
+   Release notes
+   Citation
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
+   :caption: SIMBA primer
+
+   Basic concepts
+
+
+.. toctree::
+   :maxdepth: 1
    :caption: Tutorials
 
-   scRNA-seq analysis
+   10xpbmc_rna_all_genes
+   buenrostro2018_using_peaks_sequences_v3
    scATAC-seq analysis
    Multimodal analysis
    Batch correction
    Multi-omics integration
 
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Release notes
-
-   Version 1.0
-
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Citation
-
-   Citation
-
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. |Docs| image:: https://readthedocs.org/projects/simba-bio/badge/?version=latest
+   :target: https://simba-bio.readthedocs.io

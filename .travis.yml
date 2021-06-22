@@ -1,0 +1,28 @@
+language: python
+python:
+  - "3.7"
+  - "3.8"
+install:
+  - sudo apt-get update
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION 
+  - source activate test-environment
+  - conda config --add channels defaults
+  - conda config --add channels bioconda 
+  - conda config --add channels conda-forge
+  - conda install pytorch torchvision torchaudio cpuonly -c pytorch
+  - pip install torchbiggraph
+  - pip install -r requirements.txt
+  - pip install -e .
+  - pip install -U pytest
+script:
+  - pytest
+branches:
+  only:
+    - simba_v0.1

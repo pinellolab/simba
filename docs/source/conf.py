@@ -13,6 +13,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../simba'))
+sys.path.insert(0, os.path.abspath('_ext'))
 import simba
 
 
@@ -64,7 +65,6 @@ autosummary_generate = True
 # Napoleon settings
 napoleon_google_docstring = False
 
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -95,6 +95,7 @@ html_context = dict(
     github_version='simba_v0.1',
     conf_py_path='/docs/source/',
 )
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

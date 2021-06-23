@@ -643,3 +643,4 @@ def pbg_train(dirname=None,
     train_config = attr.evolve(config, edge_paths=config.edge_paths)
     print("Starting training ...")
     train(train_config, subprocess_init=subprocess_init)
+    print("Finished")

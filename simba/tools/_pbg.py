@@ -609,11 +609,11 @@ def pbg_train(dirname=None,
                 0.0004 * 59103481 / settings.graph_stats[
                     os.path.basename(filepath)]['n_edges'],
                 decimals=6)
+        print(f'Auto-estimated weight decay is {wd}')
         pbg_params['wd'] = wd
         if save_wd:
             settings.pbg_params['wd'] = pbg_params['wd']
             print(f"`.settings.pbg_params['wd']` has been updated to {wd}")
-        print(f'Auto-estimated weight decay is {wd}')
 
     # to avoid oversubscription issues in workloads
     # that involve nested parallelism

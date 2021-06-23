@@ -5,9 +5,15 @@ if sys.version_info < (3, 6) or sys.version_info >= (3, 9):
 
 from setuptools import setup, find_packages
 from pathlib import Path
+
+version = {}
+with open("simba/_version.py") as fp:
+    exec(fp.read(), version)
+
+
 setup(
     name='simba',
-    version='1.0',
+    version=version['__version__'],
     author='Huidong Chen',
     athor_email='huidong.chen AT mgh DOT harvard DOT edu',
     license='BSD',

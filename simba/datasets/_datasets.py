@@ -51,6 +51,7 @@ def rna_10xpmbc3k():
         download_url(url,
                      fullpath,
                      desc=filename)
+        print(f'Downloaded to {filepath}.')
     adata = read_h5ad(fullpath)
     return adata
 
@@ -76,6 +77,7 @@ def rna_han2018():
         download_url(url,
                      fullpath,
                      desc=filename)
+        print(f'Downloaded to {filepath}.')
     adata = read_h5ad(fullpath)
     return adata
 
@@ -101,6 +103,7 @@ def rna_tmc2018():
         download_url(url,
                      fullpath,
                      desc=filename)
+        print(f'Downloaded to {filepath}.')
     adata = read_h5ad(fullpath)
     return adata
 
@@ -127,6 +130,7 @@ def rna_baron2016():
         download_url(url,
                      fullpath,
                      desc=filename)
+        print(f'Downloaded to {filepath}.')
     adata = read_h5ad(fullpath)
     return adata
 
@@ -152,6 +156,7 @@ def rna_muraro2016():
         download_url(url,
                      fullpath,
                      desc=filename)
+        print(f'Downloaded to {filepath}.')
     adata = read_h5ad(fullpath)
     return adata
 
@@ -178,6 +183,7 @@ def rna_segerstolpe2016():
         download_url(url,
                      fullpath,
                      desc=filename)
+        print(f'Downloaded to {filepath}.')
     adata = read_h5ad(fullpath)
     return adata
 
@@ -203,6 +209,7 @@ def rna_wang2016():
         download_url(url,
                      fullpath,
                      desc=filename)
+        print(f'Downloaded to {filepath}.')
     adata = read_h5ad(fullpath)
     return adata
 
@@ -228,6 +235,7 @@ def rna_xin2016():
         download_url(url,
                      fullpath,
                      desc=filename)
+        print(f'Downloaded to {filepath}.')
     adata = read_h5ad(fullpath)
     return adata
 
@@ -254,6 +262,7 @@ def atac_buenrostro2018():
         download_url(url,
                      fullpath,
                      desc=filename)
+        print(f'Downloaded to {filepath}.')
     adata = read_h5ad(fullpath)
     return adata
 
@@ -276,6 +285,7 @@ def atac_10xpbmc5k():
         download_url(url,
                      fullpath,
                      desc=filename)
+        print(f'Downloaded to {filepath}.')
     adata = read_h5ad(fullpath)
     return adata
 
@@ -301,6 +311,7 @@ def atac_cusanovich2018_subset():
         download_url(url,
                      fullpath,
                      desc=filename)
+        print(f'Downloaded to {filepath}.')
     adata = read_h5ad(fullpath)
     return adata
 
@@ -327,6 +338,7 @@ def atac_chen2019():
         download_url(url,
                      fullpath,
                      desc=filename)
+        print(f'Downloaded to {filepath}.')
     adata = read_h5ad(fullpath)
     return adata
 
@@ -356,12 +368,14 @@ def multiome_ma2020_fig4():
         download_url(url_rna,
                      fullpath_rna,
                      desc=filename_rna)
+        print(f'Downloaded to {filepath}.')
     if(not os.path.exists(fullpath_atac)):
         print('Downloading data ...')
         os.makedirs(filepath, exist_ok=True)
         download_url(url_atac,
                      fullpath_atac,
                      desc=filename_atac)
+        print(f'Downloaded to {filepath}.')
     adata_rna = read_h5ad(fullpath_rna)
     adata_atac = read_h5ad(fullpath_atac)
     dict_adata = {'rna': adata_rna,
@@ -395,12 +409,14 @@ def multiome_chen2019():
         download_url(url_rna,
                      fullpath_rna,
                      desc=filename_rna)
+        print(f'Downloaded to {filepath}.')
     if(not os.path.exists(fullpath_atac)):
         print('Downloading data ...')
         os.makedirs(filepath, exist_ok=True)
         download_url(url_atac,
                      fullpath_atac,
                      desc=filename_atac)
+        print(f'Downloaded to {filepath}.')
     adata_rna = read_h5ad(fullpath_rna)
     adata_atac = read_h5ad(fullpath_atac)
     dict_adata = {'rna': adata_rna,
@@ -431,12 +447,14 @@ def multiome_10xpbmc10k():
         download_url(url_rna,
                      fullpath_rna,
                      desc=filename_rna)
+        print(f'Downloaded to {filepath}.')
     if(not os.path.exists(fullpath_atac)):
         print('Downloading data ...')
         os.makedirs(filepath, exist_ok=True)
         download_url(url_atac,
                      fullpath_atac,
                      desc=filename_atac)
+        print(f'Downloaded to {filepath}.')
     adata_rna = read_h5ad(fullpath_rna)
     adata_atac = read_h5ad(fullpath_atac)
     dict_adata = {'rna': adata_rna,

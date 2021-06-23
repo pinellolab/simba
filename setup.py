@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 from pathlib import Path
 setup(
     name='simba',
-    version='0.1a',
+    version='1.0',
     author='Huidong Chen',
     athor_email='huidong.chen AT mgh DOT harvard DOT edu',
     license='BSD',

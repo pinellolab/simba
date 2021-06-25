@@ -35,9 +35,8 @@ SIMBA is a method to embed cells along with their defining features such as gene
    :maxdepth: 1
    :caption: Tutorials
 
-   10xpbmc_rna_all_genes
-   buenrostro2018_using_peaks_sequences_v3
-   scATAC-seq analysis
+   rna_10xpmbc_all_genes
+   atac_buenrostro2018_peaks_and_sequences
    Multimodal analysis
    Batch correction
    Multi-omics integration

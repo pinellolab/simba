@@ -129,7 +129,7 @@ class SimbaConfig:
 
                 # Training
                 num_epochs=10,
-                workers=12,
+                workers=4,
                 num_batch_negs=50,
                 num_uniform_negs=50,
                 loss_fn='softmax',

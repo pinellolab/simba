@@ -139,3 +139,41 @@ def load_graph_stats(path=None):
         dict_graph_stats = json.load(tf)
     dirname = os.path.basename(path)
     settings.graph_stats[dirname] = dict_graph_stats.copy()
+
+
+def write_bed(adata,
+              use_top_pcs=True,
+              filename=None
+              ):
+    """Write peaks into .bed file
+
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix with peaks as variables.
+    use_top_pcs: `bool`, optional (default: True)
+        Use top-PCs-associated features
+    filename: `str`, optional (default: None)
+        Filename name for peaks.
+        By default, a file named 'peaks.bed' will be written to
+        `.settings.workdir`
+    """
+    if filename is None:
+        filename = os.path.join(settings.workdir, 'peaks.bed')
+    for x in ['chr', 'start', 'end']:
+        if x not in adata.var_keys():
+            raise ValueError(f"could not find {x} in `adata.var_keys()`")
+    if use_top_pcs:
+        assert 'top_pcs' in adata.var_keys(), \
+            "please run `si.pp.select_pcs_features()` first"
+        peaks_selected = adata.var[
+            adata.var['top_pcs']][['chr', 'start', 'end']]
+    else:
+        peaks_selected = adata.var[
+            ['chr', 'start', 'end']]
+    peaks_selected.to_csv(filename,
+                          sep='\t',
+                          header=False,
+                          index=False)
+    fp, fn = os.path.split(filename)
+    print(f'"{fn}" was written to "{fp}".')

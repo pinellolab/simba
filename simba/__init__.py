@@ -6,8 +6,8 @@ from . import tools as tl
 from . import plotting as pl
 from .readwrite import *
 from . import datasets
+from ._version import __version__
 
-__version__ = "0.1a"
 
 import sys
 # needed when building doc (borrowed from scanpy)

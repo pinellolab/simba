@@ -353,6 +353,8 @@ def entity_barcode(adata_cmp,
 def query(adata,
           comp1=1,
           comp2=2,
+          obsm='X_umap',
+          layer=None,
           color=None,
           dict_palette=None,
           size=8,
@@ -367,8 +369,8 @@ def query(adata,
           fig_ncol=3,
           fig_legend_ncol=1,
           fig_legend_order=None,
-          alpha=0.8,
-          alpha_bg=0.5,
+          alpha=0.9,
+          alpha_bg=0.3,
           pad=1.08,
           w_pad=None,
           h_pad=None,
@@ -393,15 +395,31 @@ def query(adata,
     query_output = adata.uns['query']['output']
     nn = query_output.index.tolist()  # nearest neighbors
     query_params = adata.uns['query']['params']
-    obsm = query_params['obsm']
-    layer = query_params['layer']
-    pin = query_params['pin']
+    query_obsm = query_params['obsm']
+    query_layer = query_params['layer']
+    entity = query_params['entity']
     use_radius = query_params['use_radius']
     r = query_params['r']
-    if(obsm is not None):
+    if (obsm == query_obsm) and (layer == query_layer):
+        pin = query_params['pin']
+    else:
+        if entity is not None:
+            if obsm is not None:
+                pin = adata[entity, :].obsm[obsm].copy()
+            elif layer is not None:
+                pin = adata[entity, :].layers[layer].copy()
+            else:
+                pin = adata[entity, :].X.copy()
+        else:
+            pin = None
+
+    if(sum(list(map(lambda x: x is not None,
+                    [layer, obsm]))) == 2):
+        raise ValueError("Only one of `layer` and `obsm` can be used")
+    if obsm is not None:
         X = adata.obsm[obsm].copy()
         X_nn = adata[nn, :].obsm[obsm].copy()
-    elif(layer is not None):
+    elif layer is not None:
         X = adata.layers[layer].copy()
         X_nn = adata[nn, :].layers[layer].copy()
     else:
@@ -490,18 +508,19 @@ def query(adata,
                    color='#AE6C68',
                    alpha=alpha,
                    lw=0)
-        ax.scatter(pin[:, 0],
-                   pin[:, 1],
-                   s=20*size,
-                   marker='+',
-                   color='#B33831')
-        if use_radius:
-            circle = plt.Circle((pin[:, 0],
-                                 pin[:, 1]),
-                                radius=r,
-                                color='#B33831',
-                                fill=False)
-            ax.add_artist(circle)
+        if pin is not None:
+            ax.scatter(pin[:, 0],
+                       pin[:, 1],
+                       s=20*size,
+                       marker='+',
+                       color='#B33831')
+            if use_radius:
+                circle = plt.Circle((pin[:, 0],
+                                     pin[:, 1]),
+                                    radius=r,
+                                    color='#B33831',
+                                    fill=False)
+                ax.add_artist(circle)
         if show_texts:
             plt_texts = [ax.text(df_plot_nn[f'Dim {comp1}'][t],
                                  df_plot_nn[f'Dim {comp2}'][t],

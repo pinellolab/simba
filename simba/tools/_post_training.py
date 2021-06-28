@@ -381,7 +381,8 @@ def query(adata,
                     np.where(np.isin(adata.obs[anno_filter], filters))[0]
             else:
                 raise ValueError(f'could not find {anno_filter}')
-
+        else:
+            ids_filters = np.arange(X.shape[0])
         kdt = KDTree(X[ids_filters, :], metric=metric, **kwargs)
         dist, ind = kdt.query(pin,
                               k=k,

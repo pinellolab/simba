@@ -354,8 +354,8 @@ def multiome_ma2020_fig4():
     dict_adata: `dict`
         A dictionary of anndata objects
     """
-    url_rna = 'https://www.dropbox.com/s/7px0meac4vcg5iv/rna_seq_fig4.h5ad?dl=1'
-    url_atac = 'https://www.dropbox.com/s/utrp4fmgapz5yty/atac_seq_fig4.h5ad?dl=1'
+    url_rna = 'https://www.dropbox.com/s/gmmf77l8kzle6o7/rna_seq_fig4.h5ad?dl=1'
+    url_atac = 'https://www.dropbox.com/s/ts0v2y2m5fcumcb/atac_seq_fig4.h5ad?dl=1'
     filename_rna = 'multiome_ma2020_fig4_rna.h5ad'
     filename_atac = 'multiome_ma2020_fig4_atac.h5ad'
     filepath = os.path.join(settings.workdir, 'data')

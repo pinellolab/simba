@@ -33,15 +33,26 @@ def log_transform(adata):
 
 
 def binarize(adata,
-             threshold=1e-5,
-             copy=True):
+             threshold=1e-5):
     """Binarize an array.
+    Parameters
+    ----------
+    adata: AnnData
+        Annotated data matrix.
+    threshold: `float`, optional (default: 1e-5)
+        Values below or equal to this are replaced by 0, above it by 1.
+
+    Returns
+    -------
+    updates `adata` with the following fields.
+    X: `numpy.ndarray` (`adata.X`)
+        Store #observations × #var_genes binarized data matrix.
     """
     if(not issparse(adata.X)):
         adata.X = csr_matrix(adata.X)
     adata.X = preprocessing.binarize(adata.X,
                                      threshold=threshold,
-                                     copy=copy)
+                                     copy=True)
 
 
 def normalize(adata,

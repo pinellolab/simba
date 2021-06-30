@@ -20,11 +20,26 @@ def select_variable_genes(adata,
 
     Parameters
     ----------
-
+    adata: AnnData
+        Annotated data matrix.
+    layer: `str`, optional (default: 'raw')
+        The layer to use for calculating variable genes.
+    span: `float`, optional (default: 0.3)
+        Loess smoothing factor
+    n_top_genes: `int`, optional (default: 2000)
+        The number of genes to keep
 
     Returns
     -------
-
+    updates `adata` with the following fields.
+    variances_norm: `float`, (`adata.var['variances_norm']`)
+        Normalized variance per gene
+    variances: `float`, (`adata.var['variances']`)
+        Variance per gene.
+    means: `float`, (`adata.var['means']`)
+        Means per gene
+    highly_variable: `bool` (`adata.var['highly_variable']`)
+        Indicator of variable genes
     """
 
     if layer is None:

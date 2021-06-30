@@ -53,10 +53,9 @@ class SimbaConfig:
         rc: `dict`,optional (default: None)
             rc settings properties.
             Parameter mappings to override the values in the preset style.
-            Please see https://matplotlib.org/tutorials/introductory/customizing.html#a-sample-matplotlibrc-file
+            Please see "`matplotlibrc file
+            <https://matplotlib.org/tutorials/introductory/customizing.html#a-sample-matplotlibrc-file>`__"
         """
-        # mpl.rcParams.update(mpl.rcParamsDefault)
-
         sns.set(context=context,
                 style=style,
                 palette=palette,
@@ -102,10 +101,13 @@ class SimbaConfig:
         print('Saving results in: %s' % workdir)
 
     def set_pbg_params(self, config=None):
-        """Reset PBG parameters
+        """Set PBG parameters
 
         Parameters
         ----------
+        config : `dict`, optional (default: None)
+            PBG training configuration parameters.
+            By default it resets parameters to the default setting.
 
         Returns
         -------

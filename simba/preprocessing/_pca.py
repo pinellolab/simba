@@ -82,6 +82,31 @@ def select_pcs(adata,
                min_elbow=None,
                **kwargs):
     """select top PCs based on variance_ratio
+
+    Parameters
+    ----------
+    n_pcs: `int`, optional (default: None)
+        If n_pcs is None,
+        the number of PCs will be automatically selected with "`kneed
+        <https://kneed.readthedocs.io/>`__"
+    S : `float`, optional (default: 1)
+        Sensitivity
+    min_elbow: `int`, optional (default: None)
+        The minimum elbow location
+        By default, it is n_components/10
+    curve: `str`, optional (default: 'convex')
+        Choose from {'convex','concave'}
+        If 'concave', algorithm will detect knees,
+        If 'convex', algorithm will detect elbows.
+    direction: `str`, optional (default: 'decreasing')
+        Choose from {'decreasing','increasing'}
+    online: `bool`, optional (default: False)
+        kneed will correct old knee points if True,
+        kneed will return first knee if False.
+    **kwargs: `dict`, optional
+        Extra arguments to KneeLocator.
+    Returns
+
     """
     if(n_pcs is None):
         n_components = adata.obsm['X_pca'].shape[1]
@@ -113,8 +138,9 @@ def select_pcs_features(adata,
     ----------
     S : `float`, optional (default: 10)
         Sensitivity
-    min_elbow: `int`, optional (default: 0)
-        The minimum elbow location
+    min_elbow: `int`, optional (default: None)
+        The minimum elbow location.
+        By default, it is #features/6
     curve: `str`, optional (default: 'convex')
         Choose from {'convex','concave'}
         If 'concave', algorithm will detect knees,

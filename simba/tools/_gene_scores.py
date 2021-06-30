@@ -285,10 +285,18 @@ def gene_scores(adata,
 
     Parameters
     ----------
+    adata: AnnData
+        Annotated data matrix.
+    genome: `str`
+        Reference genome. Choose from {'hg19', 'hg38', 'mm9', 'mm10'}
+    gene_anno: `str`
+        
 
     Returns
     -------
-
+    updates `adata` with the following fields.
+    X: `numpy.ndarray` (`adata.X`)
+        Store #observations × #var_genes normalized data matrix.
     """
     GS = GeneScores(adata,
                     genome,

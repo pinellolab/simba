@@ -32,8 +32,13 @@ release = simba.__version__
 
 # notebooks_url = "https://github.com/huidongchen/simba_tutorials/raw/main/"
 # notebooks = [
-#     "10xpbmc_rna_all_genes.ipynb",
-#     "buenrostro2018_using_peaks_sequences_v3.ipynb",
+#     "rna_10xpmbc_all_genes",
+#     "atac_buenrostro2018_peaks_and_sequences",
+#     "multiome_shareseq",
+#     "multiome_shareseq_GRN",
+#     "rna_mouse_atlas",
+#     "rna_human_pancreas",
+#     "multiome_10xpmbc10k_integration",
 # ]
 # for nb in notebooks:
 #     try:

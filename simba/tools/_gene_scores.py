@@ -147,7 +147,10 @@ class GeneScores:
 
         """
         adata = self.adata
-        gene_ann = self._read_gene_anno()
+        if self.gene_anno is None:
+            gene_ann = self._read_gene_anno()
+        else:
+            gene_ann = self.gene_anno
 
         df_gene_ann = gene_ann.copy()
         df_gene_ann.index = _uniquify(df_gene_ann['symbol'].values)

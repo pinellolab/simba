@@ -331,11 +331,13 @@ def query(adata,
         The layer to use for calculating the distance.
     metric : `str`, optional (default: "euclidean")
         The distance metric to use.
+        More metrics can be found at "`DistanceMetric class
+        <https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.DistanceMetric.html>`__"
     anno_filter : `str`, optional (default: None)
         The annotation of filter to use.
         It should be one of ``adata.obs_keys()``
     filters : `list`, optional (default: None)
-        The annotation of filter to use.
+        The filters to use.
         It should be a list of values in ``adata.obs[anno_filter]``
     entity : `list`, optional (default: None)
         Query entity. It needs to be in ``adata.obs_names()``
@@ -411,8 +413,8 @@ def query(adata,
                 raise ValueError(f'could not find {anno_filter}')
         df_output = df_output.sort_values(by='distance')
     else:
-        assert (metric in ['euclidean', 'dot_product']),\
-                    "`metric` must be one of ['euclidean','dot_product']"
+        # assert (metric in ['euclidean', 'dot_product']),\
+        #             "`metric` must be one of ['euclidean','dot_product']"
         if anno_filter is not None:
             if anno_filter in adata.obs_keys():
                 if filters is None:
@@ -483,6 +485,46 @@ def find_master_regulators(adata_all,
                            cutoff_motif_entropy=None,
                            ):
     """Find all the master regulators
+
+    Parameters
+    ----------
+    adata_all : `AnnData`
+        Anndata object storing SIMBA embedding of all entities.
+    list_tf_motif : `list`
+        A list of TF motifs. They should match TF motifs in `list_tf_gene`.
+    list_tf_gene : `list`
+        A list TF genes. They should match TF motifs in `list_tf_motif`.
+    metric : `str`, optional (default: "euclidean")
+        The distance metric to use. It can be ‘braycurtis’, ‘canberra’,
+        ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’,
+        ‘hamming’, ‘jaccard’, ‘jensenshannon’, ‘kulsinski’, ‘mahalanobis’,
+        ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’,
+        ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘wminkowski’, ‘yule’.
+    anno_filter : `str`, optional (default: None)
+        The annotation of filter to use.
+        It should be one of ``adata.obs_keys()``
+    filter_gene : `str`, optional (default: None)
+        The filter for gene.
+        It should be in ``adata.obs[anno_filter]``
+    metrics_gene : `pandas.DataFrame`, optional (default: None)
+        SIMBA metrics for genes.
+    metrics_motif : `pandas.DataFrame`, optional (default: None)
+        SIMBA metrics for motifs.
+    cutoff_gene_max, cutoff_motif_max: `float`
+        cutoff of SIMBA metric `max value` for genes and motifs
+    cutoff_gene_gini,  cutoff_motif_gini: `float`
+        cutoff of SIMBA metric `Gini index` for genes and motifs
+    cutoff_gene_gini,  cutoff_motif_gini: `float`
+        cutoff of SIMBA metric `Gini index` for genes and motifs
+    cutoff_gene_std,  cutoff_motif_std: `float`
+        cutoff of SIMBA metric `standard deviation` for genes and motifs
+    cutoff_gene_entropy,  cutoff_motif_entropy: `float`
+        cutoff of SIMBA metric `entropy` for genes and motifs
+
+    Returns
+    -------
+    df_MR: `pandas.DataFrame`
+        Dataframe of master regulators
     """
     if(sum(list(map(lambda x: x is None,
                     [list_tf_motif, list_tf_gene]))) > 0):
@@ -587,6 +629,55 @@ def find_target_genes(adata_all,
                       use_precomputed=True,
                       ):
     """For a given TF, infer its target genes
+
+    Parameters
+    ----------
+    adata_all : `AnnData`
+        Anndata object storing SIMBA embedding of all entities.
+    adata_PM : `AnnData`
+        Peaks-by-motifs anndata object.
+    list_tf_motif : `list`
+        A list of TF motifs. They should match TF motifs in `list_tf_gene`.
+    list_tf_gene : `list`
+        A list TF genes. They should match TF motifs in `list_tf_motif`.
+    adata_CP : `AnnData`, optional (default: None)
+        When ``use_precomputed`` is True, it can be set None
+    metric : `str`, optional (default: "euclidean")
+        The distance metric to use. It can be ‘braycurtis’, ‘canberra’,
+        ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’,
+        ‘hamming’, ‘jaccard’, ‘jensenshannon’, ‘kulsinski’, ‘mahalanobis’,
+        ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’,
+        ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘wminkowski’, ‘yule’.
+    anno_filter : `str`, optional (default: None)
+        The annotation of filter to use.
+        It should be one of ``adata.obs_keys()``
+    filter_gene : `str`, optional (default: None)
+        The filter for gene.
+        It should be in ``adata.obs[anno_filter]``
+    filter_peak : `str`, optional (default: None)
+        The filter for peak.
+        It should be in ``adata.obs[anno_filter]``
+    n_genes : `int`, optional (default: 200)
+        The number of neighbor genes to consider initially
+        around TF gene or TF motif
+    cutoff_gene : `float`, optional (default: None)
+        Cutoff of "average_rank"
+    cutoff_peak : `int`, optional (default: 1000)
+        Cutoff for peaks-associated ranks, including
+        "rank_peak_to_gene" and "rank_peak_to_TFmotif".
+    use_precomputed : `bool`, optional (default: True)
+        Distances calculated between genes, peaks, and motifs
+        (stored in `adata.uns['tf_targets']`) will be imported
+
+    Returns
+    -------
+    dict_tf_targets : `dict`
+        Target genes for each TF.
+
+    updates `adata` with the following fields.
+
+    tf_targets: `dict`, (`adata.uns['tf_targets']`)
+        Distances calculated between genes, peaks, and motifs
     """
     if(sum(list(map(lambda x: x is None,
                     [list_tf_motif, list_tf_gene]))) > 0):

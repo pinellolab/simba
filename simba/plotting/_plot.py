@@ -39,8 +39,44 @@ def violin(adata,
            fig_name='plot_violin.pdf',
            **kwargs):
     """Violin plot
-    """
 
+    Parameters
+    ----------
+    adata : `Anndata`
+        Annotated data matrix.
+    list_obs : `list`, optional (default: None)
+        A list of observations to plot.
+    list_var : `list`, optional (default: None)
+        A list of variables to plot.
+    jitter : `float`, optional (default: 0.4)
+        Amount of jitter to apply.
+    size : `int`, optional (default: 1)
+        The marker size
+    log : `bool`, optional (default: False)
+        If True, natural logarithm transformation will be performed.
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots,
+        as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots,
+        as a fraction of the font size. Defaults to pad.
+    fig_size: `tuple`, optional (default: (3,3))
+        figure size.
+    fig_ncol: `int`, optional (default: 3)
+        the number of columns of the figure panel
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_path: `str`, optional (default: None)
+        If save_fig is True, specify figure path.
+    fig_name: `str`, optional (default: 'plot_violin.pdf')
+        if `save_fig` is True, specify figure name.
+    **kwargs: `dict`, optional
+        Other keyword arguments are passed through to ``sns.violinplot``
+
+    Returns
+    -------
+    None
+    """
     if fig_size is None:
         fig_size = mpl.rcParams['figure.figsize']
     if save_fig is None:

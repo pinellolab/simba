@@ -38,8 +38,8 @@ def pbg_metrics(metrics=['mrr'],
     Parameters
     ----------
     metrics: `list`, optional (default: ['mrr])
-        Evalulation metrics for PBG training.
-        Possible metrics:
+        Evalulation metrics for PBG training. Possible metrics:
+
         - 'pos_rank' : the average of the ranks of all positives
           (lower is better, best is 1).
         - 'mrr' : the average of the reciprocal of the ranks of all positives
@@ -162,6 +162,7 @@ def entity_metrics(adata_cmp,
         Number of contour levels or values to draw contours at
     thresh: `float`, optional ([0, 1], default: 0.05)
         Lowest iso-proportion level at which to draw a contour line.
+
     Returns
     -------
     None

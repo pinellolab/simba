@@ -288,18 +288,47 @@ def gene_scores(adata,
 
     Parameters
     ----------
-    adata: AnnData
+    adata : AnnData
         Annotated data matrix.
-    genome: `str`
+    genome : `str`
         Reference genome. Choose from {'hg19', 'hg38', 'mm9', 'mm10'}
-    gene_anno: `str`
-        
+    gene_anno : `pandas.DataFrame`, optional (default: None)
+        Dataframe of gene annotation.
+        If None, built-in gene annotation will be used depending on `genome`;
+        If provided, custom gene annotation will be used instead.
+    tss_upstream : `int`, optional (default: 1e5)
+        The number of base pairs upstream of TSS
+    tss_downsteam : `int`, optional (default: 1e5)
+        The number of base pairs downstream of TSS
+    gb_upstream : `int`, optional (default: 5000)
+        The number of base pairs upstream by which gene body is extended.
+        Peaks within the extended gene body are given the weight of 1.
+    cutoff_weight : `float`, optional (default: 1)
+        Weight cutoff for peaks
+    use_top_pcs : `bool`, optional (default: True)
+        If True, only peaks associated with top PCs will be used
+    use_precomputed : `bool`, optional (default: True)
+        If True, overlap bewteen peaks and genes
+        (stored in `adata.uns['gene_scores']['overlap']`) will be imported
+    use_gene_weigt : `bool`, optional (default: True)
+        If True, for each gene, the number of peaks assigned to it
+        will be rescaled based on gene size
+    min_w : `int`, optional (default: 1)
+        The minimum weight for each gene.
+        Only valid if `use_gene_weigt` is True
+    max_w : `int`, optional (default: 5)
+        The maximum weight for each gene.
+        Only valid if `use_gene_weigt` is True
 
     Returns
     -------
+    adata_new: AnnData
+        Annotated data matrix.
+        Stores #cells x #genes gene score matrix
+
     updates `adata` with the following fields.
-    X: `numpy.ndarray` (`adata.X`)
-        Store #observations × #var_genes normalized data matrix.
+    overlap: `pandas.DataFrame`, (`adata.uns['gene_scores']['overlap']`)
+        Dataframe of overlap between peaks and genes
     """
     GS = GeneScores(adata,
                     genome,

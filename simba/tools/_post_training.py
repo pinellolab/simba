@@ -205,21 +205,21 @@ def embed(adata_ref,
 
     Parameters
     ----------
-        adata_ref: `AnnData`
-            Reference anndata.
-        list_adata_query: `list`
-            A list query anndata objects
-        T: `float`
-            Temperature parameter shared by all query adata objects.
-            It controls the output probability distribution.
-            when T goes to inf, it becomes a discrete uniform distribution,
-            each query becomes the average of reference;
-            when T goes to zero, softargmax converges to arg max,
-            each query is approximately the best of reference.
-        list_T: `list`, (default: None)
-            A list of temperature parameters.
-            It should correspond to each of query data.
-            Once it's specified, it will override `T`.
+    adata_ref: `AnnData`
+        Reference anndata.
+    list_adata_query: `list`
+        A list query anndata objects
+    T: `float`
+        Temperature parameter shared by all query adata objects.
+        It controls the output probability distribution.
+        when T goes to inf, it becomes a discrete uniform distribution,
+        each query becomes the average of reference;
+        when T goes to zero, softargmax converges to arg max,
+        each query is approximately the best of reference.
+    list_T: `list`, (default: None)
+        A list of temperature parameters.
+        It should correspond to each of query data.
+        Once it's specified, it will override `T`.
 
     Returns
     -------
@@ -248,11 +248,13 @@ def compare_entities(adata_ref,
     """Compare the embeddings of two entities by calculating
 
     the following values between reference and query entities:
+
     - dot product
     - normalized dot product
     - softmax probability
 
-    and the following metrics for each query entity
+    and the following metrics for each query entity:
+
     - max (The average maximum dot product of top-rank reference entities,
       based on normalized dot product)
     - std (standard deviation of reference entities,
@@ -308,8 +310,8 @@ def query(adata,
           obsm='X_umap',
           layer=None,
           metric='euclidean',
-          filters=None,
           anno_filter=None,
+          filters=None,
           entity=None,
           pin=None,
           k=20,
@@ -318,6 +320,44 @@ def query(adata,
           **kwargs
           ):
     """Query the "database" of entites
+
+    Parameters
+    ----------
+    adata : `AnnData`
+        Anndata object to query.
+    obsm : `str`, optional (default: "X_umap")
+        The multi-dimensional annotation to use for calculating the distance.
+    layer : `str`, optional (default: None)
+        The layer to use for calculating the distance.
+    metric : `str`, optional (default: "euclidean")
+        The distance metric to use.
+    anno_filter : `str`, optional (default: None)
+        The annotation of filter to use.
+        It should be one of ``adata.obs_keys()``
+    filters : `list`, optional (default: None)
+        The annotation of filter to use.
+        It should be a list of values in ``adata.obs[anno_filter]``
+    entity : `list`, optional (default: None)
+        Query entity. It needs to be in ``adata.obs_names()``
+    k : `int`, optional (default: 20)
+        The number of nearest neighbors to return.
+        Only valid if ``use_radius`` is False
+    use_radius : `bool`, optional (default: False)
+        If True, query for neighbors within a given radius
+    r: `float`, optional (default: None)
+        Distance within which neighbors are returned.
+        If None, it will be estimated based the range of the space.
+    **kwargs: `dict`, optional
+        Extra arguments to ``sklearn.neighbors.KDTree``.
+
+    Returns
+    -------
+    updates `adata` with the following fields.
+
+    params: `dict`, (`adata.uns['query']['params']`)
+        Parameters used for the query
+    output: `pandas.DataFrame`, (`adata.uns['query']['output']`)
+        Query result.
     """
     if(sum(list(map(lambda x: x is None,
                     [entity, pin]))) == 2):

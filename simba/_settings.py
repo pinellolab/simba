@@ -34,11 +34,11 @@ class SimbaConfig:
         Parameters
         ----------
         context : string or dict
-            Plotting context parameters, see seaborn :func:`plotting_context
+            Plotting context parameters, see `seaborn.plotting_context`
         style: `string`,optional (default: 'white')
-            Axes style parameters, see seaborn :func:`axes_style`
+            Axes style parameters, see `seaborn.axes_style`
         palette : string or sequence
-            Color palette, see seaborn :func:`color_palette`
+            Color palette, see `seaborn.color_palette`
         font_scale: `float`, optional (default: 1.3)
             Separate scaling factor to independently
             scale the size of the font elements.

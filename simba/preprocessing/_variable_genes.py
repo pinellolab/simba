@@ -32,6 +32,7 @@ def select_variable_genes(adata,
     Returns
     -------
     updates `adata` with the following fields.
+
     variances_norm: `float`, (`adata.var['variances_norm']`)
         Normalized variance per gene
     variances: `float`, (`adata.var['variances']`)
@@ -41,7 +42,6 @@ def select_variable_genes(adata,
     highly_variable: `bool` (`adata.var['highly_variable']`)
         Indicator of variable genes
     """
-
     if layer is None:
         X = adata.X
     else:

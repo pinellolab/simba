@@ -54,12 +54,29 @@ def pbg_metrics(metrics=['mrr'],
            among their negatives
            (higher is better, best is 1).
         - 'auc' : Area Under the Curve (AUC)
-
+    path_emb: `str`, optional (default: None)
+        Path to directory for pbg embedding model.
+        If None, .settings.pbg_params['checkpoint_path'] will be used.
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots,
+        as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots,
+        as a fraction of the font size. Defaults to pad.
+    fig_size: `tuple`, optional (default: (5, 3))
+        figure size.
+    fig_ncol: `int`, optional (default: 1)
+        the number of columns of the figure panel
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_path: `str`, optional (default: None)
+        If save_fig is True, specify figure path.
+    fig_name: `str`, optional (default: 'plot_umap.pdf')
+        if save_fig is True, specify figure name.
     Returns
     -------
     None
     """
-
     if save_fig is None:
         save_fig = settings.save_fig
     if fig_path is None:
@@ -156,18 +173,49 @@ def entity_metrics(adata_cmp,
         based on softmax probability)
         - entropy (The entropy of reference entities,
         based on softmax probability)
+    show_texts : `bool`, optional (default: True)
+        If True, text annotation will be shown.
+    show_cutoff : `bool`, optional (default: False)
+        If True, cutoff of `x` and `y` will be shown.
+    show_contour : `bool`, optional (default: True)
+        If True, the plot will overlaid with contours
     texts: `list` optional (default: None)
         Entity names to plot
+    text_size : `int`, optional (default: 10)
+        The text size
+    text_expand : `tuple`, optional (default: (1.05, 1.2))
+        Two multipliers (x, y) by which to expand the bounding box of texts
+        when repelling them from each other/points/other objects.
+    cutoff_x : `float`, optional (default: 0)
+        Cutoff of axis x
+    cutoff_y : `float`, optional (default: 0)
+        Cutoff of axis y
     levels: `int`, optional (default: 6)
         Number of contour levels or values to draw contours at
     thresh: `float`, optional ([0, 1], default: 0.05)
         Lowest iso-proportion level at which to draw a contour line.
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots,
+        as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots,
+        as a fraction of the font size. Defaults to pad.
+    fig_size: `tuple`, optional (default: None)
+        figure size.
+        If None, `mpl.rcParams['figure.figsize']` will be used.
+    fig_ncol: `int`, optional (default: 1)
+        the number of columns of the figure panel
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_path: `str`, optional (default: None)
+        If save_fig is True, specify figure path.
+    fig_name: `str`, optional (default: 'plot_umap.pdf')
+        if save_fig is True, specify figure name.
 
     Returns
     -------
     None
     """
-
     if fig_size is None:
         fig_size = mpl.rcParams['figure.figsize']
     if save_fig is None:
@@ -253,35 +301,64 @@ def entity_barcode(adata_cmp,
                    linewidths=1,
                    show_cutoff=False,
                    cutoff=0.5,
+                   min_rank=None,
+                   max_rank=None,
                    fig_size=(6, 2),
                    fig_ncol=1,
                    save_fig=None,
                    fig_path=None,
-                   fig_name='barcode.pdf',
+                   fig_name='plot_barcode.pdf',
                    pad=1.08,
                    w_pad=None,
                    h_pad=None,
-                   min_rank=None,
-                   max_rank=None,
                    **kwargs
                    ):
     """Plot query entity barcode
 
     Parameters
     ----------
-    adata_cmp: `AnnData`
+    adata_cmp : `AnnData`
         Anndata object from `compare_entities`
-    entities: `list`
+    entities : `list`
         Entity names to plot.
-    anno_ref:  `str`
+    anno_ref :  `str`
         Annotation used for reference entity
-    palette: `dict`
+    layer : `str`, optional (default: 'softmax')
+        Layer to use make barcode plots
+    palette : `dict`, optional (default: None)
         Color palette used for `anno_ref`
+    alpha : `float`, optional (default: 0.8)
+        0.0 transparent through 1.0 opaque
+    linewidths : `int`, optional (default: 1)
+        The width of each line.
+    show_cutoff : `bool`, optional (default: True)
+        If True, cutoff will be shown
+    cutoff : `float`, optional (default: 0.5)
+        Cutoff value for y axis
+    min_rank : `int`, optional (default: None)
+        Specify the minimum rank of observations to show.
+        If None, `min_rank` is set to 0.
+    max_rank : `int`, optional (default: None)
+        Specify the maximum rank of observations to show.
+        If None, `max_rank` is set to the number of observations.
+    fig_size: `tuple`, optional (default: (6,2))
+        figure size.
+    fig_ncol: `int`, optional (default: 1)
+        the number of columns of the figure panel
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_path: `str`, optional (default: None)
+        If save_fig is True, specify figure path.
+    fig_name: `str`, optional (default: 'plot_barcode.pdf')
+        if `save_fig` is True, specify figure name.
+    **kwargs: `dict`, optional
+        Other keyword arguments are passed through to
+        ``mpl.collections.LineCollection``
+
     Returns
     -------
     None
     """
-
     if fig_size is None:
         fig_size = mpl.rcParams['figure.figsize']
     if save_fig is None:
@@ -382,6 +459,85 @@ def query(adata,
           vmax=None,
           **kwargs):
     """Plot query output
+
+    Parameters
+    ----------
+    adata : `Anndata`
+        Annotated data matrix.
+    comp1 : `int`, optional (default: 1)
+        Component used for x axis.
+    comp2 : `int`, optional (default: 2)
+        Component used for y axis.
+    obsm : `str`, optional (default: 'X_umap')
+        The field to use for plotting
+    layer : `str`, optional (default: None)
+        The layer to use for plotting
+    color: `list`, optional (default: None)
+        A list of variables that will produce points with different colors.
+        e.g. color = ['anno1', 'anno2']
+    dict_palette: `dict`,optional (default: None)
+        A dictionary of palettes for different variables in `color`.
+        Only valid for categorical/string variables
+        e.g. dict_palette = {'ann1': {},'ann2': {}}
+    size: `int` (default: 8)
+        Point size.
+    drawing_order: `str` (default: 'random')
+        The order in which values are plotted, This can be
+        one of the following values
+
+        - 'original': plot points in the same order as in input dataframe
+        - 'sorted' : plot points with higher values on top.
+        - 'random' : plot points in a random order
+    dict_drawing_order: `dict`,optional (default: None)
+        A dictionary of drawing_order for different variables in `color`.
+        Only valid for categorical/string variables
+        e.g. dict_drawing_order = {'ann1': 'original','ann2': 'sorted'}
+    show_texts : `bool`, optional (default: False)
+        If True, text annotation will be shown.
+    text_size : `int`, optional (default: 10)
+        The text size.
+    texts: `list` optional (default: None)
+        Point names to plot.
+    text_expand : `tuple`, optional (default: (1.05, 1.2))
+        Two multipliers (x, y) by which to expand the bounding box of texts
+        when repelling them from each other/points/other objects.
+    n_texts : `int`, optional (default: 8)
+        The number of texts to plot.
+    fig_size: `tuple`, optional (default: (4, 4))
+        figure size.
+    fig_ncol: `int`, optional (default: 3)
+        the number of columns of the figure panel
+    fig_legend_order: `dict`,optional (default: None)
+        Specified order for the appearance of the annotation keys.
+        Only valid for categorical/string variable
+        e.g. fig_legend_order = {'ann1':['a','b','c'],'ann2':['aa','bb','cc']}
+    fig_legend_ncol: `int`, optional (default: 1)
+        The number of columns that the legend has.
+    vmin,vmax: `float`, optional (default: None)
+        The min and max values are used to normalize continuous values.
+        If None, the respective min and max of continuous values is used.
+    alpha: `float`, optional (default: 0.9)
+        The alpha blending value, between 0 (transparent) and 1 (opaque)
+        for returned points.
+    alpha_bg: `float`, optional (default: 0.3)
+        The alpha blending value, between 0 (transparent) and 1 (opaque)
+        for background points
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots,
+        as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots,
+        as a fraction of the font size. Defaults to pad.
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_path: `str`, optional (default: None)
+        If save_fig is True, specify figure path.
+    fig_name: `str`, optional (default: 'plot_query.pdf')
+        if save_fig is True, specify figure name.
+
+    Returns
+    -------
+    None
     """
     if fig_size is None:
         fig_size = mpl.rcParams['figure.figsize']

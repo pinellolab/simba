@@ -173,7 +173,6 @@ def hist(adata,
          list_obs=None,
          list_var=None,
          kde=True,
-         size=1,
          log=False,
          pad=1.08,
          w_pad=None,
@@ -182,12 +181,47 @@ def hist(adata,
          fig_ncol=3,
          save_fig=False,
          fig_path=None,
-         fig_name='plot_violin.pdf',
+         fig_name='plot_histogram.pdf',
          **kwargs
          ):
     """histogram plot
-    """
 
+    Parameters
+    ----------
+    adata : `Anndata`
+        Annotated data matrix.
+    list_obs : `list`, optional (default: None)
+        A list of observations to plot.
+    list_var : `list`, optional (default: None)
+        A list of variables to plot.
+    kde : `bool`, optional (default: True)
+        If True, compute a kernel density estimate to smooth the distribution
+        and show on the plot
+    log : `bool`, optional (default: False)
+        If True, natural logarithm transformation will be performed.
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots,
+        as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots,
+        as a fraction of the font size. Defaults to pad.
+    fig_size: `tuple`, optional (default: (3,3))
+        figure size.
+    fig_ncol: `int`, optional (default: 3)
+        the number of columns of the figure panel
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_path: `str`, optional (default: None)
+        If save_fig is True, specify figure path.
+    fig_name: `str`, optional (default: 'plot_violin.pdf')
+        if `save_fig` is True, specify figure name.
+    **kwargs: `dict`, optional
+        Other keyword arguments are passed through to ``sns.histplot``
+
+    Returns
+    -------
+    None
+    """
     if fig_size is None:
         fig_size = mpl.rcParams['figure.figsize']
     if save_fig is None:
@@ -269,14 +303,42 @@ def pca_variance_ratio(adata,
                        fig_size=(4, 4),
                        save_fig=None,
                        fig_path=None,
-                       fig_name='variance_ratio.pdf',
+                       fig_name='plot_variance_ratio.pdf',
                        pad=1.08,
                        w_pad=None,
                        h_pad=None,
                        **kwargs):
     """Plot the variance ratio.
-    """
 
+    Parameters
+    ----------
+    adata : `Anndata`
+        Annotated data matrix.
+    log : `bool`, optional (default: True)
+        If True, variance_ratio will be log-transformed.
+    show_cutoff : `bool`, optional (default: True)
+        If True, cutoff on `n_pcs` will be shown
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots,
+        as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots,
+        as a fraction of the font size. Defaults to pad.
+    fig_size: `tuple`, optional (default: (3,3))
+        figure size.
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_path: `str`, optional (default: None)
+        If save_fig is True, specify figure path.
+    fig_name: `str`, optional (default: 'plot_variance_ratio.pdf')
+        if `save_fig` is True, specify figure name.
+    **kwargs: `dict`, optional
+        Other keyword arguments are passed through to ``plt.plot``
+
+    Returns
+    -------
+    None
+    """
     if fig_size is None:
         fig_size = mpl.rcParams['figure.figsize']
     if save_fig is None:
@@ -317,16 +379,49 @@ def pcs_features(adata,
                  log=False,
                  size=3,
                  show_cutoff=True,
+                 pad=1.08,
+                 w_pad=None,
+                 h_pad=None,
                  fig_size=(3, 3),
                  fig_ncol=3,
                  save_fig=None,
                  fig_path=None,
-                 fig_name='pcs_features.pdf',
-                 pad=1.08,
-                 w_pad=None,
-                 h_pad=None,
+                 fig_name='plot_pcs_features.pdf',
                  **kwargs):
     """Plot features that contribute to the top PCs.
+
+    Parameters
+    ----------
+    adata : `Anndata`
+        Annotated data matrix.
+    log : `bool`, optional (default: True)
+        If True, variance_ratio will be log-transformed.
+    show_cutoff : `bool`, optional (default: True)
+        If True, cutoff on `n_pcs` will be shown
+    size : `int`, optional (default: 3)
+        The marker size
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots,
+        as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots,
+        as a fraction of the font size. Defaults to pad.
+    fig_size: `tuple`, optional (default: (3,3))
+        figure size.
+    fig_ncol: `int`, optional (default: 3)
+        the number of columns of the figure panel
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_path: `str`, optional (default: None)
+        If save_fig is True, specify figure path.
+    fig_name: `str`, optional (default: 'plot_pcs_features.pdf')
+        if `save_fig` is True, specify figure name.
+    **kwargs: `dict`, optional
+        Other keyword arguments are passed through to ``plt.scatter``
+
+    Returns
+    -------
+    None
     """
 
     if fig_size is None:
@@ -380,15 +475,48 @@ def variable_genes(adata,
                    n_texts=10,
                    size=8,
                    text_size=10,
+                   pad=1.08,
+                   w_pad=None,
+                   h_pad=None,
                    fig_size=(4, 4),
                    save_fig=None,
                    fig_path=None,
                    fig_name='plot_variable_genes.pdf',
-                   pad=1.08,
-                   w_pad=None,
-                   h_pad=None,
                    **kwargs):
     """Plot highly variable genes.
+
+    Parameters
+    ----------
+    adata : `Anndata`
+        Annotated data matrix.
+    show_texts : `bool`, optional (default: False)
+        If True, text annotation will be shown.
+    n_texts : `int`, optional (default: 10)
+        The number of texts to plot.
+    size : `int`, optional (default: 8)
+        The marker size
+    text_size : `int`, optional (default: 10)
+        The text size
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots,
+        as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots,
+        as a fraction of the font size. Defaults to pad.
+    fig_size: `tuple`, optional (default: (3,3))
+        figure size.
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_path: `str`, optional (default: None)
+        If save_fig is True, specify figure path.
+    fig_name: `str`, optional (default: 'plot_variable_genes.pdf')
+        if `save_fig` is True, specify figure name.
+    **kwargs: `dict`, optional
+        Other keyword arguments are passed through to ``plt.scatter``
+
+    Returns
+    -------
+    None
     """
 
     if fig_size is None:
@@ -791,9 +919,6 @@ def umap(adata,
          color=None,
          dict_palette=None,
          n_components=None,
-         comp1=0,
-         comp2=1,
-         comp3=2,
          size=8,
          drawing_order='sorted',
          dict_drawing_order=None,
@@ -813,7 +938,7 @@ def umap(adata,
          h_pad=None,
          save_fig=None,
          fig_path=None,
-         fig_name='scatterplot2d.pdf',
+         fig_name='plot_umap.pdf',
          plolty=False,
          **kwargs):
     """ Plot coordinates in UMAP
@@ -826,7 +951,7 @@ def umap(adata,
         Variable in `data` that specify positions on the x axis.
     y: `str`
         Variable in `data` that specify positions on the x axis.
-    color: `str`, optional (default: None)
+    color: `list`, optional (default: None)
         A list of variables that will produce points with different colors.
         e.g. color = ['anno1', 'anno2']
     dict_palette: `dict`,optional (default: None)
@@ -839,8 +964,21 @@ def umap(adata,
         - 'original': plot points in the same order as in input dataframe
         - 'sorted' : plot points with higher values on top.
         - 'random' : plot points in a random order
+    dict_drawing_order: `dict`,optional (default: None)
+        A dictionary of drawing_order for different variables in `color`.
+        Only valid for categorical/string variables
+        e.g. dict_drawing_order = {'ann1': 'original','ann2': 'sorted'}
     size: `int` (default: 8)
         Point size.
+    show_texts : `bool`, optional (default: False)
+        If True, text annotation will be shown.
+    text_size : `int`, optional (default: 10)
+        The text size.
+    texts: `list` optional (default: None)
+        Point names to plot.
+    text_expand : `tuple`, optional (default: (1.05, 1.2))
+        Two multipliers (x, y) by which to expand the bounding box of texts
+        when repelling them from each other/points/other objects.
     fig_size: `tuple`, optional (default: None)
         figure size.
     fig_ncol: `int`, optional (default: 3)
@@ -866,7 +1004,7 @@ def umap(adata,
         if True,save the figure.
     fig_path: `str`, optional (default: None)
         If save_fig is True, specify figure path.
-    fig_name: `str`, optional (default: 'scatterplot2d.pdf')
+    fig_name: `str`, optional (default: 'plot_umap.pdf')
         if save_fig is True, specify figure name.
     Returns
     -------
@@ -1002,13 +1140,40 @@ def discretize(adata,
                fig_name='plot_discretize.pdf',
                **kwargs):
     """Plot original data VS discretized data
+
     Parameters
     ----------
-
+    adata : `Anndata`
+        Annotated data matrix.
+    layer : `str`, optional (default: None)
+        Layer to use for original histogram plot.
+        If None, ``adata.X`` will be used.
+    bins : `int`, optional (default: 20)
+        The number of equal-width bins in the given range
+        for original histogram plot.
+    kde : `bool`, optional (default: True)
+        If True, compute a kernel density estimate to smooth the distribution
+        and show on the plot
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots,
+        as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots,
+        as a fraction of the font size. Defaults to pad.
+    fig_size: `tuple`, optional (default: (5,8))
+        figure size.
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_path: `str`, optional (default: None)
+        If save_fig is True, specify figure path.
+    fig_name: `str`, optional (default: 'plot_discretize.pdf')
+        if `save_fig` is True, specify figure name.
+    **kwargs: `dict`, optional
+        Other keyword arguments are passed through to ``sns.histplot``
 
     Returns
     -------
-
+    None
     """
     if fig_size is None:
         fig_size = mpl.rcParams['figure.figsize']
@@ -1067,11 +1232,36 @@ def node_similarity(adata,
 
     Parameters
     ----------
-
+    adata : `Anndata`
+        Annotated data matrix.
+    bins : `int`, optional (default: 20)
+        The number of equal-width bins in the given range for histogram plot.
+    log : `bool`, optional (default: True)
+        If True, log scale will be used for y axis.
+    show_cutoff : `bool`, optional (default: True)
+        If True, cutoff on scores will be shown
+    cutoff: `int`, optional (default: None)
+        Cutoff used to select edges
+    n_edges: `int`, optional (default: 5000)
+        The number of edges to select.
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots,
+        as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots,
+        as a fraction of the font size. Defaults to pad.
+    fig_size: `tuple`, optional (default: (5,8))
+        figure size.
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_path: `str`, optional (default: None)
+        If save_fig is True, specify figure path.
+    fig_name: `str`, optional (default: 'plot_node_similarity.pdf')
+        if `save_fig` is True, specify figure name.
 
     Returns
     -------
-
+    None
     """
     if fig_size is None:
         fig_size = mpl.rcParams['figure.figsize']
@@ -1137,11 +1327,65 @@ def svd_nodes(adata,
 
     Parameters
     ----------
-
-
+    adata : `Anndata`
+        Annotated data matrix.
+    comp1: `int`, optional (default: 1)
+        Component used for x axis.
+    comp2: `int`, optional (default: 2)
+        Component used for y axis.
+    color: `list`, optional (default: None)
+        A list of variables that will produce points with different colors.
+        e.g. color = ['anno1', 'anno2']
+    cutoff: `int`, optional (default: None)
+        Cutoff used to select edges
+    n_edges: `int`, optional (default: 5000)
+        The number of edges to select
+    dict_palette: `dict`,optional (default: None)
+        A dictionary of palettes for different variables in `color`.
+        Only valid for categorical/string variables
+        e.g. dict_palette = {'ann1': {},'ann2': {}}
+    drawing_order: `str` (default: 'random')
+        The order in which values are plotted, This can be
+        one of the following values
+        - 'original': plot points in the same order as in input dataframe
+        - 'sorted' : plot points with higher values on top.
+        - 'random' : plot points in a random order
+    dict_drawing_order: `dict`,optional (default: None)
+        A dictionary of drawing_order for different variables in `color`.
+        Only valid for categorical/string variables
+        e.g. dict_drawing_order = {'ann1': 'original','ann2': 'sorted'}
+    size: `int` (default: 8)
+        Point size.
+    fig_size: `tuple`, optional (default: (4, 4))
+        figure size.
+    fig_ncol: `int`, optional (default: 3)
+        the number of columns of the figure panel
+    fig_legend_order: `dict`,optional (default: None)
+        Specified order for the appearance of the annotation keys.
+        Only valid for categorical/string variable
+        e.g. fig_legend_order = {'ann1':['a','b','c'],'ann2':['aa','bb','cc']}
+    fig_legend_ncol: `int`, optional (default: 1)
+        The number of columns that the legend has.
+    vmin,vmax: `float`, optional (default: None)
+        The min and max values are used to normalize continuous values.
+        If None, the respective min and max of continuous values is used.
+    alpha: `float`, optional (default: 1)
+        0.0 transparent through 1.0 opaque
+    pad: `float`, optional (default: 1.08)
+        Padding between the figure edge and the edges of subplots,
+        as a fraction of the font size.
+    h_pad, w_pad: `float`, optional (default: None)
+        Padding (height/width) between edges of adjacent subplots,
+        as a fraction of the font size. Defaults to pad.
+    save_fig: `bool`, optional (default: False)
+        if True,save the figure.
+    fig_path: `str`, optional (default: None)
+        If save_fig is True, specify figure path.
+    fig_name: `str`, optional (default: 'plot_umap.pdf')
+        if save_fig is True, specify figure name.
     Returns
     -------
-
+    None
     """
     if fig_size is None:
         fig_size = mpl.rcParams['figure.figsize']

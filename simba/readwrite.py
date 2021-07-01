@@ -33,6 +33,7 @@ def read_embedding(path_emb=None,
     ----------
     path_emb: `str`, optional (default: None)
         Path to directory for pbg embedding model
+        If None, .settings.pbg_params['checkpoint_path'] will be used.
     path_entity: `str`, optional (default: None)
         Path to entity name file
     prefix: `list`, optional (default: None)

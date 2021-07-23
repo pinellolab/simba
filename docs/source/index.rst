@@ -29,6 +29,7 @@ SIMBA is a method to embed cells along with their defining features such as gene
    :caption: SIMBA primer
 
    Basic concepts
+   Output
 
 
 .. toctree::

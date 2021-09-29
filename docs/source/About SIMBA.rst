@@ -1,2 +1,8 @@
 About SIMBA
 ===========
+
+SIMBA (SIngle-cell eMBedding Along with features) is a versatile single-cell embedding method that co-embeds cells and features into the same latent space. By formulating single-cell analyses as multi-entity graph embedding problems, SIMBA can be used to solve popular single cell tasks that appear very different in a single framework. 
+
+For each task, SIMBA constructs a graph with nodes of different entities (cells and features), and edges of different types indicating relations between these entities. SIMBA then applies multi-entity graph embedding algorithms adapted from the literature on social network and knowledge graph embeddings on this graph, and introduces a Softmax-based transformation to embed these entities (nodes) into a low-dimensional space such that the embeddings of these entities are comparable. 
+
+We show that the SIMBA framework can perform many important single-cell analyses, including dimensionality reduction techniques for studying cellular states; clustering-free marker detection based on the similarity between single cells and features; single-cell multimodal analysis and the study of gene regulation; batch correction and omics integration analysis and simultaneous identification marker features. SIMBA can be adapted to these diverse analysis tasks by simply modifying how the input graph is constructed from the relevant single-cell data. We believe that SIMBA will simplify the task of adapting single-cell analysis to new tasks and single-cell modalities.

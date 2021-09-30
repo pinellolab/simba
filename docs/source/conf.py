@@ -12,8 +12,8 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../simba'))
-import simba
+# sys.path.insert(0, os.path.abspath('../simba'))
+# import simba
 
 
 # -- Project information -----------------------------------------------------
@@ -23,7 +23,8 @@ copyright = '2021, Huidong Chen'
 author = 'Huidong Chen'
 
 # The full version, including alpha/beta/rc tags
-release = simba.__version__
+# release = simba.__version__
+release = 1.0
 
 
 # -- Retrieve notebooks (borrowed from scVelo) -------------------------------

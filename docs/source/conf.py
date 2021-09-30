@@ -28,23 +28,23 @@ release = simba.__version__
 
 # -- Retrieve notebooks (borrowed from scVelo) -------------------------------
 
-# from urllib.request import urlretrieve
+from urllib.request import urlretrieve
 
-# notebooks_url = "https://github.com/huidongchen/simba_tutorials/raw/main/"
-# notebooks = [
-#     "rna_10xpmbc_all_genes",
-#     "atac_buenrostro2018_peaks_and_sequences",
-#     "multiome_shareseq",
-#     "multiome_shareseq_GRN",
-#     "rna_mouse_atlas",
-#     "rna_human_pancreas",
-#     "multiome_10xpmbc10k_integration",
-# ]
-# for nb in notebooks:
-#     try:
-#         urlretrieve(notebooks_url + nb, nb)
-#     except Exception as e:
-#         pass
+notebooks_url = "https://github.com/huidongchen/simba_tutorials/raw/main/"
+notebooks = [
+    "rna_10xpmbc_all_genes",
+    "atac_buenrostro2018_peaks_and_sequences",
+    "multiome_shareseq",
+    "multiome_shareseq_GRN",
+    "rna_mouse_atlas",
+    "rna_human_pancreas",
+    "multiome_10xpmbc10k_integration",
+]
+for nb in notebooks:
+    try:
+        urlretrieve(notebooks_url + nb, nb)
+    except Exception as e:
+        pass
 
 
 # -- General configuration ---------------------------------------------------

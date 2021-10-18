@@ -1,0 +1,7 @@
+name: readthedocs
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - simba=0.1

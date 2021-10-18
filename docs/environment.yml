@@ -5,3 +5,7 @@ channels:
   - defaults
 dependencies:
   - simba=0.1
+  - pip:
+    - sphinx>=3.0
+    - sphinx-rtd-theme>=0.5
+    - nbsphinx>=0.8

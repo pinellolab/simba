@@ -32,13 +32,13 @@ from urllib.request import urlretrieve
 
 notebooks_url = "https://github.com/huidongchen/simba_tutorials/raw/main/"
 notebooks = [
-    "rna_10xpmbc_all_genes",
-    "atac_buenrostro2018_peaks_and_sequences",
-    "multiome_shareseq",
-    "multiome_shareseq_GRN",
-    "rna_mouse_atlas",
-    "rna_human_pancreas",
-    "multiome_10xpmbc10k_integration",
+    "rna_10xpmbc_all_genes.ipynb",
+    "atac_buenrostro2018_peaks_and_sequences.ipynb",
+    "multiome_shareseq.ipynb",
+    "multiome_shareseq_GRN.ipynb",
+    "rna_mouse_atlas.ipynb",
+    "rna_human_pancreas.ipynb",
+    "multiome_10xpmbc10k_integration.ipynb",
 ]
 for nb in notebooks:
     try:

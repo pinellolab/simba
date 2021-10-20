@@ -4,7 +4,7 @@ Installation
 Anaconda
 ~~~~~~~~
 
-To install **simba** package with conda, run::
+To install the **simba** package with conda, run::
 
     conda install -c bioconda simba
 
@@ -12,7 +12,14 @@ To install **simba** package with conda, run::
 Dev version
 ~~~~~~~~~~~
 
-To install the latest version on `GitHub <https://github.com/pinellolab/simba>`_, run::
+To install the latest version on `GitHub <https://github.com/pinellolab/simba>`_, 
+
+first install **simba_pbg** ::
+
+    conda install -c bioconda simba_pbg
+
+
+then run::
 
     git clone https://github.com/pinellolab/simba.git
     pip install simba --user

@@ -25,8 +25,7 @@ def read_embedding(path_emb=None,
                    convert_alias=True,
                    path_entity_alias=None,
                    prefix=None,
-                   num_epochs=None,
-                   **kwargs):
+                   num_epochs=None):
     """Read in entity embeddings from pbg training
 
     Parameters

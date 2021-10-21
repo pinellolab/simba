@@ -55,10 +55,13 @@ SIMBA is a method to embed cells along with their defining features such as gene
    :target: https://anaconda.org/bioconda/simba
 
 .. |Lasst updated| image:: https://anaconda.org/bioconda/simba/badges/latest_release_date.svg
+   :target: https://anaconda.org/bioconda/simba
 
 .. |License| image:: https://anaconda.org/bioconda/simba/badges/license.svg
+   :target: https://github.com/pinellolab/simba/blob/master/LICENSE
 
 .. |Downloads| image:: https://anaconda.org/bioconda/simba/badges/downloads.svg
+   :target: https://anaconda.org/bioconda/simba
 
 
 

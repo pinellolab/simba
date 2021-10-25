@@ -14,3 +14,4 @@ umap-learn>=0.3.0
 #plotly>=4.14.0
 pybedtools>=0.8.0
 # bedtools>=2.29.0 # not available in pip
+tables>=3.2

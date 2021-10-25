@@ -16,8 +16,10 @@ from anndata import (
     read_zarr,
 )
 from pathlib import Path
+import tables
 
 from ._settings import settings
+from ._utils import _read_legacy_10x_h5, _read_v3_10x_h5
 
 
 def read_embedding(path_emb=None,
@@ -25,8 +27,7 @@ def read_embedding(path_emb=None,
                    convert_alias=True,
                    path_entity_alias=None,
                    prefix=None,
-                   num_epochs=None,
-                   **kwargs):
+                   num_epochs=None):
     """Read in entity embeddings from pbg training
 
     Parameters
@@ -95,6 +96,51 @@ def read_embedding(path_emb=None,
                 adata.obs.index = names_entity
                 dict_adata[entity_type] = adata
     return dict_adata
+
+
+# modifed from
+# scanpy https://github.com/theislab/scanpy/blob/master/scanpy/readwrite.py
+def read_10x_h5(filename,
+                genome,
+                gex_only):
+    """
+    Read 10x-Genomics-formatted hdf5 file.
+    Parameters
+    ----------
+    filename
+        Path to a 10x hdf5 file.
+    genome
+        Filter expression to genes within this genome. For legacy 10x h5
+        files, this must be provided if the data contains more than one genome.
+    gex_only
+        Only keep 'Gene Expression' data and ignore other feature types,
+        e.g. 'Antibody Capture', 'CRISPR Guide Capture', or 'Custom'
+
+    Returns
+    -------
+    adata: AnnData
+        Annotated data matrix, where observations/cells are named by their
+        barcode and variables/genes by gene name
+    """
+
+    with tables.open_file(str(filename), 'r') as f:
+        v3 = '/matrix' in f
+    if v3:
+        adata = _read_v3_10x_h5(filename)
+        if genome:
+            if genome not in adata.var['genome'].values:
+                raise ValueError(
+                    f"Could not find data corresponding to genome '{genome}' in '{filename}'. "
+                    f'Available genomes are: {list(adata.var["genome"].unique())}.'
+                )
+            adata = adata[:, adata.var['genome'] == genome]
+        if gex_only:
+            adata = adata[:, adata.var['feature_types'] == 'Gene Expression']
+        if adata.is_view:
+            adata = adata.copy()
+    else:
+        adata = _read_legacy_10x_h5(filename, genome=genome)
+    return adata
 
 
 def load_pbg_config(path=None):

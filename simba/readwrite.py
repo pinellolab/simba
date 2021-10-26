@@ -101,8 +101,8 @@ def read_embedding(path_emb=None,
 # modifed from
 # scanpy https://github.com/theislab/scanpy/blob/master/scanpy/readwrite.py
 def read_10x_h5(filename,
-                genome,
-                gex_only):
+                genome=None,
+                gex_only=True):
     """Read 10x-Genomics-formatted hdf5 file.
 
     Parameters

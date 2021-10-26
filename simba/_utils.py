@@ -53,7 +53,7 @@ def locate_elbow(x, y, S=10, min_elbow=0,
 
 # modifed from
 # scanpy https://github.com/theislab/scanpy/blob/master/scanpy/readwrite.py
-def _read_legacy_10x_h5(filename, *, genome=None):
+def _read_legacy_10x_h5(filename, genome=None):
     """
     Read hdf5 file from Cell Ranger v2 or earlier versions.
     """

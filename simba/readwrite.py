@@ -103,8 +103,8 @@ def read_embedding(path_emb=None,
 def read_10x_h5(filename,
                 genome,
                 gex_only):
-    """
-    Read 10x-Genomics-formatted hdf5 file.
+    """Read 10x-Genomics-formatted hdf5 file.
+
     Parameters
     ----------
     filename
@@ -122,7 +122,6 @@ def read_10x_h5(filename,
         Annotated data matrix, where observations/cells are named by their
         barcode and variables/genes by gene name
     """
-
     with tables.open_file(str(filename), 'r') as f:
         v3 = '/matrix' in f
     if v3:
@@ -130,8 +129,10 @@ def read_10x_h5(filename,
         if genome:
             if genome not in adata.var['genome'].values:
                 raise ValueError(
-                    f"Could not find data corresponding to genome '{genome}' in '{filename}'. "
-                    f'Available genomes are: {list(adata.var["genome"].unique())}.'
+                    f"Could not find data corresponding to "
+                    f"genome '{genome}' in '{filename}'. "
+                    f'Available genomes are:'
+                    f' {list(adata.var["genome"].unique())}.'
                 )
             adata = adata[:, adata.var['genome'] == genome]
         if gex_only:

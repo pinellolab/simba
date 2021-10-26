@@ -13,7 +13,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../simba'))
-import simba
+import simba  # noqa: E402
 
 
 # -- Project information -----------------------------------------------------
@@ -28,7 +28,7 @@ release = simba.__version__
 
 # -- Retrieve notebooks (borrowed from scVelo) -------------------------------
 
-from urllib.request import urlretrieve
+from urllib.request import urlretrieve  # noqa: E402
 
 notebooks_url = "https://github.com/huidongchen/simba_tutorials/raw/main/"
 notebooks = [
@@ -43,7 +43,7 @@ notebooks = [
 for nb in notebooks:
     try:
         urlretrieve(notebooks_url + nb, nb)
-    except Exception as e:
+    except Exception:
         pass
 
 

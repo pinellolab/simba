@@ -23,15 +23,18 @@ Reading
 .. autosummary::
    :toctree: _autosummary
 
+   read_csv
    read_h5ad
+   read_10x_h5
+   read_mtx
    read_embedding
    load_pbg_config
    load_graph_stats
 
+See more at `anndata <https://anndata.readthedocs.io/en/latest/api.html#reading>`_
+
 Preprocessing
 ~~~~~~~~~~~~~
-
-Preprocessing functions
 
 .. autosummary::
    :toctree: _autosummary

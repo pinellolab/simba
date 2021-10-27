@@ -1160,17 +1160,18 @@ def discretize(adata,
     fig_name: `str`, optional (default: 'plot_discretize.pdf')
         if `save_fig` is True, specify figure name.
     **kwargs: `dict`, optional
-        Other keyword arguments are passed through to ``sns.histplot``
+        Other keyword arguments are passed through to ``plt.hist()``
+
     Returns
     -------
     None
     """
-#     if fig_size is None:
-#         fig_size = mpl.rcParams['figure.figsize']
-#     if save_fig is None:
-#         save_fig = settings.save_fig
-#     if fig_path is None:
-#         fig_path = os.path.join(settings.workdir, 'figures')
+    if fig_size is None:
+        fig_size = mpl.rcParams['figure.figsize']
+    if save_fig is None:
+        save_fig = settings.save_fig
+    if fig_path is None:
+        fig_path = os.path.join(settings.workdir, 'figures')
 
     assert 'disc' in adata.uns_keys(), \
         "please run `si.tl.discretize()` first"
@@ -1184,10 +1185,12 @@ def discretize(adata,
     _ = ax[0].hist(hist_edges[:-1],
                    hist_edges,
                    weights=hist_count,
-                   linewidth=0)
+                   linewidth=0,
+                   **kwargs)
     _ = ax[1].hist(bin_edges[:-1],
                    bin_edges,
-                   weights=bin_count)
+                   weights=bin_count,
+                   **kwargs)
     ax[0].set_xlabel('Non-zero values')
     ax[0].set_ylabel('Count')
     ax[0].set_title('Original')

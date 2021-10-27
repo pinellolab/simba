@@ -20,11 +20,13 @@ def discretize(adata,
         The number of bins to produce.
         It must be smaller than `max_bins`.
     max_bins: `int`, optional (default: 100)
-        The number of bins used to the initial approximation.
+        The number of bins used in the initial approximation.
+        i.e. the number of bins to cluster.
 
     Returns
     -------
-    updates `adata` with the following fields.
+    updates `adata` with the following fields
+
     `.layer['disc']` : `array_like`
         Discretized values.
     `.uns['disc']` : `dict`

@@ -15,7 +15,7 @@ setup(
     name='simba',
     version=version['__version__'],
     author='Huidong Chen',
-    athor_email='huidong.chen AT mgh DOT harvard DOT edu',
+    athor_email='hd7chen AT gmail DOT com',
     license='BSD',
     description='SIngle-cell eMBedding Along with features',
     long_description=Path('README.md').read_text('utf-8'),

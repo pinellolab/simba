@@ -2,7 +2,7 @@
 # It outputs regions-by-kmers/motifs frequency matrix in .h5 format
 
 # Author: Huidong Chen
-# Contact information: huidong.chen@mgh.harvard.edu
+# Contact information: hd7chen AT gmail DOT com
 
 suppressMessages(library(optparse,quietly = TRUE))
 

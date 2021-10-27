@@ -830,7 +830,8 @@ def _scatterplot2d(df,
 #     fig_legend_order: `dict`,optional (default: None)
 #         Specified order for the appearance of the annotation keys.
 #         Only valid for categorical/string variable
-#         e.g. fig_legend_order = {'ann1':['a','b','c'],'ann2':['aa','bb','cc']}
+#         e.g. fig_legend_order = {'ann1':['a','b','c'],
+#                                  'ann2':['aa','bb','cc']}
 #     fig_legend_ncol: `int`, optional (default: 1)
 #         The number of columns that the legend has.
 #     vmin,vmax: `float`, optional (default: None)
@@ -888,7 +889,8 @@ def _scatterplot2d(df,
 #     if(len(list_hue) < fig_ncol):
 #         fig_ncol = len(list_hue)
 #     fig_nrow = int(np.ceil(len(list_hue)/fig_ncol))
-#     fig = plt.figure(figsize=(fig_size[0]*fig_ncol*1.05, fig_size[1]*fig_nrow))
+#     fig = plt.figure(figsize=(fig_size[0]*fig_ncol*1.05,
+#                      fig_size[1]*fig_nrow))
 #     for hue in list_hue:
 #         if hue in hue_palette.keys():
 #             palette = hue_palette[hue]
@@ -1129,10 +1131,7 @@ def umap(adata,
 
 
 def discretize(adata,
-               layer=None,
-               kde=False,
-               bins=20,
-               fig_size=(5, 8),
+               fig_size=(6, 6),
                pad=1.08,
                w_pad=None,
                h_pad=None,
@@ -1146,15 +1145,6 @@ def discretize(adata,
     ----------
     adata : `Anndata`
         Annotated data matrix.
-    layer : `str`, optional (default: None)
-        Layer to use for original histogram plot.
-        If None, ``adata.X`` will be used.
-    bins : `int`, optional (default: 20)
-        The number of equal-width bins in the given range
-        for original histogram plot.
-    kde : `bool`, optional (default: True)
-        If True, compute a kernel density estimate to smooth the distribution
-        and show on the plot
     pad: `float`, optional (default: 1.08)
         Padding between the figure edge and the edges of subplots,
         as a fraction of the font size.
@@ -1170,7 +1160,7 @@ def discretize(adata,
     fig_name: `str`, optional (default: 'plot_discretize.pdf')
         if `save_fig` is True, specify figure name.
     **kwargs: `dict`, optional
-        Other keyword arguments are passed through to ``sns.histplot``
+        Other keyword arguments are passed through to ``plt.hist()``
 
     Returns
     -------
@@ -1183,27 +1173,29 @@ def discretize(adata,
     if fig_path is None:
         fig_path = os.path.join(settings.workdir, 'figures')
 
-    if layer is None:
-        X = adata.X.copy()
-    else:
-        X = adata.layers[layer].copy()
-    nonzero_disc = adata.uns['disc']['disc_ori'].data
-    bin_edges = adata.uns['disc']['bin_edges'][0]
-    print(bin_edges)
+    assert 'disc' in adata.uns_keys(), \
+        "please run `si.tl.discretize()` first"
+
+    hist_edges = adata.uns['disc']['hist_edges']
+    hist_count = adata.uns['disc']['hist_count']
+    bin_edges = adata.uns['disc']['bin_edges']
+    bin_count = adata.uns['disc']['bin_count']
+
     fig, ax = plt.subplots(2, 1, figsize=fig_size)
-    _ = sns.histplot(ax=ax[0],
-                     x=X.data,
-                     kde=kde,
-                     bins=bins,
-                     **kwargs)
-    _ = sns.histplot(ax=ax[1],
-                     x=nonzero_disc,
-                     kde=False,
-                     bins=bin_edges,
-                     **kwargs)
+    _ = ax[0].hist(hist_edges[:-1],
+                   hist_edges,
+                   weights=hist_count,
+                   linewidth=0,
+                   **kwargs)
+    _ = ax[1].hist(bin_edges[:-1],
+                   bin_edges,
+                   weights=bin_count,
+                   **kwargs)
     ax[0].set_xlabel('Non-zero values')
+    ax[0].set_ylabel('Count')
     ax[0].set_title('Original')
     ax[1].set_xlabel('Non-zero values')
+    ax[1].set_ylabel('Count')
     ax[1].set_title('Discretized')
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
     if(save_fig):

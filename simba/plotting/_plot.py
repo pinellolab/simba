@@ -13,6 +13,7 @@ from pandas.api.types import (
     is_categorical_dtype,
 )
 from scipy.sparse import find
+import warnings
 # import plotly.express as px
 # import plotly.graph_objects as go
 
@@ -1131,6 +1132,7 @@ def umap(adata,
 
 
 def discretize(adata,
+               kde=None,
                fig_size=(6, 6),
                pad=1.08,
                w_pad=None,
@@ -1145,6 +1147,9 @@ def discretize(adata,
     ----------
     adata : `Anndata`
         Annotated data matrix.
+    kde : `bool`, optional (default: None)
+        If True, compute a kernel density estimate to smooth the distribution
+        and show on the plot. Invalid as of v0.2.
     pad: `float`, optional (default: 1.08)
         Padding between the figure edge and the edges of subplots,
         as a fraction of the font size.
@@ -1166,6 +1171,8 @@ def discretize(adata,
     -------
     None
     """
+    if kde is not None:
+        warnings.warn("kde is not supported as of v0.2", DeprecationWarning)
     if fig_size is None:
         fig_size = mpl.rcParams['figure.figsize']
     if save_fig is None:

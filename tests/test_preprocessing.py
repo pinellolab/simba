@@ -61,3 +61,36 @@ def test_atac(adata_CP, tmp_path):
                        fig_ncol=5,
                        save_fig=True,
                        fig_name='plot_pcs_features.png')
+
+
+def test_genescores(adata_CP):
+    si.pp.filter_peaks(adata_CP, min_n_cells=5)
+    si.pp.cal_qc_atac(adata_CP)
+    si.pp.filter_cells_atac(adata_CP, min_n_peaks=5)
+    si.pp.pca(adata_CP, n_components=30)
+    si.pp.select_pcs(adata_CP, n_pcs=10)
+    si.pp.select_pcs_features(adata_CP)
+
+    adata_CG_atac = si.tl.gene_scores(adata_CP,
+                                      genome='hg19',
+                                      use_gene_weigt=True,
+                                      use_top_pcs=True)
+    print(adata_CG_atac)
+
+
+def test_integration(adata_CG):
+    si.pp.filter_genes(adata_CG, min_n_cells=3)
+    si.pp.cal_qc_rna(adata_CG)
+    si.pp.filter_cells_rna(adata_CG, min_n_genes=2)
+    si.pp.normalize(adata_CG, method='lib_size')
+    si.pp.log_transform(adata_CG)
+    si.pp.select_variable_genes(adata_CG, n_top_genes=2000)
+    adata_C1C2 = si.tl.infer_edges(
+        adata_CG, adata_CG, n_components=20, k=20)
+    si.pl.node_similarity(adata_C1C2,
+                          cutoff=0.5,
+                          save_fig=True)
+    si.pl.svd_nodes(adata_C1C2,
+                    cutoff=0.5,
+                    save_fig=True)
+    si.tl.trim_edges(adata_C1C2, cutoff=0.5)

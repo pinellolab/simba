@@ -21,6 +21,8 @@ def test_pbg_training_rna(adata_CG, tmp_path):
                     dirname='graph0')
     si.tl.pbg_train(auto_wd=True,
                     output='model')
+    si.pl.pbg_metrics(fig_ncol=1,
+                      save_fig=True)
 
 
 def test_pbg_training_atac(adata_CP, tmp_path):
@@ -30,3 +32,5 @@ def test_pbg_training_atac(adata_CP, tmp_path):
                     dirname='graph0')
     si.tl.pbg_train(auto_wd=True,
                     output='model')
+    si.pl.pbg_metrics(fig_ncol=1,
+                      save_fig=True)

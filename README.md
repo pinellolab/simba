@@ -1,6 +1,7 @@
 [![documentation](https://readthedocs.org/projects/simba-bio/badge/?version=latest)](https://simba-bio.readthedocs.io/en/latest/)
 [![CI](https://github.com/pinellolab/simba/actions/workflows/CI.yml/badge.svg)](https://github.com/pinellolab/simba/actions/workflows/CI.yml)
 [![Install with conda](https://anaconda.org/bioconda/simba/badges/installer/conda.svg)](https://anaconda.org/bioconda/simba)
+[![codecov](https://codecov.io/gh/pinellolab/simba/branch/master/graph/badge.svg?token=NDQJQPL18K)](https://codecov.io/gh/pinellolab/simba)
 
 # SIMBA
 

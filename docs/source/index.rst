@@ -1,4 +1,4 @@
-|Docs| |CI| |Install with conda| |Lasst updated| |Downloads| |License|
+|Docs| |CI| |Install with conda| |Last updated| |Downloads| |License| |Codecov|
 
 **SIMBA**: **SI**\ ngle-cell e\ **MB**\ edding **A**\ long with features
 ========================================================================
@@ -54,7 +54,7 @@ SIMBA is a method to embed cells along with their defining features such as gene
 .. |Install with conda| image:: https://anaconda.org/bioconda/simba/badges/installer/conda.svg
    :target: https://anaconda.org/bioconda/simba
 
-.. |Lasst updated| image:: https://anaconda.org/bioconda/simba/badges/latest_release_date.svg
+.. |Last updated| image:: https://anaconda.org/bioconda/simba/badges/latest_release_date.svg
    :target: https://anaconda.org/bioconda/simba
 
 .. |License| image:: https://anaconda.org/bioconda/simba/badges/license.svg
@@ -63,7 +63,9 @@ SIMBA is a method to embed cells along with their defining features such as gene
 .. |Downloads| image:: https://anaconda.org/bioconda/simba/badges/downloads.svg
    :target: https://anaconda.org/bioconda/simba
 
-
+.. |Codecov| image:: https://codecov.io/gh/pinellolab/simba/branch/master/graph/badge.svg?token=NDQJQPL18K
+   :target: https://codecov.io/gh/pinellolab/simba
+    
 
 
 

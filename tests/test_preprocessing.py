@@ -38,7 +38,8 @@ def test_rna(adata_CG, tmp_path):
                      fig_name='plot_discretize.png')
 
 
-def test_atac(adata_CP):
+def test_atac(adata_CP, tmp_path):
+    si.settings.set_workdir(tmp_path / "simba_atac")
     si.pp.filter_peaks(adata_CP, min_n_cells=5)
     si.pp.cal_qc_atac(adata_CP)
     si.pl.hist(adata_CP,

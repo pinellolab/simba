@@ -1,4 +1,4 @@
-|Docs| |CI| |Install with conda| |Last updated| |Downloads| |License| |Codecov|
+|CI| |Docs| |Install with conda| |Codecov| |Last updated| |Downloads| |License|
 
 **SIMBA**: **SI**\ ngle-cell e\ **MB**\ edding **A**\ long with features
 ========================================================================
@@ -43,6 +43,7 @@ SIMBA is a method to embed cells along with their defining features such as gene
    rna_mouse_atlas
    rna_human_pancreas
    multiome_10xpmbc10k_integration
+   rna_10x_mouse_brain_1p3M
 
 
 .. |Docs| image:: https://readthedocs.org/projects/simba-bio/badge/?version=latest

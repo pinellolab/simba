@@ -31,7 +31,7 @@ release = simba.__version__
 from urllib.request import urlretrieve  # noqa: E402
 
 notebooks_url = "https://github.com/huidongchen/simba_tutorials/raw/main/"
-notebooks = [
+notebooks_v1_0 = [
     "rna_10xpmbc_all_genes.ipynb",
     "atac_buenrostro2018_peaks_and_sequences.ipynb",
     "multiome_shareseq.ipynb",
@@ -40,12 +40,20 @@ notebooks = [
     "rna_human_pancreas.ipynb",
     "multiome_10xpmbc10k_integration.ipynb",
 ]
-for nb in notebooks:
+notebooks_v1_1 = [
+    "rna_10x_mouse_brain_1p3M.ipynb",
+]
+for nb in notebooks_v1_0:
     try:
-        urlretrieve(notebooks_url + nb, nb)
+        urlretrieve(notebooks_url + "v1.0/" + nb, nb)
     except Exception:
         pass
 
+for nb in notebooks_v1_1:
+    try:
+        urlretrieve(notebooks_url + "v1.1/" + nb, nb)
+    except Exception:
+        pass
 
 # -- General configuration ---------------------------------------------------
 

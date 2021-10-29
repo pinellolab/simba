@@ -1182,6 +1182,9 @@ def discretize(adata,
 
     assert 'disc' in adata.uns_keys(), \
         "please run `si.tl.discretize()` first"
+    if kde is not None:
+        warnings.warn("kde is no longer supported as of v1.1",
+                      DeprecationWarning)
 
     hist_edges = adata.uns['disc']['hist_edges']
     hist_count = adata.uns['disc']['hist_count']

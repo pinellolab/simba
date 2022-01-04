@@ -8,7 +8,7 @@ To install the `simba <https://anaconda.org/bioconda/simba>`_ package with conda
 
     conda install -c bioconda simba
 
-**Recommended**: install *simba* in a new vitural enviroment::
+**Recommended**: install *simba* in a new virtual enviroment::
 
     conda create -n env_simba python simba
     conda activate env_simba

@@ -107,12 +107,12 @@ def gen_graph(list_CP=None,
         Statistics of input graph
     """
 
-    if(sum(list(map(lambda x: x is None,
+    if sum(list(map(lambda x: x is None,
                     [list_CP,
                      list_PM,
                      list_PK,
                      list_CG,
-                     list_CC]))) == 5):
+                     list_CC]))) == 5:
         return 'No graph is generated'
 
     filepath = os.path.join(settings.workdir, 'pbg', dirname)
@@ -213,7 +213,7 @@ def gen_graph(list_CP=None,
         settings.pbg_params['entities'][k] = {'num_partitions': 1}
         entity_alias = entity_alias.append(dict_df_cells[k],
                                            ignore_index=False)
-    if(len(ids_genes) > 0):
+    if len(ids_genes) > 0:
         df_genes = pd.DataFrame(
                 index=ids_genes,
                 columns=['alias'],
@@ -221,7 +221,7 @@ def gen_graph(list_CP=None,
         settings.pbg_params['entities'][prefix_G] = {'num_partitions': 1}
         entity_alias = entity_alias.append(df_genes,
                                            ignore_index=False)
-    if(len(ids_peaks) > 0):
+    if len(ids_peaks) > 0:
         df_peaks = pd.DataFrame(
                 index=ids_peaks,
                 columns=['alias'],
@@ -229,7 +229,7 @@ def gen_graph(list_CP=None,
         settings.pbg_params['entities'][prefix_P] = {'num_partitions': 1}
         entity_alias = entity_alias.append(df_peaks,
                                            ignore_index=False)
-    if(len(ids_kmers) > 0):
+    if len(ids_kmers) > 0:
         df_kmers = pd.DataFrame(
                 index=ids_kmers,
                 columns=['alias'],
@@ -237,7 +237,7 @@ def gen_graph(list_CP=None,
         settings.pbg_params['entities'][prefix_K] = {'num_partitions': 1}
         entity_alias = entity_alias.append(df_kmers,
                                            ignore_index=False)
-    if(len(ids_motifs) > 0):
+    if len(ids_motifs) > 0:
         df_motifs = pd.DataFrame(
             index=ids_motifs,
             columns=['alias'],

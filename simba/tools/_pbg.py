@@ -211,40 +211,45 @@ def gen_graph(list_CP=None,
             columns=['alias'],
             data=[f'{k}.{x}' for x in range(len(dict_cells[k]))])
         settings.pbg_params['entities'][k] = {'num_partitions': 1}
-        entity_alias = entity_alias.append(dict_df_cells[k],
-                                           ignore_index=False)
+        entity_alias = pd.concat(
+            [entity_alias, dict_df_cells[k]],
+            ignore_index=False)
     if len(ids_genes) > 0:
         df_genes = pd.DataFrame(
                 index=ids_genes,
                 columns=['alias'],
                 data=[f'{prefix_G}.{x}' for x in range(len(ids_genes))])
         settings.pbg_params['entities'][prefix_G] = {'num_partitions': 1}
-        entity_alias = entity_alias.append(df_genes,
-                                           ignore_index=False)
+        entity_alias = pd.concat(
+            [entity_alias, df_genes],
+            ignore_index=False)
     if len(ids_peaks) > 0:
         df_peaks = pd.DataFrame(
                 index=ids_peaks,
                 columns=['alias'],
                 data=[f'{prefix_P}.{x}' for x in range(len(ids_peaks))])
         settings.pbg_params['entities'][prefix_P] = {'num_partitions': 1}
-        entity_alias = entity_alias.append(df_peaks,
-                                           ignore_index=False)
+        entity_alias = pd.concat(
+            [entity_alias, df_peaks],
+            ignore_index=False)
     if len(ids_kmers) > 0:
         df_kmers = pd.DataFrame(
                 index=ids_kmers,
                 columns=['alias'],
                 data=[f'{prefix_K}.{x}' for x in range(len(ids_kmers))])
         settings.pbg_params['entities'][prefix_K] = {'num_partitions': 1}
-        entity_alias = entity_alias.append(df_kmers,
-                                           ignore_index=False)
+        entity_alias = pd.concat(
+            [entity_alias, df_kmers],
+            ignore_index=False)
     if len(ids_motifs) > 0:
         df_motifs = pd.DataFrame(
             index=ids_motifs,
             columns=['alias'],
             data=[f'{prefix_M}.{x}' for x in range(len(ids_motifs))])
         settings.pbg_params['entities'][prefix_M] = {'num_partitions': 1}
-        entity_alias = entity_alias.append(df_motifs,
-                                           ignore_index=False)
+        entity_alias = pd.concat(
+            [entity_alias, df_motifs],
+            ignore_index=False)
 
     # generate edges
     dict_graph_stats = dict()
@@ -279,8 +284,9 @@ def gen_graph(list_CP=None,
                 {'source': key,
                  'destination': prefix_P,
                  'n_edges': df_edges_x.shape[0]}
-            df_edges = df_edges.append(df_edges_x,
-                                       ignore_index=True)
+            df_edges = pd.concat(
+                [df_edges, df_edges_x],
+                ignore_index=True)
             settings.pbg_params['relations'].append(
                 {'name': f'r{id_r}',
                  'lhs': f'{key}',
@@ -318,8 +324,9 @@ def gen_graph(list_CP=None,
                 {'source': prefix_P,
                  'destination': prefix_M,
                  'n_edges': df_edges_x.shape[0]}
-            df_edges = df_edges.append(df_edges_x,
-                                       ignore_index=True)
+            df_edges = pd.concat(
+                [df_edges, df_edges_x],
+                ignore_index=True)
             settings.pbg_params['relations'].append(
                 {'name': f'r{id_r}',
                  'lhs': f'{prefix_P}',
@@ -357,8 +364,9 @@ def gen_graph(list_CP=None,
                 {'source': prefix_P,
                  'destination': prefix_K,
                  'n_edges': df_edges_x.shape[0]}
-            df_edges = df_edges.append(df_edges_x,
-                                       ignore_index=True)
+            df_edges = pd.concat(
+                [df_edges, df_edges_x],
+                ignore_index=True)
             settings.pbg_params['relations'].append(
                 {'name': f'r{id_r}',
                  'lhs': f'{prefix_P}',
@@ -405,8 +413,9 @@ def gen_graph(list_CP=None,
                     {'source': key,
                      'destination': prefix_G,
                      'n_edges': df_edges_x.shape[0]}
-                df_edges = df_edges.append(df_edges_x,
-                                           ignore_index=True)
+                df_edges = pd.concat(
+                    [df_edges, df_edges_x],
+                    ignore_index=True)
                 settings.pbg_params['relations'].append(
                     {'name': f'r{id_r}',
                      'lhs': f'{key}',
@@ -448,8 +457,9 @@ def gen_graph(list_CP=None,
                 {'source': key_obs,
                  'destination': key_var,
                  'n_edges': df_edges_x.shape[0]}
-            df_edges = df_edges.append(df_edges_x,
-                                       ignore_index=True)
+            df_edges = pd.concat(
+                [df_edges, df_edges_x],
+                ignore_index=True)
             settings.pbg_params['relations'].append(
                 {'name': f'r{id_r}',
                  'lhs': f'{key_obs}',
@@ -458,62 +468,6 @@ def gen_graph(list_CP=None,
                  'weight': 10.0
                  })
             id_r += 1
-
-            # # edges within ref
-            # df_edges_x = pd.DataFrame(columns=col_names)
-            # df_edges_x['source'] = df_cells_obs.loc[
-            #     adata.obs_names[adata.obsp['conn'].nonzero()[0]],
-            #     'alias'].values
-            # df_edges_x['relation'] = f'r{id_r}'
-            # df_edges_x['destination'] = df_cells_obs.loc[
-            #     adata.obs_names[adata.obsp['conn'].nonzero()[1]],
-            #     'alias'].values
-            # print(f'relation{id_r}: '
-            #       f'source: {key_obs}, '
-            #       f'destination: {key_obs}\n'
-            #       f'#edges: {df_edges_x.shape[0]}')
-            # dict_graph_stats[f'relation{id_r}'] = \
-            #     {'source': key_obs,
-            #      'destination': key_obs,
-            #      'n_edges': df_edges_x.shape[0]}
-            # df_edges = df_edges.append(df_edges_x,
-            #                            ignore_index=True)
-            # settings.pbg_params['relations'].append(
-            #     {'name': f'r{id_r}',
-            #      'lhs': f'{key_obs}',
-            #      'rhs': f'{key_obs}',
-            #      'operator': 'none',
-            #      'weight': 1.0
-            #      })
-            # id_r += 1
-
-            # # edges within query
-            # df_edges_x = pd.DataFrame(columns=col_names)
-            # df_edges_x['source'] = df_cells_var.loc[
-            #     adata.var_names[adata.varp['conn'].nonzero()[0]],
-            #     'alias'].values
-            # df_edges_x['relation'] = f'r{id_r}'
-            # df_edges_x['destination'] = df_cells_var.loc[
-            #     adata.var_names[adata.varp['conn'].nonzero()[1]],
-            #     'alias'].values
-            # print(f'relation{id_r}: '
-            #       f'source: {key_var}, '
-            #       f'destination: {key_var}\n'
-            #       f'#edges: {df_edges_x.shape[0]}')
-            # dict_graph_stats[f'relation{id_r}'] = \
-            #     {'source': key_var,
-            #      'destination': key_var,
-            #      'n_edges': df_edges_x.shape[0]}
-            # df_edges = df_edges.append(df_edges_x,
-            #                            ignore_index=True)
-            # settings.pbg_params['relations'].append(
-            #     {'name': f'r{id_r}',
-            #      'lhs': f'{key_var}',
-            #      'rhs': f'{key_var}',
-            #      'operator': 'none',
-            #      'weight': 1.0
-            #      })
-            # id_r += 1
 
             adata.obs['pbg_id'] = df_cells_obs.loc[adata.obs_names,
                                                    'alias'].copy()

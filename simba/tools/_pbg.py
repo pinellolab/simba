@@ -1,7 +1,9 @@
 """PyTorch-BigGraph (PBG) for learning graph embeddings"""
 
+from typing import Dict
 import numpy as np
 import pandas as pd
+import anndata as ad
 import os
 import json
 
@@ -24,6 +26,14 @@ from torchbiggraph.util import (
 
 from .._settings import settings
 
+def _get_virtual_dest(n_virtual_dest_nodes: int, original_adj_matrix: np.ndarray):
+    virtual_adj_matrix = np.zeros((original_adj_matrix.shape[0], n_virtual_dest_nodes))
+    for vdidx in range(n_virtual_dest_nodes):
+        didx_sampled = np.random.randint(original_adj_matrix.shape[1]) # select the destination node index to sample edge weight from
+        edge_weights = original_adj_matrix[:,didx_sampled]
+        virtual_edge_weight = np.random.permutation(edge_weights)
+        virtual_adj_matrix[:,vdidx] = virtual_edge_weight
+    return(virtual_adj_matrix)
 
 def gen_graph(list_CP=None,
               list_PM=None,
@@ -42,6 +52,12 @@ def gen_graph(list_CP=None,
               use_top_pcs_CP=None,
               use_top_pcs_PM=None,
               use_top_pcs_PK=None,
+              get_marker_sig_G=False,
+              get_marker_sig_P=False,
+              get_marker_sig_M=False,
+              get_marker_sig_K=False,
+              n_virtual_node = 1000,
+              discretize_CG = True,
               ):
     """Generate graph for PBG training based on indices of obs and var
     It also generates an accompanying file 'entity_alias.tsv' to map
@@ -79,6 +95,9 @@ def gen_graph(list_CP=None,
     use_top_pcs_PK: `bool`, optional (default: None)
         Use top-PCs-associated features for PK
         Once specified, it will overwrite `use_top_pcs`
+    get_marker_sig_G: `bool`, optional (default: False)
+        Get the significance of cell subpopulation specificity
+        of genes
     copy: `bool`, optional (default: False)
         If True, it returns the graph file as a data frame
 
@@ -129,6 +148,8 @@ def gen_graph(list_CP=None,
     ids_peaks = pd.Index([])
     ids_kmers = pd.Index([])
     ids_motifs = pd.Index([])
+    if get_marker_sig_G:
+        ids_vgenes = pd.Index([])
 
     if list_CP is not None:
         for adata_ori in list_CP:
@@ -202,9 +223,11 @@ def gen_graph(list_CP=None,
                     # when not all indices are included
                     dict_cells[f'{prefix_C}{len(dict_cells)+1}'] = ids_cells_i
             ids_genes = ids_genes.union(adata.var.index)
+        if get_marker_sig_G:
+            ids_vgenes = pd.Index([f'v{prefix_G}{x}' for x in range(n_virtual_node)])
 
     entity_alias = pd.DataFrame(columns=['alias'])
-    dict_df_cells = dict()  # unique cell dataframes
+    dict_df_cells: Dict[int, pd.DataFrame] = dict()  # unique cell dataframes
     for k in dict_cells.keys():
         dict_df_cells[k] = pd.DataFrame(
             index=dict_cells[k],
@@ -221,6 +244,13 @@ def gen_graph(list_CP=None,
         settings.pbg_params['entities'][prefix_G] = {'num_partitions': 1}
         entity_alias = entity_alias.append(df_genes,
                                            ignore_index=False)
+        if(len(ids_vgenes) > 0):
+            df_vgenes = pd.DataFrame(
+                index=ids_vgenes,
+                columns=['alias'],
+                data=[ids_vgenes])
+            entity_alias = entity_alias.append(df_vgenes,
+                                                ignore_index=False)
     if(len(ids_peaks) > 0):
         df_peaks = pd.DataFrame(
                 index=ids_peaks,
@@ -248,7 +278,7 @@ def gen_graph(list_CP=None,
 
     # generate edges
     dict_graph_stats = dict()
-    col_names = ["source", "relation", "destination"]
+    col_names = ["source", "relation", "destination", "weight"]
     df_edges = pd.DataFrame(columns=col_names)
     id_r = 0
     settings.pbg_params['relations'] = []
@@ -375,52 +405,111 @@ def gen_graph(list_CP=None,
                 df_kmers.loc[adata.var_names, 'alias'].copy()
 
     if list_CG is not None:
+        def _get_df_edges(adj_mat, df_source, df_dest, adata, relation_id, include_weight = True, weight_scale = 1):
+            col_names = ["source", "relation", "destination"]
+            if include_weight:
+                col_names.append("weight")
+            df_edges_x = pd.DataFrame(columns=col_names)
+            df_edges_x['source'] = df_source.loc[
+                adata.obs_names[adj_mat.nonzero()[0]],
+                'alias'].values
+            df_edges_x['relation'] = relation_id
+            df_edges_x['destination'] = df_dest.loc[
+                adata.var_names[adj_mat.nonzero()[1]],
+                'alias'].values
+            if include_weight:
+                df_edges_x['weight'] = lvl * weight_scale
+            return(df_edges_x)
+        
+        def set_disc_edges():
+            pass
+
         for adata_ori in list_CG:
             if use_highly_variable:
                 adata = adata_ori[:, adata_ori.var['highly_variable']].copy()
             else:
                 adata = adata_ori.copy()
-            # select reference of cells
+            # select reference of cells ????
             for key, df_cells in dict_df_cells.items():
                 if set(adata.obs_names) <= set(df_cells.index):
                     break
-            expr_level = np.unique(adata.layers['disc'].data)
-            expr_weight = np.linspace(start=1, stop=5, num=len(expr_level))
-            for i_lvl, lvl in enumerate(expr_level):
-                df_edges_x = pd.DataFrame(columns=col_names)
-                df_edges_x['source'] = df_cells.loc[
-                    adata.obs_names[(adata.layers['disc'] == lvl)
-                                    .astype(int).nonzero()[0]],
-                    'alias'].values
-                df_edges_x['relation'] = f'r{id_r}'
-                df_edges_x['destination'] = df_genes.loc[
-                    adata.var_names[(adata.layers['disc'] == lvl)
-                                    .astype(int).nonzero()[1]],
-                    'alias'].values
+            if discretize_CG:
+                expr_level = np.unique(adata.layers['disc'].data)
+                expr_weight = np.linspace(start=1, stop=5, num=len(expr_level))
+                for i_lvl, lvl in enumerate(expr_level):
+                    df_edges_x = _get_df_edges((adata.layers['disc'] == lvl).astype(int),
+                        df_cells, df_genes, adata, f'r{id_r}', include_weight = True)
+                    print(f'relation{id_r}: '
+                        f'source: {key}, '
+                        f'destination: {prefix_G}\n'
+                        f'#edges: {df_edges_x.shape[0]}')
+                    dict_graph_stats[f'relation{id_r}'] = \
+                        {'source': key,
+                        'destination': prefix_G,
+                        'n_edges': df_edges_x.shape[0]}
+                    df_edges = df_edges.append(df_edges_x,
+                                            ignore_index=True)
+                    if get_marker_sig_G:
+                        # generate virtual AnnData with cells x virtual genes
+                        virtual_exp_matrix = _get_virtual_dest(n_virtual_node, adata.layers['disc'].data)
+                        virtual_adata = ad.AnnData(obs=adata.obs, var=df_vgenes, layers={"disc":virtual_exp_matrix})
+                        df_edges_v = _get_df_edges((virtual_exp_matrix == lvl).astype(int),
+                            df_cells, df_vgenes, virtual_adata, f'r{id_r}', include_weight=True, weight_scale=1e-6)
+                        print(f'relation{id_r}: '
+                            f'source: {key}, '
+                            f'destination: v{prefix_G}\n'
+                            f'#edges: {df_edges_v.shape[0]}')
+                        dict_graph_stats[f'relation{id_r}'] = \
+                            {'source': key,
+                            'destination': f'v{prefix_G}',
+                            'n_edges': df_edges_v.shape[0]}
+                        df_edges = df_edges.append(df_edges_v,
+                                                ignore_index=True)
+                    settings.pbg_params['relations'].append(
+                        {'name': f'r{id_r}',
+                        'lhs': f'{key}',
+                        'rhs': f'{prefix_G}',
+                        'operator': 'none',
+                        'weight': round(expr_weight[i_lvl], 2),
+                        })
+                    id_r += 1
+            else:
+                df_edges_x = _get_df_edges(adata.X,
+                    df_cells, df_genes, adata, f'r{id_r}', include_weight = True)
                 print(f'relation{id_r}: '
-                      f'source: {key}, '
-                      f'destination: {prefix_G}\n'
-                      f'#edges: {df_edges_x.shape[0]}')
+                    f'source: {key}, '
+                    f'destination: {prefix_G}\n'
+                    f'#edges: {df_edges_x.shape[0]}')
                 dict_graph_stats[f'relation{id_r}'] = \
                     {'source': key,
-                     'destination': prefix_G,
-                     'n_edges': df_edges_x.shape[0]}
+                    'destination': prefix_G,
+                    'n_edges': df_edges_x.shape[0]}
                 df_edges = df_edges.append(df_edges_x,
-                                           ignore_index=True)
-                settings.pbg_params['relations'].append(
-                    {'name': f'r{id_r}',
-                     'lhs': f'{key}',
-                     'rhs': f'{prefix_G}',
-                     'operator': 'none',
-                     'weight': round(expr_weight[i_lvl], 2),
-                     })
+                                        ignore_index=True)
+                if get_marker_sig_G:
+                    # generate virtual AnnData with cells x virtual genes
+                    virtual_exp_matrix = _get_virtual_dest(n_virtual_node, adata.X)
+                    virtual_adata = ad.AnnData(obs=adata.obs, var=df_vgenes, layers={"disc":virtual_exp_matrix})
+                    df_edges_v = _get_df_edges(virtual_exp_matrix,
+                        df_cells, df_vgenes, virtual_adata, f'r{id_r}', include_weight=True, weight_scale=1e-6)
+                    print(f'relation{id_r}: '
+                        f'source: {key}, '
+                        f'destination: v{prefix_G}\n'
+                        f'#edges: {df_edges_v.shape[0]}')
+                    dict_graph_stats[f'relation{id_r}'] = \
+                        {'source': key,
+                        'destination': f'v{prefix_G}',
+                        'n_edges': df_edges_v.shape[0]}
+                    df_edges = df_edges.append(df_edges_v,
+                                            ignore_index=True)
+                    settings.pbg_params['relations'].append(
+                        {'name': f'r{id_r}',
+                        'lhs': f'{key}',
+                        'rhs': f'{prefix_G}',
+                        'operator': 'none',
+                        'weight': 1,
+                        })
                 id_r += 1
-            adata_ori.obs['pbg_id'] = ""
-            adata_ori.var['pbg_id'] = ""
-            adata_ori.obs.loc[adata.obs_names, 'pbg_id'] = \
-                df_cells.loc[adata.obs_names, 'alias'].copy()
-            adata_ori.var.loc[adata.var_names, 'pbg_id'] = \
-                df_genes.loc[adata.var_names, 'alias'].copy()
 
     if list_CC is not None:
         for adata in list_CC:

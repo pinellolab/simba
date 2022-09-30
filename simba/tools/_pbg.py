@@ -120,7 +120,7 @@ def gen_graph(list_CP=None,
         os.path.join(filepath, "input/entity")
     settings.pbg_params['edge_paths'] = \
         [os.path.join(filepath, "input/edge"), ]
-    if(not os.path.exists(filepath)):
+    if not os.path.exists(filepath):
         os.makedirs(filepath)
 
     # Collect the indices of entities
@@ -141,7 +141,7 @@ def gen_graph(list_CP=None,
             else:
                 adata = adata_ori.copy()
             ids_cells_i = adata.obs.index
-            if(len(dict_cells) == 0):
+            if len(dict_cells) == 0:
                 dict_cells[prefix_C] = ids_cells_i
             else:
                 # check if cell indices are included in dict_cells
@@ -187,7 +187,7 @@ def gen_graph(list_CP=None,
             else:
                 adata = adata_ori.copy()
             ids_cells_i = adata.obs.index
-            if(len(dict_cells) == 0):
+            if len(dict_cells) == 0:
                 dict_cells[prefix_C] = ids_cells_i
             else:
                 # check if cell indices are included in dict_cells
@@ -253,7 +253,7 @@ def gen_graph(list_CP=None,
 
     # generate edges
     dict_graph_stats = dict()
-    col_names = ["source", "relation", "destination"]
+    col_names = ["source", "relation", "destination", "weight"]
     df_edges = pd.DataFrame(columns=col_names)
     id_r = 0
     settings.pbg_params['relations'] = []
@@ -382,6 +382,55 @@ def gen_graph(list_CP=None,
             adata_ori.var.loc[adata.var_names, 'pbg_id'] = \
                 df_kmers.loc[adata.var_names, 'alias'].copy()
 
+    # if list_CG is not None:
+    #     for adata_ori in list_CG:
+    #         if use_highly_variable:
+    #             adata = adata_ori[:, adata_ori.var['highly_variable']].copy()
+    #         else:
+    #             adata = adata_ori.copy()
+    #         # select reference of cells
+    #         for key, df_cells in dict_df_cells.items():
+    #             if set(adata.obs_names) <= set(df_cells.index):
+    #                 break
+    #         expr_level = np.unique(adata.layers['disc'].data)
+    #         expr_weight = np.linspace(start=1, stop=5, num=len(expr_level))
+    #         for i_lvl, lvl in enumerate(expr_level):
+    #             df_edges_x = pd.DataFrame(columns=col_names)
+    #             df_edges_x['source'] = df_cells.loc[
+    #                 adata.obs_names[(adata.layers['disc'] == lvl)
+    #                                 .astype(int).nonzero()[0]],
+    #                 'alias'].values
+    #             df_edges_x['relation'] = f'r{id_r}'
+    #             df_edges_x['destination'] = df_genes.loc[
+    #                 adata.var_names[(adata.layers['disc'] == lvl)
+    #                                 .astype(int).nonzero()[1]],
+    #                 'alias'].values
+    #             print(f'relation{id_r}: '
+    #                   f'source: {key}, '
+    #                   f'destination: {prefix_G}\n'
+    #                   f'#edges: {df_edges_x.shape[0]}')
+    #             dict_graph_stats[f'relation{id_r}'] = \
+    #                 {'source': key,
+    #                  'destination': prefix_G,
+    #                  'n_edges': df_edges_x.shape[0]}
+    #             df_edges = pd.concat(
+    #                 [df_edges, df_edges_x],
+    #                 ignore_index=True)
+    #             settings.pbg_params['relations'].append(
+    #                 {'name': f'r{id_r}',
+    #                  'lhs': f'{key}',
+    #                  'rhs': f'{prefix_G}',
+    #                  'operator': 'none',
+    #                  'weight': round(expr_weight[i_lvl], 2),
+    #                  })
+    #             id_r += 1
+    #         adata_ori.obs['pbg_id'] = ""
+    #         adata_ori.var['pbg_id'] = ""
+    #         adata_ori.obs.loc[adata.obs_names, 'pbg_id'] = \
+    #             df_cells.loc[adata.obs_names, 'alias'].copy()
+    #         adata_ori.var.loc[adata.var_names, 'pbg_id'] = \
+    #             df_genes.loc[adata.var_names, 'alias'].copy()
+
     if list_CG is not None:
         for adata_ori in list_CG:
             if use_highly_variable:
@@ -392,38 +441,35 @@ def gen_graph(list_CP=None,
             for key, df_cells in dict_df_cells.items():
                 if set(adata.obs_names) <= set(df_cells.index):
                     break
-            expr_level = np.unique(adata.layers['disc'].data)
-            expr_weight = np.linspace(start=1, stop=5, num=len(expr_level))
-            for i_lvl, lvl in enumerate(expr_level):
-                df_edges_x = pd.DataFrame(columns=col_names)
-                df_edges_x['source'] = df_cells.loc[
-                    adata.obs_names[(adata.layers['disc'] == lvl)
-                                    .astype(int).nonzero()[0]],
-                    'alias'].values
-                df_edges_x['relation'] = f'r{id_r}'
-                df_edges_x['destination'] = df_genes.loc[
-                    adata.var_names[(adata.layers['disc'] == lvl)
-                                    .astype(int).nonzero()[1]],
-                    'alias'].values
-                print(f'relation{id_r}: '
-                      f'source: {key}, '
-                      f'destination: {prefix_G}\n'
-                      f'#edges: {df_edges_x.shape[0]}')
-                dict_graph_stats[f'relation{id_r}'] = \
-                    {'source': key,
-                     'destination': prefix_G,
-                     'n_edges': df_edges_x.shape[0]}
-                df_edges = pd.concat(
-                    [df_edges, df_edges_x],
-                    ignore_index=True)
-                settings.pbg_params['relations'].append(
-                    {'name': f'r{id_r}',
-                     'lhs': f'{key}',
-                     'rhs': f'{prefix_G}',
-                     'operator': 'none',
-                     'weight': round(expr_weight[i_lvl], 2),
-                     })
-                id_r += 1
+            df_edges_x = pd.DataFrame(columns=col_names)
+            _row, _col = adata.X.nonzero()
+            df_edges_x['source'] = df_cells.loc[
+                adata.obs_names[_row],
+                'alias'].values
+            df_edges_x['relation'] = f'r{id_r}'
+            df_edges_x['destination'] = df_genes.loc[
+                adata.var_names[_col],
+                'alias'].values
+            df_edges_x['weight'] = \
+                adata.X[_row, _col].A.flatten()
+            print(
+                f'relation{id_r}: '
+                f'source: {key}, '
+                f'destination: {prefix_G}\n'
+                f'#edges: {df_edges_x.shape[0]}')
+            dict_graph_stats[f'relation{id_r}'] = \
+                {'source': key,
+                    'destination': prefix_G,
+                    'n_edges': df_edges_x.shape[0]}
+            df_edges = pd.concat(
+                [df_edges, df_edges_x],
+                ignore_index=True)
+            settings.pbg_params['relations'].append(
+                {'name': f'r{id_r}',
+                 'lhs': f'{key}',
+                 'rhs': f'{prefix_G}',
+                 'operator': 'none'})
+            id_r += 1
             adata_ori.obs['pbg_id'] = ""
             adata_ori.var['pbg_id'] = ""
             adata_ori.obs.loc[adata.obs_names, 'pbg_id'] = \
@@ -580,13 +626,14 @@ def pbg_train(dirname=None,
     list_filenames = [os.path.join(filepath, "pbg_graph.txt")]
     input_edge_paths = [Path(name) for name in list_filenames]
     print("Converting input data ...")
+    print("new version:")
     convert_input_data(
         config.entities,
         config.relations,
         config.entity_path,
         config.edge_paths,
         input_edge_paths,
-        TSVEdgelistReader(lhs_col=0, rhs_col=2, rel_col=1),
+        TSVEdgelistReader(lhs_col=0, rhs_col=2, rel_col=1, weight_col=3),
         dynamic_relations=config.dynamic_relations,
         )
 

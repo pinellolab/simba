@@ -36,7 +36,7 @@ def _uniquify(seq, sep='-'):
             # Use stored occurrence value
             seq[i] += (sep+str(dups[val][1]))
 
-    return(seq)
+    return seq
 
 
 def _gini(array):

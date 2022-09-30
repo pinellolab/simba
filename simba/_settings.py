@@ -91,10 +91,10 @@ class SimbaConfig:
         Returns
         -------
         """
-        if(workdir is None):
+        if workdir is None:
             workdir = self.workdir
             print("Using default working directory.")
-        if(not os.path.exists(workdir)):
+        if not os.path.exists(workdir):
             os.makedirs(workdir)
         self.workdir = workdir
         self.set_pbg_params()

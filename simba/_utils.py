@@ -44,11 +44,11 @@ def locate_elbow(x, y, S=10, min_elbow=0,
                           online=online,
                           **kwargs,
                           )
-    if(kneedle.elbow is None):
+    if kneedle.elbow is None:
         elbow = len(y)
     else:
         elbow = int(kneedle.elbow)
-    return(elbow)
+    return elbow
 
 
 # modifed from

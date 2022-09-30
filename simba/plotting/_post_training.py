@@ -84,8 +84,8 @@ def pbg_metrics(metrics=['mrr'],
 
     assert isinstance(metrics, list), "`metrics` must be list"
     for x in metrics:
-        if(x not in ['pos_rank', 'mrr', 'r1',
-                     'r10', 'r50', 'auc']):
+        if x not in ['pos_rank', 'mrr', 'r1',
+                     'r10', 'r50', 'auc']:
             raise ValueError(f'unrecognized metric {x}')
     pbg_params = settings.pbg_params
     if path_emb is None:
@@ -95,11 +95,11 @@ def pbg_metrics(metrics=['mrr'],
     with open(os.path.join(path_emb, 'training_stats.json'), 'r') as f:
         for line in f:
             line_json = json.loads(line)
-            if('stats' in line_json.keys()):
+            if 'stats' in line_json.keys():
                 training_loss.append(line_json['stats']['metrics']['loss'])
                 line_stats_before = line_json['eval_stats_before']['metrics']
                 for x in line_stats_before.keys():
-                    if(x not in eval_stats_before.keys()):
+                    if x not in eval_stats_before.keys():
                         eval_stats_before[x] = [line_stats_before[x]]
                     else:
                         eval_stats_before[x].append(line_stats_before[x])
@@ -124,8 +124,8 @@ def pbg_metrics(metrics=['mrr'],
         ax_i.set_xlabel('epoch')
         ax_i.set_ylabel(metric)
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
-    if(save_fig):
-        if(not os.path.exists(fig_path)):
+    if save_fig:
+        if not os.path.exists(fig_path):
             os.makedirs(fig_path)
         plt.savefig(os.path.join(fig_path, fig_name),
                     pad_inches=1,
@@ -283,8 +283,8 @@ def entity_metrics(adata_cmp,
     ax.locator_params(axis='x', tight=True)
     ax.locator_params(axis='y', tight=True)
     fig.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
-    if(save_fig):
-        if(not os.path.exists(fig_path)):
+    if save_fig:
+        if not os.path.exists(fig_path):
             os.makedirs(fig_path)
         fig.savefig(os.path.join(fig_path, fig_name),
                     pad_inches=1,
@@ -419,8 +419,8 @@ def entity_barcode(adata_cmp,
                          color='#CC6F47',
                          linestyle='--')
     plt.tight_layout(pad=pad, h_pad=h_pad, w_pad=w_pad)
-    if(save_fig):
-        if(not os.path.exists(fig_path)):
+    if save_fig:
+        if not os.path.exists(fig_path):
             os.makedirs(fig_path)
         plt.savefig(os.path.join(fig_path, fig_name),
                     pad_inches=1,
@@ -570,8 +570,8 @@ def query(adata,
         else:
             pin = None
 
-    if(sum(list(map(lambda x: x is not None,
-                    [layer, obsm]))) == 2):
+    if sum(list(map(lambda x: x is not None,
+                    [layer, obsm]))) == 2:
         raise ValueError("Only one of `layer` and `obsm` can be used")
     if obsm is not None:
         X = adata.obsm[obsm].copy()
@@ -608,9 +608,9 @@ def query(adata,
     else:
         color = list(dict.fromkeys(color))  # remove duplicate keys
         for ann in color:
-            if(ann in adata.obs_keys()):
+            if ann in adata.obs_keys():
                 df_plot[ann] = adata.obs[ann]
-                if(not is_numeric_dtype(df_plot[ann])):
+                if not is_numeric_dtype(df_plot[ann]):
                     if 'color' not in adata.uns_keys():
                         adata.uns['color'] = dict()
 
@@ -632,7 +632,7 @@ def query(adata,
                             adata.uns['color'][ann+'_color'] = \
                                 dict_palette[ann].copy()
 
-            elif(ann in adata.var_names):
+            elif ann in adata.var_names:
                 df_plot[ann] = adata.obs_vector(ann)
             else:
                 raise ValueError(f"could not find {ann} in `adata.obs.columns`"
@@ -695,7 +695,7 @@ def query(adata,
                         arrowprops=dict(arrowstyle='->', color='black'))
     if save_fig:
         fig = plt.gcf()
-        if(not os.path.exists(fig_path)):
+        if not os.path.exists(fig_path):
             os.makedirs(fig_path)
         fig.savefig(os.path.join(fig_path, fig_name),
                     pad_inches=1,

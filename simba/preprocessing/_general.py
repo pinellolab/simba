@@ -26,7 +26,7 @@ def log_transform(adata):
     X: `numpy.ndarray` (`adata.X`)
         Store #observations × #var_genes logarithmized data matrix.
     """
-    if(not issparse(adata.X)):
+    if not issparse(adata.X):
         adata.X = csr_matrix(adata.X)
     adata.X = np.log1p(adata.X)
     return None
@@ -48,7 +48,7 @@ def binarize(adata,
     X: `numpy.ndarray` (`adata.X`)
         Store #observations × #var_genes binarized data matrix.
     """
-    if(not issparse(adata.X)):
+    if not issparse(adata.X):
         adata.X = csr_matrix(adata.X)
     adata.X = preprocessing.binarize(adata.X,
                                      threshold=threshold,
@@ -78,14 +78,14 @@ def normalize(adata,
     X: `numpy.ndarray` (`adata.X`)
         Store #observations × #var_genes normalized data matrix.
     """
-    if(method not in ['lib_size', 'tf_idf']):
+    if method not in ['lib_size', 'tf_idf']:
         raise ValueError("unrecognized method '%s'" % method)
-    if(not issparse(adata.X)):
+    if not issparse(adata.X):
         adata.X = csr_matrix(adata.X)
-    if(save_raw):
+    if save_raw:
         adata.layers['raw'] = adata.X.copy()
-    if(method == 'lib_size'):
+    if method == 'lib_size':
         sparsefuncs.inplace_row_scale(adata.X, 1/adata.X.sum(axis=1).A)
         adata.X = adata.X*scale_factor
-    if(method == 'tf_idf'):
+    if method == 'tf_idf':
         adata.X = cal_tf_idf(adata.X)

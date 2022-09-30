@@ -28,7 +28,7 @@ def discretize(adata,
     updates `adata` with the following fields
 
     `.layer['simba']` : `array_like`
-        Discretized values to build simba graph.
+        The matrix of discretized values to build SIMBA graph.
     `.uns['disc']` : `dict`
         `bin_edges`: The edges of each bin.
         `bin_count`: The number of values in each bin.

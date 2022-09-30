@@ -43,9 +43,13 @@ def gen_graph(list_CP=None,
               use_top_pcs_PM=None,
               use_top_pcs_PK=None,
               ):
-    """Generate graph for PBG training based on indices of obs and var
+    """Generate graph for PBG training.
+
+    By default, `.layers['simba']` is used to build graph for SIMBA.
+    If `.layers['simba']` doesn't exist, `.X ` will be used instead.
+
     It also generates an accompanying file 'entity_alias.tsv' to map
-    the indices to the aliases used in the graph
+    the indices to the aliases used in the graph.
 
     Parameters
     ----------
@@ -268,14 +272,17 @@ def gen_graph(list_CP=None,
             for key, df_cells in dict_df_cells.items():
                 if set(adata.obs_names) <= set(df_cells.index):
                     break
+            if 'simba' in adata.layers.keys():
+                arr_simba = adata.layers['simba']
+            else:
+                arr_simba = adata.X
+            _row, _col = arr_simba.nonzero()
             df_edges_x = pd.DataFrame(columns=col_names)
             df_edges_x['source'] = df_cells.loc[
-                adata.obs_names[adata.X.nonzero()[0]],
-                'alias'].values
+                adata.obs_names[_row], 'alias'].values
             df_edges_x['relation'] = f'r{id_r}'
             df_edges_x['destination'] = df_peaks.loc[
-                adata.var_names[adata.X.nonzero()[1]],
-                'alias'].values
+                adata.var_names[_col], 'alias'].values
             print(f'relation{id_r}: '
                   f'source: {key}, '
                   f'destination: {prefix_P}\n'
@@ -308,14 +315,17 @@ def gen_graph(list_CP=None,
                 adata = adata_ori[:, adata_ori.var['top_pcs']].copy()
             else:
                 adata = adata_ori.copy()
+            if 'simba' in adata.layers.keys():
+                arr_simba = adata.layers['simba']
+            else:
+                arr_simba = adata.X
+            _row, _col = arr_simba.nonzero()
             df_edges_x = pd.DataFrame(columns=col_names)
             df_edges_x['source'] = df_peaks.loc[
-                adata.obs_names[adata.X.nonzero()[0]],
-                'alias'].values
+                adata.obs_names[_row], 'alias'].values
             df_edges_x['relation'] = f'r{id_r}'
             df_edges_x['destination'] = df_motifs.loc[
-                adata.var_names[adata.X.nonzero()[1]],
-                'alias'].values
+                adata.var_names[_col], 'alias'].values
             print(f'relation{id_r}: '
                   f'source: {prefix_P}, '
                   f'destination: {prefix_M}\n'
@@ -348,14 +358,17 @@ def gen_graph(list_CP=None,
                 adata = adata_ori[:, adata_ori.var['top_pcs']].copy()
             else:
                 adata = adata_ori.copy()
+            if 'simba' in adata.layers.keys():
+                arr_simba = adata.layers['simba']
+            else:
+                arr_simba = adata.X
+            _row, _col = arr_simba.nonzero()
             df_edges_x = pd.DataFrame(columns=col_names)
             df_edges_x['source'] = df_peaks.loc[
-                adata.obs_names[adata.X.nonzero()[0]],
-                'alias'].values
+                adata.obs_names[_row], 'alias'].values
             df_edges_x['relation'] = f'r{id_r}'
             df_edges_x['destination'] = df_kmers.loc[
-                adata.var_names[adata.X.nonzero()[1]],
-                'alias'].values
+                adata.var_names[_col], 'alias'].values
             print(f'relation{id_r}: '
                   f'source: {prefix_P}, '
                   f'destination: {prefix_K}\n'
@@ -441,17 +454,19 @@ def gen_graph(list_CP=None,
             for key, df_cells in dict_df_cells.items():
                 if set(adata.obs_names) <= set(df_cells.index):
                     break
+            if 'simba' in adata.layers.keys():
+                arr_simba = adata.layers['simba']
+            else:
+                arr_simba = adata.X
+            _row, _col = arr_simba.nonzero()
             df_edges_x = pd.DataFrame(columns=col_names)
-            _row, _col = adata.X.nonzero()
             df_edges_x['source'] = df_cells.loc[
-                adata.obs_names[_row],
-                'alias'].values
+                adata.obs_names[_row], 'alias'].values
             df_edges_x['relation'] = f'r{id_r}'
             df_edges_x['destination'] = df_genes.loc[
-                adata.var_names[_col],
-                'alias'].values
+                adata.var_names[_col], 'alias'].values
             df_edges_x['weight'] = \
-                adata.X[_row, _col].A.flatten()
+                arr_simba[_row, _col].A.flatten()
             print(
                 f'relation{id_r}: '
                 f'source: {key}, '
@@ -486,15 +501,18 @@ def gen_graph(list_CP=None,
             for key_var, df_cells_var in dict_df_cells.items():
                 if set(adata.var_names) <= set(df_cells_var.index):
                     break
+            if 'simba' in adata.layers.keys():
+                arr_simba = adata.layers['simba']
+            else:
+                arr_simba = adata.X
+            _row, _col = arr_simba.nonzero()
             #  edges between ref and query
             df_edges_x = pd.DataFrame(columns=col_names)
             df_edges_x['source'] = df_cells_obs.loc[
-                adata.obs_names[adata.layers['conn'].nonzero()[0]],
-                'alias'].values
+                adata.obs_names[_row], 'alias'].values
             df_edges_x['relation'] = f'r{id_r}'
             df_edges_x['destination'] = df_cells_var.loc[
-                adata.var_names[adata.layers['conn'].nonzero()[1]],
-                'alias'].values
+                adata.var_names[_col], 'alias'].values
             print(f'relation{id_r}: '
                   f'source: {key_obs}, '
                   f'destination: {key_var}\n'

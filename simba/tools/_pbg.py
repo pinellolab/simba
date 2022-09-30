@@ -37,11 +37,12 @@ def gen_graph(list_CP=None,
               prefix_G='G',
               copy=False,
               dirname='graph0',
+              add_edge_weights=False,
               use_highly_variable=True,
               use_top_pcs=True,
               use_top_pcs_CP=None,
               use_top_pcs_PM=None,
-              use_top_pcs_PK=None,
+              use_top_pcs_PK=None
               ):
     """Generate graph for PBG training.
 
@@ -70,6 +71,8 @@ def gen_graph(list_CP=None,
         Prefix to indicate the entity type of genes
     dirname: `str`, (default: 'graph0')
         The name of the directory in which each graph will be stored
+    add_edge_weights: `bool`, optional (default: False)
+        If True, the column of edge weigths will be added.
     use_highly_variable: `bool`, optional (default: True)
         Use highly variable genes
     use_top_pcs: `bool`, optional (default: True)
@@ -82,7 +85,7 @@ def gen_graph(list_CP=None,
         Once specified, it will overwrite `use_top_pcs`
     use_top_pcs_PK: `bool`, optional (default: None)
         Use top-PCs-associated features for PK
-        Once specified, it will overwrite `use_top_pcs`
+        Once specified, it will overwrite `use_top_pcs
     copy: `bool`, optional (default: False)
         If True, it returns the graph file as a data frame
 
@@ -124,6 +127,8 @@ def gen_graph(list_CP=None,
         os.path.join(filepath, "input/entity")
     settings.pbg_params['edge_paths'] = \
         [os.path.join(filepath, "input/edge"), ]
+    settings.pbg_params['entity_path'] = \
+        os.path.join(filepath, "input/entity")
     if not os.path.exists(filepath):
         os.makedirs(filepath)
 
@@ -257,7 +262,10 @@ def gen_graph(list_CP=None,
 
     # generate edges
     dict_graph_stats = dict()
-    col_names = ["source", "relation", "destination", "weight"]
+    if add_edge_weights:
+        col_names = ["source", "relation", "destination", "weight"]
+    else:
+        col_names = ["source", "relation", "destination"]
     df_edges = pd.DataFrame(columns=col_names)
     id_r = 0
     settings.pbg_params['relations'] = []
@@ -283,25 +291,37 @@ def gen_graph(list_CP=None,
             df_edges_x['relation'] = f'r{id_r}'
             df_edges_x['destination'] = df_peaks.loc[
                 adata.var_names[_col], 'alias'].values
-            print(f'relation{id_r}: '
-                  f'source: {key}, '
-                  f'destination: {prefix_P}\n'
-                  f'#edges: {df_edges_x.shape[0]}')
+            if add_edge_weights:
+                df_edges_x['weight'] = \
+                    arr_simba[_row, _col].A.flatten()
+                settings.pbg_params['relations'].append({
+                    'name': f'r{id_r}',
+                    'lhs': f'{key}',
+                    'rhs': f'{prefix_P}',
+                    'operator': 'none',
+                    'weight': 1.0
+                    })
+            else:
+                settings.pbg_params['relations'].append({
+                    'name': f'r{id_r}',
+                    'lhs': f'{key}',
+                    'rhs': f'{prefix_P}',
+                    'operator': 'none',
+                    'weight': 1.0
+                    })
             dict_graph_stats[f'relation{id_r}'] = \
                 {'source': key,
                  'destination': prefix_P,
                  'n_edges': df_edges_x.shape[0]}
+            print(f'relation{id_r}: '
+                  f'source: {key}, '
+                  f'destination: {prefix_P}\n'
+                  f'#edges: {df_edges_x.shape[0]}')
+
+            id_r += 1
             df_edges = pd.concat(
                 [df_edges, df_edges_x],
                 ignore_index=True)
-            settings.pbg_params['relations'].append(
-                {'name': f'r{id_r}',
-                 'lhs': f'{key}',
-                 'rhs': f'{prefix_P}',
-                 'operator': 'none',
-                 'weight': 1.0
-                 })
-            id_r += 1
             adata_ori.obs['pbg_id'] = ""
             adata_ori.var['pbg_id'] = ""
             adata_ori.obs.loc[adata.obs_names, 'pbg_id'] = \
@@ -326,25 +346,37 @@ def gen_graph(list_CP=None,
             df_edges_x['relation'] = f'r{id_r}'
             df_edges_x['destination'] = df_motifs.loc[
                 adata.var_names[_col], 'alias'].values
-            print(f'relation{id_r}: '
-                  f'source: {prefix_P}, '
-                  f'destination: {prefix_M}\n'
-                  f'#edges: {df_edges_x.shape[0]}')
+            if add_edge_weights:
+                df_edges_x['weight'] = \
+                    arr_simba[_row, _col].A.flatten()
+                settings.pbg_params['relations'].append({
+                    'name': f'r{id_r}',
+                    'lhs': f'{prefix_P}',
+                    'rhs': f'{prefix_M}',
+                    'operator': 'none',
+                    'weight': 1.0
+                    })
+            else:
+                settings.pbg_params['relations'].append({
+                    'name': f'r{id_r}',
+                    'lhs': f'{prefix_P}',
+                    'rhs': f'{prefix_M}',
+                    'operator': 'none',
+                    'weight': 0.2
+                    })
             dict_graph_stats[f'relation{id_r}'] = \
                 {'source': prefix_P,
                  'destination': prefix_M,
                  'n_edges': df_edges_x.shape[0]}
+            print(f'relation{id_r}: '
+                  f'source: {prefix_P}, '
+                  f'destination: {prefix_M}\n'
+                  f'#edges: {df_edges_x.shape[0]}')
+
+            id_r += 1
             df_edges = pd.concat(
                 [df_edges, df_edges_x],
                 ignore_index=True)
-            settings.pbg_params['relations'].append(
-                {'name': f'r{id_r}',
-                 'lhs': f'{prefix_P}',
-                 'rhs': f'{prefix_M}',
-                 'operator': 'none',
-                 'weight': 0.2
-                 })
-            id_r += 1
             adata_ori.obs['pbg_id'] = ""
             adata_ori.var['pbg_id'] = ""
             adata_ori.obs.loc[adata.obs_names, 'pbg_id'] = \
@@ -369,6 +401,24 @@ def gen_graph(list_CP=None,
             df_edges_x['relation'] = f'r{id_r}'
             df_edges_x['destination'] = df_kmers.loc[
                 adata.var_names[_col], 'alias'].values
+            if add_edge_weights:
+                df_edges_x['weight'] = \
+                    arr_simba[_row, _col].A.flatten()
+                settings.pbg_params['relations'].append({
+                    'name': f'r{id_r}',
+                    'lhs': f'{prefix_P}',
+                    'rhs': f'{prefix_K}',
+                    'operator': 'none',
+                    'weight': 1
+                    })
+            else:
+                settings.pbg_params['relations'].append({
+                    'name': f'r{id_r}',
+                    'lhs': f'{prefix_P}',
+                    'rhs': f'{prefix_K}',
+                    'operator': 'none',
+                    'weight': 0.02
+                    })
             print(f'relation{id_r}: '
                   f'source: {prefix_P}, '
                   f'destination: {prefix_K}\n'
@@ -377,17 +427,11 @@ def gen_graph(list_CP=None,
                 {'source': prefix_P,
                  'destination': prefix_K,
                  'n_edges': df_edges_x.shape[0]}
+
+            id_r += 1
             df_edges = pd.concat(
                 [df_edges, df_edges_x],
                 ignore_index=True)
-            settings.pbg_params['relations'].append(
-                {'name': f'r{id_r}',
-                 'lhs': f'{prefix_P}',
-                 'rhs': f'{prefix_K}',
-                 'operator': 'none',
-                 'weight': 0.02
-                 })
-            id_r += 1
             adata_ori.obs['pbg_id'] = ""
             adata_ori.var['pbg_id'] = ""
             adata_ori.obs.loc[adata.obs_names, 'pbg_id'] = \
@@ -458,33 +502,67 @@ def gen_graph(list_CP=None,
                 arr_simba = adata.layers['simba']
             else:
                 arr_simba = adata.X
-            _row, _col = arr_simba.nonzero()
-            df_edges_x = pd.DataFrame(columns=col_names)
-            df_edges_x['source'] = df_cells.loc[
-                adata.obs_names[_row], 'alias'].values
-            df_edges_x['relation'] = f'r{id_r}'
-            df_edges_x['destination'] = df_genes.loc[
-                adata.var_names[_col], 'alias'].values
-            df_edges_x['weight'] = \
-                arr_simba[_row, _col].A.flatten()
-            print(
-                f'relation{id_r}: '
-                f'source: {key}, '
-                f'destination: {prefix_G}\n'
-                f'#edges: {df_edges_x.shape[0]}')
-            dict_graph_stats[f'relation{id_r}'] = \
-                {'source': key,
+            if add_edge_weights:
+                _row, _col = arr_simba.nonzero()
+                df_edges_x = pd.DataFrame(columns=col_names)
+                df_edges_x['source'] = df_cells.loc[
+                    adata.obs_names[_row], 'alias'].values
+                df_edges_x['relation'] = f'r{id_r}'
+                df_edges_x['destination'] = df_genes.loc[
+                    adata.var_names[_col], 'alias'].values
+                df_edges_x['weight'] = \
+                    arr_simba[_row, _col].A.flatten()
+                settings.pbg_params['relations'].append({
+                    'name': f'r{id_r}',
+                    'lhs': f'{key}',
+                    'rhs': f'{prefix_G}',
+                    'operator': 'none',
+                    'weight': 1.0,
+                    })
+                print(
+                    f'relation{id_r}: '
+                    f'source: {key}, '
+                    f'destination: {prefix_G}\n'
+                    f'#edges: {df_edges_x.shape[0]}')
+                dict_graph_stats[f'relation{id_r}'] = {
+                    'source': key,
                     'destination': prefix_G,
                     'n_edges': df_edges_x.shape[0]}
-            df_edges = pd.concat(
-                [df_edges, df_edges_x],
-                ignore_index=True)
-            settings.pbg_params['relations'].append(
-                {'name': f'r{id_r}',
-                 'lhs': f'{key}',
-                 'rhs': f'{prefix_G}',
-                 'operator': 'none'})
-            id_r += 1
+                id_r += 1
+                df_edges = pd.concat(
+                    [df_edges, df_edges_x],
+                    ignore_index=True)
+            else:
+                expr_level = np.unique(arr_simba.data)
+                expr_weight = np.linspace(start=1, stop=5, num=len(expr_level))
+                for i_lvl, lvl in enumerate(expr_level):
+                    _row, _col = (arr_simba == lvl).astype(int).nonzero()
+                    df_edges_x = pd.DataFrame(columns=col_names)
+                    df_edges_x['source'] = df_cells.loc[
+                        adata.obs_names[_row], 'alias'].values
+                    df_edges_x['relation'] = f'r{id_r}'
+                    df_edges_x['destination'] = df_genes.loc[
+                        adata.var_names[_col], 'alias'].values
+                    settings.pbg_params['relations'].append({
+                        'name': f'r{id_r}',
+                        'lhs': f'{key}',
+                        'rhs': f'{prefix_G}',
+                        'operator': 'none',
+                        'weight': round(expr_weight[i_lvl], 2),
+                        })
+                    print(
+                        f'relation{id_r}: '
+                        f'source: {key}, '
+                        f'destination: {prefix_G}\n'
+                        f'#edges: {df_edges_x.shape[0]}')
+                    dict_graph_stats[f'relation{id_r}'] = {
+                        'source': key,
+                        'destination': prefix_G,
+                        'n_edges': df_edges_x.shape[0]}
+                    id_r += 1
+                    df_edges = pd.concat(
+                        [df_edges, df_edges_x], ignore_index=True)
+
             adata_ori.obs['pbg_id'] = ""
             adata_ori.var['pbg_id'] = ""
             adata_ori.obs.loc[adata.obs_names, 'pbg_id'] = \
@@ -513,6 +591,24 @@ def gen_graph(list_CP=None,
             df_edges_x['relation'] = f'r{id_r}'
             df_edges_x['destination'] = df_cells_var.loc[
                 adata.var_names[_col], 'alias'].values
+            if add_edge_weights:
+                df_edges_x['weight'] = \
+                    arr_simba[_row, _col].A.flatten()
+                settings.pbg_params['relations'].append({
+                    'name': f'r{id_r}',
+                    'lhs': f'{key_obs}',
+                    'rhs': f'{key_var}',
+                    'operator': 'none',
+                    'weight': 1.0
+                    })
+            else:
+                settings.pbg_params['relations'].append({
+                    'name': f'r{id_r}',
+                    'lhs': f'{key_obs}',
+                    'rhs': f'{key_var}',
+                    'operator': 'none',
+                    'weight': 10.0
+                    })
             print(f'relation{id_r}: '
                   f'source: {key_obs}, '
                   f'destination: {key_var}\n'
@@ -521,18 +617,11 @@ def gen_graph(list_CP=None,
                 {'source': key_obs,
                  'destination': key_var,
                  'n_edges': df_edges_x.shape[0]}
+
+            id_r += 1
             df_edges = pd.concat(
                 [df_edges, df_edges_x],
                 ignore_index=True)
-            settings.pbg_params['relations'].append(
-                {'name': f'r{id_r}',
-                 'lhs': f'{key_obs}',
-                 'rhs': f'{key_var}',
-                 'operator': 'none',
-                 'weight': 10.0
-                 })
-            id_r += 1
-
             adata.obs['pbg_id'] = df_cells_obs.loc[adata.obs_names,
                                                    'alias'].copy()
             adata.var['pbg_id'] = df_cells_var.loc[adata.var_names,
@@ -568,7 +657,8 @@ def pbg_train(dirname=None,
               pbg_params=None,
               output='model',
               auto_wd=True,
-              save_wd=False):
+              save_wd=False,
+              use_edge_weights=False):
     """PBG training
 
     Parameters
@@ -588,6 +678,10 @@ def pbg_train(dirname=None,
         Recommended for relative small training sample size (<1e7)
     save_wd: `bool`, optional (default: False)
         If True, estimated `wd` will be saved to `settings.pbg_params['wd']`
+    use_edge_weights: `bool`, optional (default: False)
+        If True, the edge weights are used for the training;
+        If False, the weights of relation types are used instead,
+        and edge weights will be ignored.
 
     Returns
     -------
@@ -644,17 +738,27 @@ def pbg_train(dirname=None,
     list_filenames = [os.path.join(filepath, "pbg_graph.txt")]
     input_edge_paths = [Path(name) for name in list_filenames]
     print("Converting input data ...")
-    print("new version:")
-    convert_input_data(
-        config.entities,
-        config.relations,
-        config.entity_path,
-        config.edge_paths,
-        input_edge_paths,
-        TSVEdgelistReader(lhs_col=0, rhs_col=2, rel_col=1, weight_col=3),
-        dynamic_relations=config.dynamic_relations,
-        )
-
+    if use_edge_weights:
+        print("Edge weights are being used ...")
+        convert_input_data(
+            config.entities,
+            config.relations,
+            config.entity_path,
+            config.edge_paths,
+            input_edge_paths,
+            TSVEdgelistReader(lhs_col=0, rhs_col=2, rel_col=1, weight_col=3),
+            dynamic_relations=config.dynamic_relations,
+            )
+    else:
+        convert_input_data(
+            config.entities,
+            config.relations,
+            config.entity_path,
+            config.edge_paths,
+            input_edge_paths,
+            TSVEdgelistReader(lhs_col=0, rhs_col=2, rel_col=1),
+            dynamic_relations=config.dynamic_relations,
+            )
     subprocess_init = SubprocessInitializer()
     subprocess_init.register(setup_logging, config.verbose)
     subprocess_init.register(add_to_sys_path, loader.config_dir.name)

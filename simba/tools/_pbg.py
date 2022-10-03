@@ -27,6 +27,8 @@ from torchbiggraph.util import (
 from .._settings import settings
 
 def _get_virtual_dest(n_virtual_dest_nodes: int, original_adj_matrix: np.ndarray):
+    # original_adj_matrix: n_source (cells) x  n_dest
+    # reutnrs: n_source (cells) x n_virtual_dest
     virtual_adj_matrix = np.zeros((original_adj_matrix.shape[0], n_virtual_dest_nodes))
     for vdidx in range(n_virtual_dest_nodes):
         didx_sampled = np.random.randint(original_adj_matrix.shape[1]) # select the destination node index to sample edge weight from
@@ -244,7 +246,7 @@ def gen_graph(list_CP=None,
         settings.pbg_params['entities'][prefix_G] = {'num_partitions': 1}
         entity_alias = entity_alias.append(df_genes,
                                            ignore_index=False)
-        if(len(ids_vgenes) > 0):
+        if get_marker_sig_G and (len(ids_vgenes) > 0):
             df_vgenes = pd.DataFrame(
                 index=ids_vgenes,
                 columns=['alias'],
@@ -420,9 +422,6 @@ def gen_graph(list_CP=None,
             if include_weight:
                 df_edges_x['weight'] = lvl * weight_scale
             return(df_edges_x)
-        
-        def set_disc_edges():
-            pass
 
         for adata_ori in list_CG:
             if use_highly_variable:
@@ -449,7 +448,16 @@ def gen_graph(list_CP=None,
                         'n_edges': df_edges_x.shape[0]}
                     df_edges = df_edges.append(df_edges_x,
                                             ignore_index=True)
+                    settings.pbg_params['relations'].append(
+                        {'name': f'r{id_r}',
+                        'lhs': f'{key}',
+                        'rhs': f'{prefix_G}',
+                        'operator': 'none',
+                        'weight': round(expr_weight[i_lvl], 2),
+                        })
+                    id_r += 1
                     if get_marker_sig_G:
+                        epsilon = 1e-4 # edge weights of virtual nodes
                         # generate virtual AnnData with cells x virtual genes
                         virtual_exp_matrix = _get_virtual_dest(n_virtual_node, adata.layers['disc'].data)
                         virtual_adata = ad.AnnData(obs=adata.obs, var=df_vgenes, layers={"disc":virtual_exp_matrix})
@@ -465,15 +473,17 @@ def gen_graph(list_CP=None,
                             'n_edges': df_edges_v.shape[0]}
                         df_edges = df_edges.append(df_edges_v,
                                                 ignore_index=True)
-                    settings.pbg_params['relations'].append(
-                        {'name': f'r{id_r}',
-                        'lhs': f'{key}',
-                        'rhs': f'{prefix_G}',
-                        'operator': 'none',
-                        'weight': round(expr_weight[i_lvl], 2),
+                        settings.pbg_params['relations'].append(
+                            {'name': f'r{id_r}',
+                            'lhs': f'{key}',
+                            'rhs': f'v{prefix_G}',
+                            'operator': 'none',
+                            'weight': round(expr_weight[i_lvl]*epsilon, 5),
                         })
-                    id_r += 1
+                        id_r += 1
+
             else:
+                raise NotImplementedError
                 df_edges_x = _get_df_edges(adata.X,
                     df_cells, df_genes, adata, f'r{id_r}', include_weight = True)
                 print(f'relation{id_r}: '

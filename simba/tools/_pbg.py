@@ -435,6 +435,9 @@ def gen_graph(list_CP=None,
             if discretize_CG:
                 expr_level = np.unique(adata.layers['disc'].data)
                 expr_weight = np.linspace(start=1, stop=5, num=len(expr_level))
+                virtual_exp_matrix = _get_virtual_dest(n_virtual_node, adata.layers['disc'].data)
+                virtual_adata = ad.AnnData(obs=adata.obs, var=df_vgenes, layers={"disc":virtual_exp_matrix})
+                        
                 for i_lvl, lvl in enumerate(expr_level):
                     df_edges_x = _get_df_edges((adata.layers['disc'] == lvl).astype(int),
                         df_cells, df_genes, adata, f'r{id_r}', include_weight = True)
@@ -459,8 +462,6 @@ def gen_graph(list_CP=None,
                     if get_marker_sig_G:
                         epsilon = 1e-4 # edge weights of virtual nodes
                         # generate virtual AnnData with cells x virtual genes
-                        virtual_exp_matrix = _get_virtual_dest(n_virtual_node, adata.layers['disc'].data)
-                        virtual_adata = ad.AnnData(obs=adata.obs, var=df_vgenes, layers={"disc":virtual_exp_matrix})
                         df_edges_v = _get_df_edges((virtual_exp_matrix == lvl).astype(int),
                             df_cells, df_vgenes, virtual_adata, f'r{id_r}', include_weight=True, weight_scale=1e-6)
                         print(f'relation{id_r}: '

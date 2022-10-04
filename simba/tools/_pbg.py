@@ -2,6 +2,7 @@
 
 from typing import Dict
 import numpy as np
+from scipy.sparse import dok_matrix
 import pandas as pd
 import anndata as ad
 import os
@@ -29,12 +30,17 @@ from .._settings import settings
 def _get_virtual_dest(n_virtual_dest_nodes: int, original_adj_matrix: np.ndarray):
     # original_adj_matrix: n_source (cells) x  n_dest
     # reutnrs: n_source (cells) x n_virtual_dest
-    virtual_adj_matrix = np.zeros((original_adj_matrix.shape[0], n_virtual_dest_nodes))
+    virtual_adj_matrix = dok_matrix((original_adj_matrix.shape[0], n_virtual_dest_nodes))
+    
     for vdidx in range(n_virtual_dest_nodes):
         didx_sampled = np.random.randint(original_adj_matrix.shape[1]) # select the destination node index to sample edge weight from
         edge_weights = original_adj_matrix[:,didx_sampled]
-        virtual_edge_weight = np.random.permutation(edge_weights)
-        virtual_adj_matrix[:,vdidx] = virtual_edge_weight
+        pidx = np.random.permutation(range(edge_weights.shape[0]))
+        virtual_edge_weight = edge_weights[pidx,0]
+        try:
+            virtual_adj_matrix[:,vdidx] = virtual_edge_weight
+        except: return virtual_edge_weight
+            
     return(virtual_adj_matrix)
 
 def gen_graph(list_CP=None,
@@ -60,7 +66,7 @@ def gen_graph(list_CP=None,
               get_marker_sig_K=False,
               n_virtual_node = 1000,
               discretize_CG = True,
-              ):
+              epsilon=1):
     """Generate graph for PBG training based on indices of obs and var
     It also generates an accompanying file 'entity_alias.tsv' to map
     the indices to the aliases used in the graph
@@ -226,7 +232,7 @@ def gen_graph(list_CP=None,
                     dict_cells[f'{prefix_C}{len(dict_cells)+1}'] = ids_cells_i
             ids_genes = ids_genes.union(adata.var.index)
         if get_marker_sig_G:
-            ids_vgenes = pd.Index([f'v{prefix_G}{x}' for x in range(n_virtual_node)])
+            ids_vgenes = pd.Index([f'v{prefix_G}.{x}' for x in range(n_virtual_node)])
 
     entity_alias = pd.DataFrame(columns=['alias'])
     dict_df_cells: Dict[int, pd.DataFrame] = dict()  # unique cell dataframes
@@ -250,7 +256,8 @@ def gen_graph(list_CP=None,
             df_vgenes = pd.DataFrame(
                 index=ids_vgenes,
                 columns=['alias'],
-                data=[ids_vgenes])
+                data=ids_vgenes.tolist())
+            settings.pbg_params['entities'][f'v{prefix_G}'] = {'num_partitions': 1}
             entity_alias = entity_alias.append(df_vgenes,
                                                 ignore_index=False)
     if(len(ids_peaks) > 0):
@@ -435,8 +442,9 @@ def gen_graph(list_CP=None,
             if discretize_CG:
                 expr_level = np.unique(adata.layers['disc'].data)
                 expr_weight = np.linspace(start=1, stop=5, num=len(expr_level))
-                virtual_exp_matrix = _get_virtual_dest(n_virtual_node, adata.layers['disc'].data)
-                virtual_adata = ad.AnnData(obs=adata.obs, var=df_vgenes, layers={"disc":virtual_exp_matrix})
+                if get_marker_sig_G:
+                    virtual_exp_matrix = _get_virtual_dest(n_virtual_node, adata.layers['disc'])
+                    virtual_adata = ad.AnnData(obs=adata.obs, var=df_vgenes, layers={"disc":virtual_exp_matrix})
                         
                 for i_lvl, lvl in enumerate(expr_level):
                     df_edges_x = _get_df_edges((adata.layers['disc'] == lvl).astype(int),
@@ -460,7 +468,6 @@ def gen_graph(list_CP=None,
                         })
                     id_r += 1
                     if get_marker_sig_G:
-                        epsilon = 1e-4 # edge weights of virtual nodes
                         # generate virtual AnnData with cells x virtual genes
                         df_edges_v = _get_df_edges((virtual_exp_matrix == lvl).astype(int),
                             df_cells, df_vgenes, virtual_adata, f'r{id_r}', include_weight=True, weight_scale=1e-6)
@@ -521,6 +528,12 @@ def gen_graph(list_CP=None,
                         'weight': 1,
                         })
                 id_r += 1
+            adata_ori.obs['pbg_id'] = ""
+            adata_ori.var['pbg_id'] = ""
+            adata_ori.obs.loc[adata.obs_names, 'pbg_id'] = \
+                df_cells.loc[adata.obs_names, 'alias'].copy()
+            adata_ori.var.loc[adata.var_names, 'pbg_id'] = \
+                df_genes.loc[adata.var_names, 'alias'].copy()
 
     if list_CC is not None:
         for adata in list_CC:

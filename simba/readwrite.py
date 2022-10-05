@@ -42,7 +42,7 @@ def read_embedding(path_emb=None,
         By default, it reads in the embeddings of all entities.
     convert_alias: `bool`, optional (default: True)
         If True, it will convert entity aliases to the original indices
-    path_entity: `str`, optional (default: None)
+    path_entity_alias: `str`, optional (default: None)
         Path to entity alias file
     num_epochs: `int`, optional (default: None)
         The embedding result associated with num_epochs to read in

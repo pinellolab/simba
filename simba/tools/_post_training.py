@@ -186,7 +186,8 @@ class SimbaEmbed:
             #         )
             obs_query = adata_query.obs.copy()
             obs_query['id_dataset'] = [f'query_{i}']*adata_query.shape[0]
-            obs_all = obs_all.append(obs_query, ignore_index=False)
+            obs_all = pd.concat(
+                [obs_all, obs_query], ignore_index=False)
         adata_all = ad.AnnData(X=X_all,
                                obs=obs_all)
         return adata_all
@@ -403,7 +404,8 @@ def query(adata,
                 df_output_ii['query'] = entity[ii]
             else:
                 df_output_ii['query'] = ii
-            df_output = df_output.append(df_output_ii)
+            df_output = pd.concat(
+                [df_output, df_output_ii], ignore_index=False)
         if anno_filter is not None:
             if anno_filter in adata.obs_keys():
                 if filters is None:
@@ -452,7 +454,8 @@ def query(adata,
                 df_output_ii['query'] = entity[ii]
             else:
                 df_output_ii['query'] = ii
-            df_output = df_output.append(df_output_ii)
+            df_output = pd.concat(
+                [df_output, df_output_ii], ignore_index=False)
         df_output = df_output.sort_values(by='distance')
 
     adata.uns['query'] = dict()

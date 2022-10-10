@@ -37,6 +37,7 @@ def gen_graph(list_CP=None,
               prefix_K='K',
               prefix_G='G',
               prefix='E',
+              layer='simba',
               copy=False,
               dirname='graph0',
               add_edge_weights=None,
@@ -60,6 +61,10 @@ def gen_graph(list_CP=None,
 
     It also generates an accompanying file 'entity_alias.tsv' to map
     the indices to the aliases used in the graph.
+
+    Note when `add_edge_weights` is True, `list_CG` will only generate
+    one relation of cells and genes, as opposed to multiple relations
+    based on discretized levels.
 
     Parameters
     ----------
@@ -86,6 +91,10 @@ def gen_graph(list_CP=None,
         Prefix to indicate the entity type of genes
     prefix: `str`, optional (default: 'E')
         Prefix to indicate general entities in `list_adata`
+    layer: `str`, optional (default: 'simba')
+        The layer in AnnData to use for constructing the graph.
+        If `layer` is None or the specificed layer does not exist,
+        `.X` in AnnData will be used instead.
     dirname: `str`, (default: 'graph0')
         The name of the directory in which each graph will be stored
     add_edge_weights: `bool`, optional (default: None)
@@ -240,8 +249,13 @@ def gen_graph(list_CP=None,
                         ignore_index=False)
 
             # generate edges
-            if 'simba' in adata_ori.layers.keys():
-                arr_simba = adata_ori.layers['simba']
+            if layer is not None:
+                if layer in adata_ori.layers.keys():
+                    arr_simba = adata_ori.layers[layer]
+                else:
+                    print(f'`{layer}` does not exist in adata {ctr_rel} '
+                          'in `list_adata`.`.X` is being used instead.')
+                    arr_simba = adata_ori.X
             else:
                 arr_simba = adata_ori.X
             _row, _col = arr_simba.nonzero()
@@ -426,7 +440,7 @@ def gen_graph(list_CP=None,
         settings.pbg_params['relations'] = []
 
         if list_CP is not None:
-            for adata_ori in list_CP:
+            for i, adata_ori in enumerate(list_CP):
                 if use_top_pcs:
                     adata = adata_ori[:, adata_ori.var['top_pcs']].copy()
                 else:
@@ -435,8 +449,13 @@ def gen_graph(list_CP=None,
                 for key, df_cells in dict_df_cells.items():
                     if set(adata.obs_names) <= set(df_cells.index):
                         break
-                if 'simba' in adata.layers.keys():
-                    arr_simba = adata.layers['simba']
+                if layer is not None:
+                    if layer in adata.layers.keys():
+                        arr_simba = adata.layers[layer]
+                    else:
+                        print(f'`{layer}` does not exist in anndata {i} '
+                              'in `list_CP`.`.X` is being used instead.')
+                        arr_simba = adata.X
                 else:
                     arr_simba = adata.X
                 _row, _col = arr_simba.nonzero()
@@ -486,13 +505,18 @@ def gen_graph(list_CP=None,
                     df_peaks.loc[adata.var_names, 'alias'].copy()
 
         if list_PM is not None:
-            for adata_ori in list_PM:
+            for i, adata_ori in enumerate(list_PM):
                 if use_top_pcs:
                     adata = adata_ori[:, adata_ori.var['top_pcs']].copy()
                 else:
                     adata = adata_ori.copy()
-                if 'simba' in adata.layers.keys():
-                    arr_simba = adata.layers['simba']
+                if layer is not None:
+                    if layer in adata.layers.keys():
+                        arr_simba = adata.layers[layer]
+                    else:
+                        print(f'`{layer}` does not exist in anndata {i} '
+                              'in `list_PM`.`.X` is being used instead.')
+                        arr_simba = adata.X
                 else:
                     arr_simba = adata.X
                 _row, _col = arr_simba.nonzero()
@@ -542,13 +566,18 @@ def gen_graph(list_CP=None,
                     df_motifs.loc[adata.var_names, 'alias'].copy()
 
         if list_PK is not None:
-            for adata_ori in list_PK:
+            for i, adata_ori in enumerate(list_PK):
                 if use_top_pcs:
                     adata = adata_ori[:, adata_ori.var['top_pcs']].copy()
                 else:
                     adata = adata_ori.copy()
-                if 'simba' in adata.layers.keys():
-                    arr_simba = adata.layers['simba']
+                if layer is not None:
+                    if layer in adata.layers.keys():
+                        arr_simba = adata.layers[layer]
+                    else:
+                        print(f'`{layer}` does not exist in anndata {i} '
+                              'in `list_PK`.`.X` is being used instead.')
+                        arr_simba = adata.X
                 else:
                     arr_simba = adata.X
                 _row, _col = arr_simba.nonzero()
@@ -598,7 +627,7 @@ def gen_graph(list_CP=None,
                     df_kmers.loc[adata.var_names, 'alias'].copy()
 
         if list_CG is not None:
-            for adata_ori in list_CG:
+            for i, adata_ori in enumerate(list_CG):
                 if use_highly_variable:
                     adata = adata_ori[
                         :, adata_ori.var['highly_variable']].copy()
@@ -608,8 +637,13 @@ def gen_graph(list_CP=None,
                 for key, df_cells in dict_df_cells.items():
                     if set(adata.obs_names) <= set(df_cells.index):
                         break
-                if 'simba' in adata.layers.keys():
-                    arr_simba = adata.layers['simba']
+                if layer is not None:
+                    if layer in adata.layers.keys():
+                        arr_simba = adata.layers[layer]
+                    else:
+                        print(f'`{layer}` does not exist in anndata {i} '
+                              'in `list_CG`.`.X` is being used instead.')
+                        arr_simba = adata.X
                 else:
                     arr_simba = adata.X
                 if add_edge_weights:
@@ -682,7 +716,7 @@ def gen_graph(list_CP=None,
                     df_genes.loc[adata.var_names, 'alias'].copy()
 
         if list_CC is not None:
-            for adata in list_CC:
+            for i, adata in enumerate(list_CC):
                 # select reference of cells
                 for key_obs, df_cells_obs in dict_df_cells.items():
                     if set(adata.obs_names) <= set(df_cells_obs.index):
@@ -690,8 +724,13 @@ def gen_graph(list_CP=None,
                 for key_var, df_cells_var in dict_df_cells.items():
                     if set(adata.var_names) <= set(df_cells_var.index):
                         break
-                if 'simba' in adata.layers.keys():
-                    arr_simba = adata.layers['simba']
+                if layer is not None:
+                    if layer in adata.layers.keys():
+                        arr_simba = adata.layers[layer]
+                    else:
+                        print(f'`{layer}` does not exist in anndata {i} '
+                              'in `list_PM`.`.X` is being used instead.')
+                        arr_simba = adata.X
                 else:
                     arr_simba = adata.X
                 _row, _col = arr_simba.nonzero()

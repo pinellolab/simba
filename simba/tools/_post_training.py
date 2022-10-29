@@ -293,12 +293,14 @@ def compare_entities(adata_ref,
                            var=adata_query.obs)
     adata_cmp.layers['norm'] = X_cmp \
         - np.log(np.exp(X_cmp).mean(axis=0)).reshape(1, -1)
+    X_sorted_normed = np.sort(adata_cmp.layers['norm'], axis=0)
     adata_cmp.layers['softmax'] = np.exp(X_cmp/T) \
         / np.exp(X_cmp/T).sum(axis=0).reshape(1, -1)
     adata_cmp.var['max'] = \
         np.clip(np.sort(adata_cmp.layers['norm'], axis=0)[-n_top_cells:, ],
                 a_min=0,
                 a_max=None).mean(axis=0)
+    adata_cmp.var['maxmin'] = (X_sorted_normed[-n_top_cells:, ]-X_sorted_normed[:n_top_cells,]).mean(axis=0)
     adata_cmp.var['std'] = np.std(X_cmp, axis=0, ddof=1)
     adata_cmp.var['gini'] = np.array([_gini(adata_cmp.layers['softmax'][:, i])
                                       for i in np.arange(X_cmp.shape[1])])

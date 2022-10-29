@@ -595,42 +595,7 @@ def gen_graph(list_CP=None,
 
             else:
                 raise NotImplementedError
-                df_edges_x = _get_df_edges(adata.X,
-                    df_cells, df_genes, adata, f'r{id_r}', include_weight = True)
-                print(f'relation{id_r}: '
-                    f'source: {key}, '
-                    f'destination: {prefix_G}\n'
-                    f'#edges: {df_edges_x.shape[0]}')
-                dict_graph_stats[f'relation{id_r}'] = \
-                    {'source': key,
-                    'destination': prefix_G,
-                    'n_edges': df_edges_x.shape[0]}
-                df_edges = df_edges.append(df_edges_x,
-                                        ignore_index=True)
-                if get_marker_sig_G:
-                    # generate virtual AnnData with cells x virtual genes
-                    virtual_exp_matrix = _get_virtual_dest(n_virtual_node, adata.X)
-                    virtual_adata = ad.AnnData(obs=adata.obs, var=df_vgenes, layers={"disc":virtual_exp_matrix})
-                    df_edges_v = _get_df_edges(virtual_exp_matrix,
-                        df_cells, df_vgenes, virtual_adata, f'r{id_r}', include_weight=True, weight_scale=1e-6)
-                    print(f'relation{id_r}: '
-                        f'source: {key}, '
-                        f'destination: v{prefix_G}\n'
-                        f'#edges: {df_edges_v.shape[0]}')
-                    dict_graph_stats[f'relation{id_r}'] = \
-                        {'source': key,
-                        'destination': f'v{prefix_G}',
-                        'n_edges': df_edges_v.shape[0]}
-                    df_edges = df_edges.append(df_edges_v,
-                                            ignore_index=True)
-                    settings.pbg_params['relations'].append(
-                        {'name': f'r{id_r}',
-                        'lhs': f'{key}',
-                        'rhs': f'{prefix_G}',
-                        'operator': 'none',
-                        'weight': 1,
-                        })
-                id_r += 1
+                
             adata_ori.obs['pbg_id'] = ""
             adata_ori.var['pbg_id'] = ""
             adata_ori.obs.loc[adata.obs_names, 'pbg_id'] = \

@@ -102,33 +102,20 @@ def _degreePreservingShuffle(input_adj_graph, n_virtual_dest_nodes: int = None):
     row_idx = shuffled_adj_graph.row
     col_idx = shuffled_adj_graph.col
     data_vals = shuffled_adj_graph.data
-    print(type(shuffled_adj_graph))
     assert shuffled_adj_graph.shape == (input_adj_graph.shape[0], n_virtual_dest_nodes)
     source_degs = (input_adj_graph>0).toarray().sum(axis=1)
     dest_degs = np.squeeze(np.asarray((input_adj_graph>0).sum(axis=0)))[input_col_idx]
+
     row_conv_dict = dict()
-    for source_deg in tqdm(np.unique(source_degs)):
+    for source_deg in np.unique(source_degs):
         source_deg_nodes_idx = np.where(source_degs == source_deg)[0]
-        # shuffle id of the nodes
-        try:
-            row_conv_dict.update(dict(zip(source_deg_nodes_idx, np.random.permutation(source_deg_nodes_idx))))
-        except ValueError as e:
-            print(e)
-            print(source_deg_nodes_idx.tolist())
-            exit(1)
+        row_conv_dict.update(dict(zip(source_deg_nodes_idx, np.random.permutation(source_deg_nodes_idx))))
     shuffled_row_idx = np.vectorize(row_conv_dict.get)(row_idx)
+
     col_conv_dict = dict()
-    
-    for dest_deg in tqdm(np.unique(dest_degs)):
+    for dest_deg in np.unique(dest_degs):
         dest_deg_nodes_idx = np.where(dest_degs == dest_deg)[0]
-        # shuffle id of the nodes
-        try:
-            
-            col_conv_dict.update(dict(zip(dest_deg_nodes_idx, np.random.permutation(dest_deg_nodes_idx))))
-        except ValueError as e:
-            print(e)
-            print(dest_deg_nodes_idx.tolist())
-            exit(1)
+        col_conv_dict.update(dict(zip(dest_deg_nodes_idx, np.random.permutation(dest_deg_nodes_idx))))
     shuffled_col_idx = np.vectorize(col_conv_dict.get)(col_idx)
 
     shuffled_adj_graph = sparse.coo_matrix((data_vals, (shuffled_row_idx, shuffled_col_idx)), shape=(input_adj_graph.shape[0], n_virtual_dest_nodes)).tocsr()

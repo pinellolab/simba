@@ -109,7 +109,7 @@ def _digitizedDegreePreservingShuffle(input_adj_graph, mean_nodes = 100, n_virtu
     dest_degs = np.squeeze(np.asarray((input_adj_graph>0).sum(axis=0)))[input_col_idx]
 
     row_conv_dict = dict()
-    source_quantile = np.unique(np.quantile(source_degs.data, np.append(np.arange(0, 1, mean_nodes/n_source), [1.])))
+    source_quantile = np.unique(np.quantile(source_degs.data, np.append(np.arange(0, 1, mean_nodes/n_orig_dest_nodes), [1.])))
     source_lb=0.0
     for source_q in source_quantile:
         source_deg_nodes_idx = np.where((source_lb <= source_degs) & (source_degs < source_q))[0]
@@ -117,11 +117,11 @@ def _digitizedDegreePreservingShuffle(input_adj_graph, mean_nodes = 100, n_virtu
     shuffled_row_idx = np.vectorize(row_conv_dict.get)(row_idx)
 
     col_conv_dict = dict()
-    dest_quantile = np.unique(np.quantile(dest_degs.data, np.append(np.arange(0, 1, mean_nodes/n_dest), [1.])))
+    dest_quantile = np.unique(np.quantile(dest_degs.data, np.append(np.arange(0, 1, mean_nodes/n_virtual_dest_nodes), [1.])))
     print(dest_quantile)
     dest_lb = 0.0
     for dest_q in dest_quantile:
-        dest_deg_nodes_idx = np.where(dest_degs == dest_deg)[0]
+        dest_deg_nodes_idx = np.where((dest_lb <= dest_degs) & (dest_degs < dest_q))[0]
         col_conv_dict.update(dict(zip(dest_deg_nodes_idx, np.random.permutation(dest_deg_nodes_idx))))
     shuffled_col_idx = np.vectorize(col_conv_dict.get)(col_idx)
 

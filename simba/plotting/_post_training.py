@@ -143,6 +143,8 @@ def entity_metrics(adata_cmp,
                    thresh=0.05,
                    cutoff_x=0,
                    cutoff_y=0,
+                   cutoff_fdr=None,
+                   color_by_fdr=False,
                    n_texts=10,
                    size=8,
                    texts=None,
@@ -190,6 +192,11 @@ def entity_metrics(adata_cmp,
         Cutoff of axis x
     cutoff_y : `float`, optional (default: 0)
         Cutoff of axis y
+    cutoff_fdr: `float`, optional (default: None)
+        FDR cutoff of each metric that will be displayed as horizontal and
+        vertical lines.
+    color_by_fdr: `str`, optional (default: None)
+        Metric whose FDR will be used to color the points.
     levels: `int`, optional (default: 6)
         Number of contour levels or values to draw contours at
     thresh: `float`, optional ([0, 1], default: 0.05)
@@ -227,12 +234,32 @@ def entity_metrics(adata_cmp,
         "x must be one of ['max','std','gini','entropy']"
     assert (y in ['max', 'std', 'gini', 'entropy']), \
         "y must be one of ['max','std','gini','entropy']"
-
+    try:
+        if not cutoff_fdr is None:
+            assert f"{x}_fdr" in adata_cmp.var.columns
+            assert f"{y}_fdr" in adata_cmp.var.columns
+    except AssertionError:
+        print(f"{x}_fdr or {y}_fdr not calculated in adata_cmp.")
+        print("SIMBA needs to be trained with null genes in order to calculate FDR for marker features.\nDid you train your model with null genes?")
+        print("If not, re-run your graph training from graph generation step with `get_marker_significance=True`.\nSee https://simba-bio.readthedocs.io/en/latest/rna_10xpmbc_all_genes_significance.html for more information.")
+    try:
+        if not color_by_fdr is None:
+            assert f"{color_by_fdr}_fdr" in adata_cmp.var.columns
+    except AssertionError:
+        print(f"{color_by_fdr}_fdr not calculated in adata_cmp.")
+        print("SIMBA needs to be trained with null genes in order to calculate FDR for marker features.\nDid you train your model with null genes?")
+        print("If not, re-run your graph training from graph generation step with `get_marker_significance=True`.\nSee https://simba-bio.readthedocs.io/en/latest/rna_10xpmbc_all_genes_significance.html for more information.")
+    
     fig, ax = plt.subplots(figsize=fig_size)
-    ax.scatter(adata_cmp.var[x],
+    if not color_by_fdr is None:
+        kwargs['c'] = -np.log10(adata_cmp.var[f"{color_by_fdr}_fdr"])
+
+    spt = ax.scatter(adata_cmp.var[x],
                adata_cmp.var[y],
                s=size,
                **kwargs)
+    if not color_by_fdr is None:
+        fig.colorbar(spt, label=f'-log10(FDR, {color_by_fdr})')
     if show_texts:
         if texts is not None:
             plt_texts = [plt.text(adata_cmp.var[x][t],
@@ -267,8 +294,16 @@ def entity_metrics(adata_cmp,
                     expand_objects=text_expand,
                     arrowprops=dict(arrowstyle='-', color='black'))
     if show_cutoff:
-        ax.axvline(x=cutoff_x, linestyle='--', color='#CE3746')
-        ax.axhline(y=cutoff_y, linestyle='--', color='#CE3746')
+        if cutoff_fdr is None:
+            ax.axvline(x=cutoff_x, linestyle='--', color='#CE3746')
+            ax.axhline(y=cutoff_y, linestyle='--', color='#CE3746')
+        else:
+            def _get_fdr_thres(metric):
+                metric_fdrs = adata_cmp.var[f"{metric}_fdr"]
+                closest_idx = np.where((metric_fdrs-cutoff_fdr).abs() == (metric_fdrs-cutoff_fdr).abs().min())[0]
+                return(adata_cmp.var[metric][closest_idx])
+            ax.axvline(x=_get_fdr_thres(x), linestyle='--', color='#CE3746')
+            ax.axhline(y=_get_fdr_thres(y), linestyle='--', color='#CE3746')
     if show_contour:
         sns.kdeplot(ax=ax,
                     data=adata_cmp.var,

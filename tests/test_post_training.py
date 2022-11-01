@@ -10,7 +10,6 @@ def dict_adata():
         path_entity='tests/data/pbg_training/input/entity/',
         path_entity_alias='tests/data/pbg_training')
 
-
 def test_embeddding_rna(dict_adata, tmp_path):
     si.settings.set_workdir(tmp_path / "simba_rna")
     adata_C = dict_adata['C']

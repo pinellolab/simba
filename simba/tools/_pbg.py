@@ -3,8 +3,6 @@
 from random import shuffle
 from typing import Dict
 import numpy as np
-from scipy import sparse
-from scipy.sparse import dok_matrix, hstack
 import pandas as pd
 import anndata as ad
 import os
@@ -28,98 +26,8 @@ from torchbiggraph.util import (
     SubprocessInitializer,
 )
 
+from ._utils import _randomize_matrix
 from .._settings import settings
-
-def randomize_matrix(input_adj_graph, n_virtual_dest_nodes: int = None, method='random'):
-    if method == "random":
-        return _randomShuffle(n_virtual_dest_nodes, input_adj_graph)
-    elif method == "degPreserving":
-        return _degreePreservingShuffle(input_adj_graph, n_virtual_dest_nodes)
-    elif method == "binnedDegPreserving":
-        return _digitizedDegreePreservingShuffle(input_adj_graph, n_virtual_dest_nodes=n_virtual_dest_nodes)
-    elif method == 'none':
-        return dok_matrix((input_adj_graph.shape[0], n_virtual_dest_nodes))
-    else:
-        raise ValueError('{} not implemented. method should be one of "random", "degPreserving", "binnedDegPreserving".')
-
-
-def _randomShuffle(n_virtual_dest_nodes: int, original_adj_matrix: np.ndarray):
-    # original_adj_matrix: n_source (cells) x  n_dest
-    # reutnrs: n_source (cells) x n_virtual_dest
-    virtual_adj_matrix = dok_matrix((original_adj_matrix.shape[0], n_virtual_dest_nodes))
-    
-    for vdidx in range(n_virtual_dest_nodes):
-        didx_sampled = np.random.randint(original_adj_matrix.shape[1]) # select the destination node index to sample edge weight from
-        edge_weights = original_adj_matrix[:,didx_sampled]
-        pidx = np.random.permutation(range(edge_weights.shape[0]))
-        virtual_edge_weight = edge_weights[pidx,0]
-        try:
-            virtual_adj_matrix[:,vdidx] = virtual_edge_weight
-        except: return virtual_edge_weight
-            
-    return(virtual_adj_matrix)
-
-def _digitizedDegreePreservingShuffle(input_adj_graph, mean_nodes = 100, n_virtual_dest_nodes: int = None):
-    shuffled_adj_graph = input_adj_graph.copy()
-    n_source, n_dest = input_adj_graph.shape
-    if n_virtual_dest_nodes is None:
-        n_virtual_dest_nodes = n_dest
-    source_degs = input_adj_graph.sum(axis=1)
-    source_quantile = np.unique(np.quantile(source_degs.data, np.append(np.arange(0, 1, mean_nodes/n_source), [1.])))
-    print(source_quantile)
-    source_idx = np.digitize(source_degs, source_quantile)
-    source_lb=0.0
-    for source_q in source_quantile:
-        source_deg_nodes_idx = np.where((source_lb <= source_degs) & (source_degs < source_q))[0]
-        print(len(source_deg_nodes_idx))
-        # shuffle id of the nodes
-        
-        shuffled_adj_graph[source_deg_nodes_idx,:] = shuffled_adj_graph[np.random.permutation(source_deg_nodes_idx),:]
-        source_lb=source_q
-    
-    dest_degs = input_adj_graph.sum(axis=0)
-    dest_quantile = np.unique(np.quantile(dest_degs.data, np.append(np.arange(0, 1, mean_nodes/n_dest), [1.])))
-    print(dest_quantile)
-    dest_lb = 0.0
-    for dest_q in dest_quantile:
-        dest_deg_nodes_idx = np.where((dest_lb <= dest_degs) & (dest_degs < dest_q))[0]
-        print(len(dest_deg_nodes_idx))
-        shuffled_adj_graph[:,dest_deg_nodes_idx] = shuffled_adj_graph[:,np.random.permutation(dest_deg_nodes_idx)]
-        dest_lb=dest_q
-    return shuffled_adj_graph
-
-def _degreePreservingShuffle(input_adj_graph, n_virtual_dest_nodes: int = None):
-    print(f"input graph: {input_adj_graph.shape}")
-    n_orig_dest_nodes = input_adj_graph.shape[1]
-    if n_virtual_dest_nodes is None:
-        n_virtual_dest_nodes = n_orig_dest_nodes
-    input_col_idx = np.tile(np.arange(n_orig_dest_nodes), n_virtual_dest_nodes // n_orig_dest_nodes)
-    assert input_col_idx.ndim == 1
-    input_col_idx = np.concatenate((input_col_idx, np.random.choice(n_orig_dest_nodes, n_virtual_dest_nodes % n_orig_dest_nodes)))
-    
-    assert input_col_idx.ndim == 1
-    shuffled_adj_graph = input_adj_graph.copy()[:,input_col_idx].tocoo()
-    row_idx = shuffled_adj_graph.row
-    col_idx = shuffled_adj_graph.col
-    data_vals = shuffled_adj_graph.data
-    assert shuffled_adj_graph.shape == (input_adj_graph.shape[0], n_virtual_dest_nodes)
-    source_degs = (input_adj_graph>0).toarray().sum(axis=1)
-    dest_degs = np.squeeze(np.asarray((input_adj_graph>0).sum(axis=0)))[input_col_idx]
-
-    row_conv_dict = dict()
-    for source_deg in np.unique(source_degs):
-        source_deg_nodes_idx = np.where(source_degs == source_deg)[0]
-        row_conv_dict.update(dict(zip(source_deg_nodes_idx, np.random.permutation(source_deg_nodes_idx))))
-    shuffled_row_idx = np.vectorize(row_conv_dict.get)(row_idx)
-
-    col_conv_dict = dict()
-    for dest_deg in np.unique(dest_degs):
-        dest_deg_nodes_idx = np.where(dest_degs == dest_deg)[0]
-        col_conv_dict.update(dict(zip(dest_deg_nodes_idx, np.random.permutation(dest_deg_nodes_idx))))
-    shuffled_col_idx = np.vectorize(col_conv_dict.get)(col_idx)
-
-    shuffled_adj_graph = sparse.coo_matrix((data_vals, (shuffled_row_idx, shuffled_col_idx)), shape=(input_adj_graph.shape[0], n_virtual_dest_nodes)).tocsr()
-    return shuffled_adj_graph
  
 
 def gen_graph(list_CP=None,
@@ -139,11 +47,8 @@ def gen_graph(list_CP=None,
               use_top_pcs_CP=None,
               use_top_pcs_PM=None,
               use_top_pcs_PK=None,
-              get_marker_sig_G=False,
-              get_marker_sig_P=False,
-              get_marker_sig_M=False,
-              get_marker_sig_K=False,
-              n_virtual_node = 1000,
+              get_marker_significance=True,
+              fold_null_nodes = 1.0,
               discretize_CG = True,
               write_G_edges = True,
               epsilon=1,
@@ -186,16 +91,17 @@ def gen_graph(list_CP=None,
     use_top_pcs_PK: `bool`, optional (default: None)
         Use top-PCs-associated features for PK
         Once specified, it will overwrite `use_top_pcs`
-    get_marker_sig_G: `bool`, optional (default: False)
+    get_marker_significance: `bool`, optional (default: False)
         Get the significance of cell subpopulation specificity
-        of genes
+        by generating null feature nodes. These feature nodes will
+        be generated by the degree-preserving random edge shuffle
+        by `._utils._randomize_matrix` function and doesn't effect the training
+        of real node embeddings. 
+    fold_null_nodes: `float`, optional (default: 1.0)
+        When `get_marker_significance` is `True`, 
+        `int(fold_null_nodes*n_features) null nodes are created.
     copy: `bool`, optional (default: False)
         If True, it returns the graph file as a data frame
-    fix_cell_nodes: `bool`, optional (default: False)
-        If True, cell nodes are not trained in virtual expression
-        relation. 
-    fix_CG: `bool`, optional (default: False)
-        If True, cell, gene nodes are not trained.
     actualize: `bool`, optional (default: True)
         If False, only the graph stats and the path are updated.
     Returns
@@ -244,8 +150,11 @@ def gen_graph(list_CP=None,
     ids_peaks = pd.Index([])
     ids_kmers = pd.Index([])
     ids_motifs = pd.Index([])
-    if get_marker_sig_G:
-        ids_vgenes = pd.Index([])
+    if get_marker_significance:
+        ids_ngenes = pd.Index([])
+        ids_npeaks = pd.Index([])
+        ids_nkmers = pd.Index([])
+        ids_nmotifs = pd.Index([])
 
     if list_CP is not None:
         for adata_ori in list_CP:
@@ -319,8 +228,9 @@ def gen_graph(list_CP=None,
                     # when not all indices are included
                     dict_cells[f'{prefix_C}{len(dict_cells)+1}'] = ids_cells_i
             ids_genes = ids_genes.union(adata.var.index)
-        if get_marker_sig_G:
-            ids_vgenes = pd.Index([f'v{prefix_G}.{x}' for x in range(n_virtual_node)])
+        if get_marker_significance:
+            n_ngenes = int(len(ids_genes)*fold_null_nodes)
+            ids_ngenes = pd.Index([f'n{prefix_G}.{x}' for x in range(n_ngenes)])
 
     entity_alias = pd.DataFrame(columns=['alias'])
     dict_df_cells: Dict[int, pd.DataFrame] = dict()  # unique cell dataframes
@@ -340,13 +250,13 @@ def gen_graph(list_CP=None,
         settings.pbg_params['entities'][prefix_G] = {'num_partitions': 1}
         entity_alias = entity_alias.append(df_genes,
                                            ignore_index=False)
-        if get_marker_sig_G and (len(ids_vgenes) > 0):
-            df_vgenes = pd.DataFrame(
-                index=ids_vgenes,
+        if get_marker_significance and (len(ids_ngenes) > 0):
+            df_ngenes = pd.DataFrame(
+                index=ids_ngenes,
                 columns=['alias'],
-                data=ids_vgenes.tolist())
-            settings.pbg_params['entities'][f'v{prefix_G}'] = {'num_partitions': 1}
-            entity_alias = entity_alias.append(df_vgenes,
+                data=ids_ngenes.tolist())
+            settings.pbg_params['entities'][f'n{prefix_G}'] = {'num_partitions': 1}
+            entity_alias = entity_alias.append(df_ngenes,
                                                 ignore_index=False)
     if(len(ids_peaks) > 0):
         df_peaks = pd.DataFrame(
@@ -530,9 +440,10 @@ def gen_graph(list_CP=None,
             if discretize_CG:
                 expr_level = np.unique(adata.layers['disc'].data)
                 expr_weight = np.linspace(start=1, stop=5, num=len(expr_level))
-                if get_marker_sig_G:
-                    virtual_exp_matrix = randomize_matrix(adata.layers['disc'], n_virtual_node, method='degPreserving' if actualize else 'none')
-                    virtual_adata = ad.AnnData(obs=adata.obs, var=df_vgenes, layers={"disc":virtual_exp_matrix})
+                if get_marker_significance:
+                    n_ngenes = int(len(ids_genes)*fold_null_nodes)
+                    null_exp_matrix = _randomize_matrix(adata.layers['disc'], n_ngenes, method='degPreserving' if actualize else 'none')
+                    null_adata = ad.AnnData(obs=adata.obs, var=df_ngenes, layers={"disc":null_exp_matrix})
                         
                 for i_lvl, lvl in enumerate(expr_level):
                     df_edges_x = _get_df_edges((adata.layers['disc'] == lvl).astype(int),
@@ -552,30 +463,30 @@ def gen_graph(list_CP=None,
                         {'name': f'r{id_r}',
                         'lhs': f'{key}',
                         'rhs': f'{prefix_G}',
-                        'operator': 'fix' if fix_CG else 'none',
+                        'operator': 'none',
                         'weight': round(expr_weight[i_lvl], 2),
                         })
                     id_r += 1
-                    if get_marker_sig_G:
-                        # generate virtual AnnData with cells x virtual genes
-                        df_edges_v = _get_df_edges((virtual_exp_matrix == lvl).astype(int).T,
-                            df_vgenes, df_cells, virtual_adata.transpose(), f'r{id_r}', include_weight=True, weight_scale=1e-6)
+                    if get_marker_significance:
+                        # generate null AnnData with cells x null genes
+                        df_edges_v = _get_df_edges((null_exp_matrix == lvl).astype(int).T,
+                            df_ngenes, df_cells, null_adata.transpose(), f'r{id_r}', include_weight=True, weight_scale=1e-6)
                         print(f'relation{id_r}: '
                             f'source: v{prefix_G}, '
                             f'destination: {key}\n'
                             f'#edges: {df_edges_v.shape[0]}')
                         dict_graph_stats[f'relation{id_r}'] = \
-                            {'source': f'v{prefix_G}',
+                            {'source': f'n{prefix_G}',
                             'destination': key,
                             'n_edges': df_edges_v.shape[0]}
                         df_edges = df_edges.append(df_edges_v,
                                                 ignore_index=True)
                         settings.pbg_params['relations'].append(
                             {'name': f'r{id_r}',
-                            'lhs': f'v{prefix_G}',
+                            'lhs': f'n{prefix_G}',
                             'rhs': f'{key}',
                             'operator_l': 'none',
-                            'operator_r': 'fix' if fix_cell_nodes else 'none',
+                            'operator_r': 'fix',
                             'weight': round(expr_weight[i_lvl]*epsilon, 5),
                         })
                         id_r += 1

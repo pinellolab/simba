@@ -13,6 +13,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../simba'))
+sys.path.insert(0, os.path.abspath('_ext'))
 import simba  # noqa: E402
 
 
@@ -70,7 +71,9 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
-    "nbsphinx"]
+    "nbsphinx",
+    "edit_on_github",
+    ]
 
 autosummary_generate = True
 
@@ -85,6 +88,11 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build']
 
+# Add prolog for notebooks
+
+# nbsphinx_prolog = r"""
+# {% set docname = 'github/huidongchen/simba_tutorials/blob/main/v1.0/' + env.doc2path(env.docname, base=None) %}
+# """
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -100,13 +108,22 @@ html_theme_options = {
 html_show_sphinx = False
 html_logo = '_static/img/logo_simba.png'
 html_favicon = '_static/img/lion_icon.svg'
-html_context = dict(
-    display_github=True,
-    github_user='pinellolab',
-    github_repo='simba',
-    github_version='simba_v0.1',
-    conf_py_path='/docs/source/',
-)
+# html_context = dict(
+#     display_github=True,
+#     github_user='pinellolab',
+#     github_repo='simba',
+#     github_version='master',
+#     conf_py_path='/docs/source/',
+# )
+# html_context = dict(
+#     display_github=True,
+#     github_user='huidongchen',
+#     github_repo='simba_tutorials',
+#     github_version='main',
+#     conf_py_path='/v1.0/',
+# )
+github_repo = 'simba'
+github_nb_repo = 'simba_tutorials'
 
 
 # Add any paths that contain custom static files (such as style sheets) here,

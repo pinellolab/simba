@@ -137,10 +137,7 @@ class SimbaEmbed:
         percentile = self.percentile
         list_percentile = self.list_percentile
         X_all = adata_ref.X.copy()
-        # obs_all = pd.DataFrame(
-        #     data=['ref']*adata_ref.shape[0],
-        #     index=adata_ref.obs.index,
-        #     columns=['id_dataset'])
+
         obs_all = adata_ref.obs.copy()
         obs_all['id_dataset'] = ['ref']*adata_ref.shape[0]
         for i, adata_query in enumerate(list_adata_query):
@@ -178,15 +175,11 @@ class SimbaEmbed:
                     n_top=n_top,
                     )
             X_all = np.vstack((X_all, adata_query.layers['softmax']))
-            # obs_all = obs_all.append(
-            #     pd.DataFrame(
-            #         data=[f'query_{i}']*adata_query.shape[0],
-            #         index=adata_query.obs.index,
-            #         columns=['id_dataset'])
-            #         )
+
             obs_query = adata_query.obs.copy()
             obs_query['id_dataset'] = [f'query_{i}']*adata_query.shape[0]
-            obs_all = obs_all.append(obs_query, ignore_index=False)
+            obs_all = pd.concat([obs_all, obs_query], ignore_index=False)
+            
         adata_all = ad.AnnData(X=X_all,
                                obs=obs_all)
         return adata_all

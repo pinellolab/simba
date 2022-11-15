@@ -301,7 +301,7 @@ def entity_metrics(adata_cmp,
             def _get_fdr_thres(metric):
                 metric_fdrs = adata_cmp.var[f"{metric}_fdr"]
                 closest_idx = np.where((metric_fdrs-cutoff_fdr).abs() == (metric_fdrs-cutoff_fdr).abs().min())[0]
-                return(adata_cmp.var[metric][closest_idx])
+                return(adata_cmp.var[metric][closest_idx][0])
             ax.axvline(x=_get_fdr_thres(x), linestyle='--', color='#CE3746')
             ax.axhline(y=_get_fdr_thres(y), linestyle='--', color='#CE3746')
     if show_contour:

@@ -47,7 +47,7 @@ def gen_graph(list_CP=None,
               use_top_pcs_CP=None,
               use_top_pcs_PM=None,
               use_top_pcs_PK=None,
-              get_marker_significance=True,
+              get_marker_significance=False,
               fold_null_nodes = 1.0,
               discretize_CG = True,
               write_G_edges = True,
@@ -135,7 +135,33 @@ def gen_graph(list_CP=None,
                      list_CG,
                      list_CC]))) == 5):
         return 'No graph is generated'
-
+    if get_marker_significance: 
+        gen_graph(list_CP=list_CP,
+              list_PM=list_PM,
+              list_PK=list_PK,
+              list_CG=list_CG,
+              list_CC=list_CC,
+              prefix_C=prefix_C,
+              prefix_P=prefix_P,
+              prefix_M=prefix_M,
+              prefix_K=prefix_K,
+              prefix_G=prefix_G,
+              copy=copy,
+              dirname=dirname,
+              use_highly_variable=use_highly_variable,
+              use_top_pcs=use_top_pcs,
+              use_top_pcs_CP=use_top_pcs_CP,
+              use_top_pcs_PM=use_top_pcs_PM,
+              use_top_pcs_PK=use_top_pcs_PK,
+              get_marker_significance=False,
+              discretize_CG = discretize_CG,
+              write_G_edges = write_G_edges,
+              epsilon=epsilon,
+              fix_cell_nodes = False,
+              fix_CG = False,
+              actualize=True)
+        dirname_orig = dirname
+        dirname += "_with_sig"
     filepath = os.path.join(settings.workdir, 'pbg', dirname)
     settings.pbg_params['entity_path'] = \
         os.path.join(filepath, "input/entity")
@@ -472,7 +498,7 @@ def gen_graph(list_CP=None,
                         df_edges_v = _get_df_edges((null_exp_matrix == lvl).astype(int).T,
                             df_ngenes, df_cells, null_adata.transpose(), f'r{id_r}', include_weight=True, weight_scale=1e-6)
                         print(f'relation{id_r}: '
-                            f'source: v{prefix_G}, '
+                            f'source: n{prefix_G}, '
                             f'destination: {key}\n'
                             f'#edges: {df_edges_v.shape[0]}')
                         dict_graph_stats[f'relation{id_r}'] = \
@@ -485,8 +511,7 @@ def gen_graph(list_CP=None,
                             {'name': f'r{id_r}',
                             'lhs': f'n{prefix_G}',
                             'rhs': f'{key}',
-                            'operator_l': 'none',
-                            'operator_r': 'fix',
+                            'operator': 'fix',
                             'weight': round(expr_weight[i_lvl]*epsilon, 5),
                         })
                         id_r += 1
@@ -619,6 +644,16 @@ def gen_graph(list_CP=None,
                   indent=4,
                   separators=(',', ': '))
     print("Finished.")
+    settings.graph_stats[dirname]['entities'] = settings.pbg_params['entities']
+    settings.graph_stats[dirname]['relations'] = settings.pbg_params['relations']
+    if get_marker_significance:
+        filepath = os.path.join(settings.workdir, 'pbg', dirname_orig)
+        settings.pbg_params['entity_path'] = \
+            os.path.join(filepath, "input/entity")
+        settings.pbg_params['edge_paths'] = \
+            [os.path.join(filepath, "input/edge"), ]
+        settings.pbg_params['entities'] = settings.graph_stats[dirname_orig]['entities']
+        settings.pbg_params['relations'] = settings.graph_stats[dirname_orig]['relations']
     if copy:
         return df_edges
     else:
@@ -629,7 +664,8 @@ def pbg_train(dirname=None,
               pbg_params=None,
               output='model',
               auto_wd=True,
-              save_wd=False):
+              save_wd=False,
+              get_marker_significance=False):
     """PBG training
 
     Parameters
@@ -658,7 +694,6 @@ def pbg_train(dirname=None,
         will be written to.
         If checkpoints are found in it, training will resume from them.
     """
-
     if pbg_params is None:
         pbg_params = settings.pbg_params.copy()
     else:
@@ -667,11 +702,24 @@ def pbg_train(dirname=None,
 
     if dirname is None:
         filepath = Path(pbg_params['entity_path']).parent.parent.as_posix()
+        dirname = os.path.basename(filepath)
     else:
         filepath = os.path.join(settings.workdir, 'pbg', dirname)
-
     pbg_params['checkpoint_path'] = os.path.join(filepath, output)
     settings.pbg_params['checkpoint_path'] = pbg_params['checkpoint_path']
+    if get_marker_significance:
+        pbg_train(dirname=dirname,
+              pbg_params=pbg_params,
+              output=output,
+              auto_wd=auto_wd,
+              save_wd=save_wd,
+              get_marker_significance=False)
+        pbg_params = pbg_params.copy()
+        filepath += "_with_sig"
+        pbg_params['checkpoint_path'] = os.path.join(filepath, output)
+        pbg_params['entity_path'] = os.path.join(filepath, "input/entity")
+        pbg_params['edge_paths'] = [os.path.join(filepath, "input/edge"), ]
+        pbg_params['relations'] = settings.graph_stats[dirname + "_with_sig"]['relations']
 
     if auto_wd:
         # empirical numbers from simulation experiments

@@ -27,7 +27,9 @@ def read_embedding(path_emb=None,
                    convert_alias=True,
                    path_entity_alias=None,
                    prefix=None,
-                   num_epochs=None):
+                   num_epochs=None,
+                   get_marker_significance=False,
+                   path_entity_alias_marker=None):
     """Read in entity embeddings from pbg training
 
     Parameters
@@ -75,6 +77,21 @@ def read_embedding(path_emb=None,
         df_entity_alias['id'] = df_entity_alias.index
         df_entity_alias.index = df_entity_alias['alias'].values
 
+    if get_marker_significance:
+        path_emb_marker = os.path.join(Path(path_emb).parent.as_posix() + "_with_sig", os.path.basename(path_emb))
+        path_entity_marker = os.path.join(Path(path_entity).parent.parent.as_posix() + "_with_sig", 'input/entity')
+        if path_entity_alias_marker is None:
+            path_entity_alias = Path(path_emb).parent.as_posix() + "_with_sig"
+        dict_adata_with_sig = read_embedding(
+            path_emb=path_emb_marker,
+            path_entity=path_entity_marker,
+            convert_alias=True,
+            path_entity_alias=path_entity_alias_marker,
+            prefix=prefix,
+            num_epochs=num_epochs,
+            get_marker_significance=False
+        )
+
     dict_adata = dict()
     for x in os.listdir(path_emb):
         if x.startswith('embeddings'):
@@ -95,6 +112,12 @@ def read_embedding(path_emb=None,
                         df_entity_alias.loc[names_entity, 'id'].tolist()
                 adata.obs.index = names_entity
                 dict_adata[entity_type] = adata
+                if get_marker_significance:
+                    try:
+                        dict_adata[f"n{entity_type}"] = dict_adata_with_sig[f"n{entity_type}"]
+                    except KeyError:
+                        print(f"Null feature nodes for entity {entity_type} not embedded.")
+
     return dict_adata
 
 

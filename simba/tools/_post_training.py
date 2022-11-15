@@ -310,7 +310,8 @@ def compare_entities(adata_ref,
                      adata_query,
                      adata_query_null = None,
                      n_top_cells=50,
-                     T=1):
+                     T=1,
+                     ):
     """Compare the embeddings of two entities by calculating
 
     the following values between reference and query entities:

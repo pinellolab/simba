@@ -248,4 +248,4 @@ def _get_fdr(samples: Sequence[float], null_values: Sequence[float], method: str
         lam: lambda parameter used for Stanley-Tibshirani method.
     """
     p_vals = _p_vals(samples, null_values)
-    return(_fdr(p_vals, method=method))
+    return(p_vals, _fdr(p_vals, method=method))

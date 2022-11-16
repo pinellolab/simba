@@ -367,7 +367,12 @@ def compare_entities(adata_ref,
     
     adata_cmp_null = _compare_entities(adata_ref, adata_query_null, n_top_cells = n_top_cells, T = T)
     for metric in ['max', 'std', 'gini', 'entropy']:
-        fdr = _get_fdr(adata_cmp.var[metric], adata_cmp_null.var[metric])
+        if metric == 'entropy':
+            # for entropy, we need the p_value in the opposite direction (lower value if significant)
+            p_val, fdr = _get_fdr(-adata_cmp.var[metric], -adata_cmp_null.var[metric])
+        else:
+            p_val, fdr = _get_fdr(adata_cmp.var[metric], adata_cmp_null.var[metric])
+        adata_cmp.var[f"{metric}_p"] = p_val
         adata_cmp.var[f"{metric}_fdr"] = fdr
     return adata_cmp
 

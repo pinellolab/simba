@@ -391,6 +391,9 @@ def gen_graph(list_CP=None,
                     adata = adata_ori.copy()
                 ids_peaks = ids_peaks.union(adata.obs.index)
                 ids_motifs = ids_motifs.union(adata.var.index)
+            if get_marker_significance:
+                n_nmotifs = int(len(ids_motifs)*fold_null_nodes)
+                ids_nmotifs = pd.Index([f'n{prefix_M}.{x}' for x in range(n_nmotifs)])
         if list_PK is not None:
             for adata_ori in list_PK:
                 if use_top_pcs_PK is None:
@@ -403,6 +406,9 @@ def gen_graph(list_CP=None,
                     adata = adata_ori.copy()
                 ids_peaks = ids_peaks.union(adata.obs.index)
                 ids_kmers = ids_kmers.union(adata.var.index)
+            if get_marker_significance:
+                n_nkmers = int(len(ids_kmers)*fold_null_nodes)
+                ids_nkmers = pd.Index([f'n{prefix_K}.{x}' for x in range(n_nkmers)])
         if list_CG is not None:
             for adata_ori in list_CG:
                 if use_highly_variable:
@@ -486,6 +492,14 @@ def gen_graph(list_CP=None,
             entity_alias = pd.concat(
                 [entity_alias, df_kmers],
                 ignore_index=False)
+            if get_marker_significance and (len(ids_nkmers) > 0):
+                df_nkmers = pd.DataFrame(
+                    index=ids_nkmers,
+                    columns=['alias'],
+                    data=ids_nkmers.tolist())
+                settings.pbg_params['entities'][f'n{prefix_K}'] = {'num_partitions': 1}
+                entity_alias = pd.concat([entity_alias,df_nkmers],
+                                                    ignore_index=False)
         if len(ids_motifs) > 0:
             df_motifs = pd.DataFrame(
                 index=ids_motifs,
@@ -495,7 +509,14 @@ def gen_graph(list_CP=None,
             entity_alias = pd.concat(
                 [entity_alias, df_motifs],
                 ignore_index=False)
-
+            if get_marker_significance and (len(ids_nmotifs) > 0):
+                df_nmotifs = pd.DataFrame(
+                    index=ids_nmotifs,
+                    columns=['alias'],
+                    data=ids_nmotifs.tolist())
+                settings.pbg_params['entities'][f'n{prefix_M}'] = {'num_partitions': 1}
+                entity_alias = pd.concat([entity_alias,df_nmotifs],
+                                                    ignore_index=False)
         # generate edges
         dict_graph_stats = dict()
         if add_edge_weights:
@@ -611,6 +632,10 @@ def gen_graph(list_CP=None,
                         arr_simba = adata.X
                 else:
                     arr_simba = adata.X
+                if get_marker_significance:
+                    n_nmotifs = int(len(ids_motifs)*fold_null_nodes)
+                    null_matrix = _randomize_matrix(arr_simba, n_nmotifs, method='degPreserving')
+                    null_adata = ad.AnnData(obs=adata.obs, var=df_nmotifs, layers={"disc":null_matrix})
                 _row, _col = arr_simba.nonzero()
                 df_edges_x = pd.DataFrame(columns=col_names)
                 df_edges_x['source'] = df_peaks.loc[
@@ -656,6 +681,36 @@ def gen_graph(list_CP=None,
                     df_peaks.loc[adata.obs_names, 'alias'].copy()
                 adata_ori.var.loc[adata.var_names, 'pbg_id'] = \
                     df_motifs.loc[adata.var_names, 'alias'].copy()
+                if get_marker_significance:
+                    _col, _row = null_matrix.transpose().nonzero()
+                    df_edges_x = pd.DataFrame(columns=col_names)
+                    df_edges_x['destination'] = df_cells.loc[
+                        null_adata.obs_names[_row], 'alias'].values
+                    df_edges_x['relation'] = f'r{id_r}'
+                    df_edges_x['source'] = df_nmotifs.loc[
+                        null_adata.var_names[_col], 'alias'].values
+                    df_edges_x['weight'] = \
+                        null_matrix.transpose()[_col, _row].A.flatten()
+                    settings.pbg_params['relations'].append({
+                        'name': f'r{id_r}',
+                        'lhs': f'n{prefix_P}',
+                        'rhs': f'{key}',
+                        'operator': 'fix',
+                        'weight': 1.0,
+                        })
+                    print(
+                        f'relation{id_r}: '
+                        f'source: n{prefix_P}, '
+                        f'destination: {key}\n'
+                        f'#edges: {df_edges_x.shape[0]}')
+                    dict_graph_stats[f'relation{id_r}'] = {
+                        'source': f'n{prefix_P}',
+                        'destination': key,
+                        'n_edges': df_edges_x.shape[0]}
+                    id_r += 1
+                    df_edges = pd.concat(
+                        [df_edges, df_edges_x],
+                        ignore_index=True)
 
         if list_PK is not None:
             for i, adata_ori in enumerate(list_PK):
@@ -674,7 +729,7 @@ def gen_graph(list_CP=None,
                     arr_simba = adata.X
                 _row, _col = arr_simba.nonzero()
                 df_edges_x = pd.DataFrame(columns=col_names)
-                df_edges_x['source'] = df_peaks.loc[
+                df_edges_x['source'] = df_motifs.loc[
                     adata.obs_names[_row], 'alias'].values
                 df_edges_x['relation'] = f'r{id_r}'
                 df_edges_x['destination'] = df_kmers.loc[

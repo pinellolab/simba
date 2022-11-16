@@ -93,7 +93,7 @@ class GeneScores:
 
         """
         ext_tss = pbt_gene
-        if(ext_tss['strand'] == '+'):
+        if ext_tss['strand'] == '+':
             ext_tss.start = max(0, ext_tss.start - self.tss_upstream)
             ext_tss.end = max(ext_tss.end, ext_tss.start + self.tss_downsteam)
         else:
@@ -113,7 +113,7 @@ class GeneScores:
 
         """
         ext_gb = pbt_gene
-        if(ext_gb['strand'] == '+'):
+        if ext_gb['strand'] == '+':
             ext_gb.start = max(0, ext_gb.start - self.gb_upstream)
         else:
             ext_gb.end = ext_gb.end + self.gb_upstream
@@ -160,12 +160,12 @@ class GeneScores:
             mask_p = pd.Series(True, index=adata.var_names)
         df_peaks = adata.var[mask_p][['chr', 'start', 'end']].copy()
 
-        if('gene_scores' not in adata.uns_keys()):
+        if 'gene_scores' not in adata.uns_keys():
             print('Gene scores are being calculated for the first time')
             print('`use_precomputed` has been ignored')
             self.use_precomputed = False
 
-        if(self.use_precomputed):
+        if self.use_precomputed:
             print('Using precomputed overlap')
             df_overlap_updated = adata.uns['gene_scores']['overlap'].copy()
         else:
@@ -222,7 +222,7 @@ class GeneScores:
                 mask_x = (df_gene_ann['symbol'] == x)
                 range_x = df_gene_ann[mask_x][['start', 'end']].values\
                     .flatten()
-                if(df_overlap_x['strand_g'].iloc[0] == '+'):
+                if df_overlap_x['strand_g'].iloc[0] == '+':
                     df_overlap_updated.loc[id_overlap, 'dist'] = pd.concat(
                         [abs(df_overlap_x.loc[id_overlap, 'start_p']
                              - (range_x[1])),
@@ -238,7 +238,7 @@ class GeneScores:
                         axis=1, sort=False).min(axis=1)
 
                 n_batch = int(df_gene_ann_for_pbt.shape[0]/5)
-                if(i % n_batch == 0):
+                if i % n_batch == 0:
                     print(f'Processing: {i/df_gene_ann_for_pbt.shape[0]:.1%}')
             df_overlap_updated['dist'] = df_overlap_updated['dist']\
                 .astype(float)

@@ -142,7 +142,7 @@ def infer_edges(adata_ref,
     adata_ref_query = ad.AnnData(X=sim_ref_query,
                                  obs=adata_ref.obs,
                                  var=adata_query.obs)
-    adata_ref_query.layers['conn'] = conn_ref_query
+    adata_ref_query.layers['simba'] = conn_ref_query
     adata_ref_query.obsm['svd'] = X_svd_ref
     # adata_ref_query.obsp['conn'] = knn_conn_ref
     # adata_ref_query.obsp['dist'] = knn_dist_ref
@@ -172,7 +172,7 @@ def trim_edges(adata_ref_query,
     Returns
     -------
     updates `adata_ref_query` with the following field.
-    `.layers['conn']` : `array_like`
+    `.layers['simba']` : `array_like`
         relation matrix betwewn reference and query observations
     """
     sim_ref_query = adata_ref_query.X
@@ -194,4 +194,4 @@ def trim_edges(adata_ref_query,
     conn_ref_query = csr_matrix(
         (values*1, (id_x, id_y)),
         shape=(sim_ref_query.shape))
-    adata_ref_query.layers['conn'] = conn_ref_query
+    adata_ref_query.layers['simba'] = conn_ref_query

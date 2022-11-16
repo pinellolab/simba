@@ -39,16 +39,16 @@ def umap(adata,
         UMAP coordinates of samples.
     """
 
-    if(sum(list(map(lambda x: x is not None,
-                    [layer, obsm]))) == 2):
+    if sum(list(map(lambda x: x is not None,
+                    [layer, obsm]))) == 2:
         raise ValueError("Only one of `layer` and `obsm` can be used")
-    elif(obsm is not None):
+    elif obsm is not None:
         X = adata.obsm[obsm]
-    elif(layer is not None):
+    elif layer is not None:
         X = adata.layers[layer]
     else:
         X = adata.X
-    if(n_dim is not None):
+    if n_dim is not None:
         X = X[:, :n_dim]
     reducer = umap_learn.UMAP(n_neighbors=n_neighbors,
                               n_components=n_components,

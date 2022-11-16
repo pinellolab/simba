@@ -186,7 +186,8 @@ class SimbaEmbed:
             #         )
             obs_query = adata_query.obs.copy()
             obs_query['id_dataset'] = [f'query_{i}']*adata_query.shape[0]
-            obs_all = obs_all.append(obs_query, ignore_index=False)
+            obs_all = pd.concat(
+                [obs_all, obs_query], ignore_index=False)
         adata_all = ad.AnnData(X=X_all,
                                obs=obs_all)
         return adata_all
@@ -426,23 +427,23 @@ def query(adata,
     output: `pandas.DataFrame`, (`adata.uns['query']['output']`)
         Query result.
     """
-    if(sum(list(map(lambda x: x is None,
-                    [entity, pin]))) == 2):
+    if sum(list(map(lambda x: x is None,
+                    [entity, pin]))) == 2:
         raise ValueError("One of `entity` and `pin` must be specified")
-    if(sum(list(map(lambda x: x is not None,
-                    [entity, pin]))) == 2):
+    if sum(list(map(lambda x: x is not None,
+                    [entity, pin]))) == 2:
         print("`entity` will be ignored.")
     if entity is not None:
         entity = np.array(entity).flatten()
 
-    if(sum(list(map(lambda x: x is not None,
-                    [layer, obsm]))) == 2):
+    if sum(list(map(lambda x: x is not None,
+                    [layer, obsm]))) == 2:
         raise ValueError("Only one of `layer` and `obsm` can be used")
-    elif(obsm is not None):
+    elif obsm is not None:
         X = adata.obsm[obsm].copy()
         if pin is None:
             pin = adata[entity, :].obsm[obsm].copy()
-    elif(layer is not None):
+    elif layer is not None:
         X = adata.layers[layer].copy()
         if pin is None:
             pin = adata[entity, :].layers[layer].copy()
@@ -468,7 +469,8 @@ def query(adata,
                 df_output_ii['query'] = entity[ii]
             else:
                 df_output_ii['query'] = ii
-            df_output = df_output.append(df_output_ii)
+            df_output = pd.concat(
+                [df_output, df_output_ii], ignore_index=False)
         if anno_filter is not None:
             if anno_filter in adata.obs_keys():
                 if filters is None:
@@ -517,7 +519,8 @@ def query(adata,
                 df_output_ii['query'] = entity[ii]
             else:
                 df_output_ii['query'] = ii
-            df_output = df_output.append(df_output_ii)
+            df_output = pd.concat(
+                [df_output, df_output_ii], ignore_index=False)
         df_output = df_output.sort_values(by='distance')
 
     adata.uns['query'] = dict()
@@ -591,9 +594,9 @@ def find_master_regulators(adata_all,
     df_MR: `pandas.DataFrame`
         Dataframe of master regulators
     """
-    if(sum(list(map(lambda x: x is None,
-                    [list_tf_motif, list_tf_gene]))) > 0):
-        return("Please specify both `list_tf_motif` and `list_tf_gene`")
+    if sum(list(map(lambda x: x is None,
+                    [list_tf_motif, list_tf_gene]))) > 0:
+        return "Please specify both `list_tf_motif` and `list_tf_gene`"
 
     assert isinstance(list_tf_motif, list), \
         "`list_tf_motif` must be list"
@@ -744,9 +747,9 @@ def find_target_genes(adata_all,
     tf_targets: `dict`, (`adata.uns['tf_targets']`)
         Distances calculated between genes, peaks, and motifs
     """
-    if(sum(list(map(lambda x: x is None,
-                    [list_tf_motif, list_tf_gene]))) > 0):
-        return("Please specify both `list_tf_motif` and `list_tf_gene`")
+    if sum(list(map(lambda x: x is None,
+                    [list_tf_motif, list_tf_gene]))) > 0:
+        return "Please specify both `list_tf_motif` and `list_tf_gene`"
 
     assert isinstance(list_tf_motif, list), \
         "`list_tf_motif` must be list"

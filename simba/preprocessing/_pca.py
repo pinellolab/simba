@@ -53,7 +53,7 @@ def pca(adata,
     `.uns['pca']['variance_ratio']` : `array`
         Percentage of variance explained by each of the selected components.
     """
-    if(feature is None):
+    if feature is None:
         X = adata.X.copy()
     else:
         mask = adata.var[feature]
@@ -108,9 +108,9 @@ def select_pcs(adata,
     Returns
 
     """
-    if(n_pcs is None):
+    if n_pcs is None:
         n_components = adata.obsm['X_pca'].shape[1]
-        if(min_elbow is None):
+        if min_elbow is None:
             min_elbow = n_components/10
         n_pcs = locate_elbow(range(n_components),
                              adata.uns['pca']['variance_ratio'],
@@ -157,7 +157,7 @@ def select_pcs_features(adata,
     """
     n_pcs = adata.uns['pca']['n_pcs']
     n_features = adata.uns['pca']['PCs'].shape[0]
-    if(min_elbow is None):
+    if min_elbow is None:
         min_elbow = n_features/6
     adata.uns['pca']['features'] = dict()
     ids_features = list()

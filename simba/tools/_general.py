@@ -27,8 +27,8 @@ def discretize(adata,
     -------
     updates `adata` with the following fields
 
-    `.layer['disc']` : `array_like`
-        Discretized values.
+    `.layer['simba']` : `array_like`
+        The matrix of discretized values to build SIMBA graph.
     `.uns['disc']` : `dict`
         `bin_edges`: The edges of each bin.
         `bin_count`: The number of values in each bin.
@@ -62,8 +62,8 @@ def discretize(adata,
     nonzero_disc = np.digitize(nonzero_cont, bin_edges).reshape(-1,)
     bin_count = np.unique(nonzero_disc, return_counts=True)[1]
 
-    adata.layers['disc'] = X.copy()
-    adata.layers['disc'].data = nonzero_disc
+    adata.layers['simba'] = X.copy()
+    adata.layers['simba'].data = nonzero_disc
     adata.uns['disc'] = dict()
     adata.uns['disc']['bin_edges'] = bin_edges
     adata.uns['disc']['bin_count'] = bin_count

@@ -378,7 +378,7 @@ def gen_graph(list_CP=None,
                 ids_peaks = ids_peaks.union(adata.var.index)
             if get_marker_significance:
                 n_npeaks = int(len(ids_peaks)*fold_null_nodes)
-                ids_npeaks = pd.Index([f'n{prefix_G}.{x}' for x in range(n_npeaks)])
+                ids_npeaks = pd.Index([f'n{prefix_P}.{x}' for x in range(n_npeaks)])
         if list_PM is not None:
             for adata_ori in list_PM:
                 if use_top_pcs_PM is None:
@@ -458,7 +458,7 @@ def gen_graph(list_CP=None,
                     columns=['alias'],
                     data=ids_ngenes.tolist())
                 settings.pbg_params['entities'][f'n{prefix_G}'] = {'num_partitions': 1}
-                entity_alias = entity_alias.append(df_ngenes,
+                entity_alias = pd.concat([entity_alias, df_ngenes],
                                                     ignore_index=False)
         if len(ids_peaks) > 0:
             df_peaks = pd.DataFrame(
@@ -471,11 +471,11 @@ def gen_graph(list_CP=None,
                 ignore_index=False)
             if get_marker_significance and (len(ids_npeaks) > 0):
                 df_npeaks = pd.DataFrame(
-                    index=ids_ngenes,
+                    index=ids_npeaks,
                     columns=['alias'],
                     data=ids_npeaks.tolist())
-                settings.pbg_params['entities'][f'n{prefix_G}'] = {'num_partitions': 1}
-                entity_alias = entity_alias.append(df_npeaks,
+                settings.pbg_params['entities'][f'n{prefix_P}'] = {'num_partitions': 1}
+                entity_alias = pd.concat([entity_alias,df_npeaks],
                                                     ignore_index=False)
         if len(ids_kmers) > 0:
             df_kmers = pd.DataFrame(
@@ -525,6 +525,10 @@ def gen_graph(list_CP=None,
                         arr_simba = adata.X
                 else:
                     arr_simba = adata.X
+                if get_marker_significance:
+                    n_npeaks = int(len(ids_peaks)*fold_null_nodes)
+                    null_matrix = _randomize_matrix(arr_simba, n_npeaks, method='degPreserving')
+                    null_adata = ad.AnnData(obs=adata.obs, var=df_npeaks, layers={"disc":null_matrix})
                 _row, _col = arr_simba.nonzero()
                 df_edges_x = pd.DataFrame(columns=col_names)
                 df_edges_x['source'] = df_cells.loc[
@@ -535,21 +539,13 @@ def gen_graph(list_CP=None,
                 if add_edge_weights:
                     df_edges_x['weight'] = \
                         arr_simba[_row, _col].A.flatten()
-                    settings.pbg_params['relations'].append({
-                        'name': f'r{id_r}',
-                        'lhs': f'{key}',
-                        'rhs': f'{prefix_P}',
-                        'operator': 'none',
-                        'weight': 1.0
-                        })
-                else:
-                    settings.pbg_params['relations'].append({
-                        'name': f'r{id_r}',
-                        'lhs': f'{key}',
-                        'rhs': f'{prefix_P}',
-                        'operator': 'none',
-                        'weight': 1.0
-                        })
+                settings.pbg_params['relations'].append({
+                    'name': f'r{id_r}',
+                    'lhs': f'{key}',
+                    'rhs': f'{prefix_P}',
+                    'operator': 'none',
+                    'weight': 1.0
+                    })
                 dict_graph_stats[f'relation{id_r}'] = {
                     'source': key,
                     'destination': prefix_P,
@@ -559,7 +555,6 @@ def gen_graph(list_CP=None,
                     f'source: {key}, '
                     f'destination: {prefix_P}\n'
                     f'#edges: {df_edges_x.shape[0]}')
-
                 id_r += 1
                 df_edges = pd.concat(
                     [df_edges, df_edges_x],
@@ -570,6 +565,36 @@ def gen_graph(list_CP=None,
                     df_cells.loc[adata.obs_names, 'alias'].copy()
                 adata_ori.var.loc[adata.var_names, 'pbg_id'] = \
                     df_peaks.loc[adata.var_names, 'alias'].copy()
+                if get_marker_significance:
+                    _col, _row = null_matrix.transpose().nonzero()
+                    df_edges_x = pd.DataFrame(columns=col_names)
+                    df_edges_x['destination'] = df_cells.loc[
+                        null_adata.obs_names[_row], 'alias'].values
+                    df_edges_x['relation'] = f'r{id_r}'
+                    df_edges_x['source'] = df_npeaks.loc[
+                        null_adata.var_names[_col], 'alias'].values
+                    df_edges_x['weight'] = \
+                        null_matrix.transpose()[_col, _row].A.flatten()
+                    settings.pbg_params['relations'].append({
+                        'name': f'r{id_r}',
+                        'lhs': f'n{prefix_P}',
+                        'rhs': f'{key}',
+                        'operator': 'fix',
+                        'weight': 1.0,
+                        })
+                    print(
+                        f'relation{id_r}: '
+                        f'source: n{prefix_P}, '
+                        f'destination: {key}\n'
+                        f'#edges: {df_edges_x.shape[0]}')
+                    dict_graph_stats[f'relation{id_r}'] = {
+                        'source': f'n{prefix_P}',
+                        'destination': key,
+                        'n_edges': df_edges_x.shape[0]}
+                    id_r += 1
+                    df_edges = pd.concat(
+                        [df_edges, df_edges_x],
+                        ignore_index=True)
 
         if list_PM is not None:
             for i, adata_ori in enumerate(list_PM):
@@ -995,6 +1020,7 @@ def pbg_train(dirname=None,
               output=output,
               auto_wd=auto_wd,
               save_wd=True,
+              use_edge_weights=use_edge_weights,
               get_marker_significance=False)
         pbg_params = pbg_params.copy()
         filepath += "_with_sig"
@@ -1007,7 +1033,7 @@ def pbg_train(dirname=None,
     if auto_wd:
         # empirical numbers from simulation experiments
         if settings.graph_stats[
-                os.path.basename(filepath)]['n_edges'] < 5e7:  # @TODO: This should be accounted for for fake nodes
+                os.path.basename(filepath)]['n_edges'] < 5e7:  
             # optimial wd (0.013) for sample size (2725781)
             wd = 0.013 * 2725781 / settings.graph_stats[
                     os.path.basename(filepath)]['n_edges']

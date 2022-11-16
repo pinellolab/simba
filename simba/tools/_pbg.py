@@ -221,6 +221,8 @@ def gen_graph(list_CP=None,
             col_names = ["source", "relation", "destination"]
         df_edges = pd.DataFrame(columns=col_names)
         settings.pbg_params['relations'] = []
+        if get_marker_significance and list_adata:
+            raise NotImplementedError("Marker gene significance is not yet implemented for graph generation from AnnData list.")
         for ctr_rel, adata_ori in enumerate(list_adata):
             obs_names = adata_ori.obs_names
             var_names = adata_ori.var_names

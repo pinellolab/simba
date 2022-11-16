@@ -123,8 +123,6 @@ def gen_graph(list_CP=None,
         Once specified, it will overwrite `use_top_pcs`
     copy: `bool`, optional (default: False)
         If True, it returns the graph file as a data frame
-    actualize: `bool`, optional (default: True)
-        If False, only the graph stats and the path are updated.
     Returns
     -------
     If `copy` is True,
@@ -169,8 +167,10 @@ def gen_graph(list_CP=None,
               prefix_M=prefix_M,
               prefix_K=prefix_K,
               prefix_G=prefix_G,
+              layer=layer,
               copy=copy,
               dirname=dirname,
+              add_edge_weights=add_edge_weights,
               use_highly_variable=use_highly_variable,
               use_top_pcs=use_top_pcs,
               use_top_pcs_CP=use_top_pcs_CP,
@@ -194,7 +194,21 @@ def gen_graph(list_CP=None,
             add_edge_weights = False
         else:
             add_edge_weights = True
-
+    def _get_df_edges(adj_mat, df_source, df_dest, adata, relation_id, include_weight = True, weight_scale = 1):
+        col_names = ["source", "relation", "destination"]
+        if include_weight:
+            col_names.append("weight")
+        df_edges_x = pd.DataFrame(columns=col_names)
+        df_edges_x['source'] = df_source.loc[
+            adata.obs_names[adj_mat.nonzero()[0]],
+            'alias'].values
+        df_edges_x['relation'] = relation_id
+        df_edges_x['destination'] = df_dest.loc[
+            adata.var_names[adj_mat.nonzero()[1]],
+            'alias'].values
+        if include_weight:
+            df_edges_x['weight'] = weight_scale
+        return(df_edges_x)
     if list_adata is not None:
         id_ent = pd.Index([])  # ids of all entities
         dict_ent_type = dict()
@@ -361,8 +375,8 @@ def gen_graph(list_CP=None,
                                 ids_cells_i
                 ids_peaks = ids_peaks.union(adata.var.index)
             if get_marker_significance:
-                n_ngenes = int(len(ids_genes)*fold_null_nodes)
-                ids_ngenes = pd.Index([f'n{prefix_G}.{x}' for x in range(n_ngenes)])
+                n_npeaks = int(len(ids_peaks)*fold_null_nodes)
+                ids_npeaks = pd.Index([f'n{prefix_G}.{x}' for x in range(n_npeaks)])
         if list_PM is not None:
             for adata_ori in list_PM:
                 if use_top_pcs_PM is None:
@@ -676,22 +690,6 @@ def gen_graph(list_CP=None,
                     df_peaks.loc[adata.obs_names, 'alias'].copy()
                 adata_ori.var.loc[adata.var_names, 'pbg_id'] = \
                     df_kmers.loc[adata.var_names, 'alias'].copy()
-    
-    def _get_df_edges(adj_mat, df_source, df_dest, adata, relation_id, include_weight = True, weight_scale = 1):
-            col_names = ["source", "relation", "destination"]
-            if include_weight:
-                col_names.append("weight")
-            df_edges_x = pd.DataFrame(columns=col_names)
-            df_edges_x['source'] = df_source.loc[
-                adata.obs_names[adj_mat.nonzero()[0]],
-                'alias'].values
-            df_edges_x['relation'] = relation_id
-            df_edges_x['destination'] = df_dest.loc[
-                adata.var_names[adj_mat.nonzero()[1]],
-                'alias'].values
-            if include_weight:
-                df_edges_x['weight'] = lvl * weight_scale
-            return(df_edges_x)
 
         if list_CG is not None:
             for i, adata_ori in enumerate(list_CG):
@@ -715,7 +713,7 @@ def gen_graph(list_CP=None,
                     arr_simba = adata.X
                 if get_marker_significance:
                     n_ngenes = int(len(ids_genes)*fold_null_nodes)
-                    null_exp_matrix = _randomize_matrix(arr_simba, n_ngenes, method='degPreserving' if actualize else 'none')
+                    null_exp_matrix = _randomize_matrix(arr_simba, n_ngenes, method='degPreserving')
                     null_adata = ad.AnnData(obs=adata.obs, var=df_ngenes, layers={"disc":null_exp_matrix})
                 if add_edge_weights:
                     _row, _col = arr_simba.nonzero()
@@ -748,15 +746,15 @@ def gen_graph(list_CP=None,
                         [df_edges, df_edges_x],
                         ignore_index=True)
                     if get_marker_significance:
-                        _row, _col = null_exp_matrix.nonzero().transpose()
+                        _col, _row = null_exp_matrix.transpose().nonzero()
                         df_edges_x = pd.DataFrame(columns=col_names)
                         df_edges_x['destination'] = df_cells.loc[
                             null_adata.obs_names[_row], 'alias'].values
                         df_edges_x['relation'] = f'r{id_r}'
-                        df_edges_x['source'] = df_genes.loc[
+                        df_edges_x['source'] = df_ngenes.loc[
                             null_adata.var_names[_col], 'alias'].values
                         df_edges_x['weight'] = \
-                            null_exp_matrix.transpose()[_row, _col].A.flatten()
+                            null_exp_matrix.transpose()[_col, _row].A.flatten()
                         settings.pbg_params['relations'].append({
                             'name': f'r{id_r}',
                             'lhs': f'n{prefix_G}',
@@ -811,7 +809,7 @@ def gen_graph(list_CP=None,
                         if get_marker_significance:
                         # generate null AnnData with cells x null genes
                             df_edges_v = _get_df_edges((null_exp_matrix == lvl).astype(int).T,
-                                df_ngenes, df_cells, null_adata.transpose(), f'r{id_r}', include_weight=True, weight_scale=1e-6)
+                                df_ngenes, df_cells, null_adata.transpose(), f'r{id_r}', include_weight=True, weight_scale=lvl)
                             print(f'relation{id_r}: '
                                 f'source: n{prefix_G}, '
                                 f'destination: {key}\n'
@@ -827,7 +825,7 @@ def gen_graph(list_CP=None,
                                 'lhs': f'n{prefix_G}',
                                 'rhs': f'{key}',
                                 'operator': 'fix',
-                                'weight': round(expr_weight[i_lvl]*epsilon, 5),
+                                'weight': round(expr_weight[i_lvl], 2),
                             })
                             id_r += 1
 

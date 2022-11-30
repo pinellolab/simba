@@ -138,6 +138,8 @@ def _degreePreservingShuffle(input_adj_graph, n_virtual_dest_nodes: int = None):
     input_col_idx = np.concatenate((input_col_idx, np.random.choice(n_orig_dest_nodes, n_virtual_dest_nodes % n_orig_dest_nodes)))
     
     assert input_col_idx.ndim == 1
+    if not isinstance(input_adj_graph, sparse.csr_matrix): 
+        input_adj_graph = sparse.csr_matrix(input_adj_graph)
     shuffled_adj_graph = input_adj_graph.copy()[:,input_col_idx].tocoo()
     row_idx = shuffled_adj_graph.row
     col_idx = shuffled_adj_graph.col

@@ -377,7 +377,7 @@ def gen_graph(list_CP=None,
                                 ids_cells_i
                 ids_peaks = ids_peaks.union(adata.var.index)
             if get_marker_significance:
-                n_npeaks = int(len(ids_peaks)*fold_null_nodes)
+                n_npeaks = min(int(len(ids_peaks)*fold_null_nodes), len(ids_peaks))
                 ids_npeaks = pd.Index([f'n{prefix_P}.{x}' for x in range(n_npeaks)])
         if list_PM is not None:
             for adata_ori in list_PM:
@@ -547,7 +547,7 @@ def gen_graph(list_CP=None,
                 else:
                     arr_simba = adata.X
                 if get_marker_significance:
-                    n_npeaks = int(len(ids_peaks)*fold_null_nodes)
+                    #n_npeaks = int(len(ids_peaks)*fold_null_nodes)
                     null_matrix = _randomize_matrix(arr_simba, n_npeaks, method='degPreserving')
                     null_adata = ad.AnnData(obs=adata.obs, var=df_npeaks, layers={"disc":null_matrix})
                 _row, _col = arr_simba.nonzero()
@@ -651,7 +651,7 @@ def gen_graph(list_CP=None,
                         'lhs': f'{prefix_P}',
                         'rhs': f'{prefix_M}',
                         'operator': 'none',
-                        'weight': 1.0
+                        'weight': 0.2
                         })
                 else:
                     settings.pbg_params['relations'].append({
@@ -684,7 +684,7 @@ def gen_graph(list_CP=None,
                 if get_marker_significance:
                     _col, _row = null_matrix.transpose().nonzero()
                     df_edges_x = pd.DataFrame(columns=col_names)
-                    df_edges_x['destination'] = df_cells.loc[
+                    df_edges_x['destination'] = df_peaks.loc[
                         null_adata.obs_names[_row], 'alias'].values
                     df_edges_x['relation'] = f'r{id_r}'
                     df_edges_x['source'] = df_nmotifs.loc[
@@ -693,19 +693,19 @@ def gen_graph(list_CP=None,
                         null_matrix.transpose()[_col, _row].A.flatten()
                     settings.pbg_params['relations'].append({
                         'name': f'r{id_r}',
-                        'lhs': f'n{prefix_P}',
-                        'rhs': f'{key}',
+                        'lhs': f'n{prefix_M}',
+                        'rhs': f'{prefix_P}',
                         'operator': 'fix',
                         'weight': 1.0,
                         })
                     print(
                         f'relation{id_r}: '
-                        f'source: n{prefix_P}, '
-                        f'destination: {key}\n'
+                        f'source: n{prefix_M}, '
+                        f'destination: {prefix_P}\n'
                         f'#edges: {df_edges_x.shape[0]}')
                     dict_graph_stats[f'relation{id_r}'] = {
-                        'source': f'n{prefix_P}',
-                        'destination': key,
+                        'source': f'n{prefix_M}',
+                        'destination': prefix_P,
                         'n_edges': df_edges_x.shape[0]}
                     id_r += 1
                     df_edges = pd.concat(
@@ -727,9 +727,13 @@ def gen_graph(list_CP=None,
                         arr_simba = adata.X
                 else:
                     arr_simba = adata.X
+                if get_marker_significance:
+                    n_nkmers = int(len(ids_kmers)*fold_null_nodes)
+                    null_matrix = _randomize_matrix(arr_simba, n_nkmers, method='degPreserving')
+                    null_adata = ad.AnnData(obs=adata.obs, var=df_nkmers, layers={"disc":null_matrix})
                 _row, _col = arr_simba.nonzero()
                 df_edges_x = pd.DataFrame(columns=col_names)
-                df_edges_x['source'] = df_motifs.loc[
+                df_edges_x['source'] = df_peaks.loc[
                     adata.obs_names[_row], 'alias'].values
                 df_edges_x['relation'] = f'r{id_r}'
                 df_edges_x['destination'] = df_kmers.loc[
@@ -742,7 +746,7 @@ def gen_graph(list_CP=None,
                         'lhs': f'{prefix_P}',
                         'rhs': f'{prefix_K}',
                         'operator': 'none',
-                        'weight': 1
+                        'weight': 0.02
                         })
                 else:
                     settings.pbg_params['relations'].append({
@@ -772,6 +776,36 @@ def gen_graph(list_CP=None,
                     df_peaks.loc[adata.obs_names, 'alias'].copy()
                 adata_ori.var.loc[adata.var_names, 'pbg_id'] = \
                     df_kmers.loc[adata.var_names, 'alias'].copy()
+                if get_marker_significance:
+                    _col, _row = null_matrix.transpose().nonzero()
+                    df_edges_x = pd.DataFrame(columns=col_names)
+                    df_edges_x['destination'] = df_peaks.loc[
+                        null_adata.obs_names[_row], 'alias'].values
+                    df_edges_x['relation'] = f'r{id_r}'
+                    df_edges_x['source'] = df_nkmers.loc[
+                        null_adata.var_names[_col], 'alias'].values
+                    df_edges_x['weight'] = \
+                        null_matrix.transpose()[_col, _row].A.flatten()
+                    settings.pbg_params['relations'].append({
+                        'name': f'r{id_r}',
+                        'lhs': f'n{prefix_K}',
+                        'rhs': f'{prefix_P}',
+                        'operator': 'fix',
+                        'weight': 0.02,
+                        })
+                    print(
+                        f'relation{id_r}: '
+                        f'source: n{prefix_K}, '
+                        f'destination: {prefix_P}\n'
+                        f'#edges: {df_edges_x.shape[0]}')
+                    dict_graph_stats[f'relation{id_r}'] = {
+                        'source': f'n{prefix_K}',
+                        'destination': prefix_P,
+                        'n_edges': df_edges_x.shape[0]}
+                    id_r += 1
+                    df_edges = pd.concat(
+                        [df_edges, df_edges_x],
+                        ignore_index=True)
 
         if list_CG is not None:
             for i, adata_ori in enumerate(list_CG):
@@ -1078,12 +1112,17 @@ def pbg_train(dirname=None,
               use_edge_weights=use_edge_weights,
               get_marker_significance=False)
         pbg_params = pbg_params.copy()
+        n_edges = settings.graph_stats[
+                os.path.basename(filepath)]['n_edges']
         filepath += "_with_sig"
         pbg_params['checkpoint_path'] = os.path.join(filepath, output)
         pbg_params['entity_path'] = os.path.join(filepath, "input/entity")
         pbg_params['edge_paths'] = [os.path.join(filepath, "input/edge"), ]
         pbg_params['relations'] = settings.graph_stats[dirname + "_with_sig"]['relations']
         auto_wd = False
+        pbg_params['wd'] = settings.pbg_params['wd'] * n_edges / settings.graph_stats[
+                os.path.basename(filepath)]['n_edges']
+        settings.pbg_params['wd'] = pbg_params['wd']
 
     if auto_wd:
         # empirical numbers from simulation experiments

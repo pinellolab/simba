@@ -144,6 +144,7 @@ def entity_metrics(adata_cmp,
                    cutoff_x=0,
                    cutoff_y=0,
                    cutoff_fdr=None,
+                   cutoff_p=None,
                    color_by_fdr=None,
                    n_texts=10,
                    size=8,
@@ -235,7 +236,7 @@ def entity_metrics(adata_cmp,
     assert (y in ['max', 'std', 'gini', 'entropy']), \
         "y must be one of ['max','std','gini','entropy']"
     try:
-        if not cutoff_fdr is None:
+        if not cutoff_fdr is None or (not cutoff_p is None):
             assert f"{x}_fdr" in adata_cmp.var.columns
             assert f"{y}_fdr" in adata_cmp.var.columns
     except AssertionError:
@@ -294,16 +295,19 @@ def entity_metrics(adata_cmp,
                     expand_objects=text_expand,
                     arrowprops=dict(arrowstyle='-', color='black'))
     if show_cutoff:
-        if cutoff_fdr is None:
+        def _get_fdr_thres(metric, cutoff, sig="fdr"):
+            metric_fdrs = adata_cmp.var[f"{metric}_{sig}"]
+            closest_idx = np.where((metric_fdrs-cutoff).abs() == (metric_fdrs-cutoff).abs().min())[0]
+            return(adata_cmp.var[metric][closest_idx][0])
+        if cutoff_fdr is None and cutoff_p is None:
             ax.axvline(x=cutoff_x, linestyle='--', color='#CE3746')
             ax.axhline(y=cutoff_y, linestyle='--', color='#CE3746')
-        else:
-            def _get_fdr_thres(metric):
-                metric_fdrs = adata_cmp.var[f"{metric}_fdr"]
-                closest_idx = np.where((metric_fdrs-cutoff_fdr).abs() == (metric_fdrs-cutoff_fdr).abs().min())[0]
-                return(adata_cmp.var[metric][closest_idx][0])
-            ax.axvline(x=_get_fdr_thres(x), linestyle='--', color='#CE3746')
-            ax.axhline(y=_get_fdr_thres(y), linestyle='--', color='#CE3746')
+        elif not cutoff_fdr is None and cutoff_p is None:
+            ax.axvline(x=_get_fdr_thres(x, cutoff_fdr), linestyle='--', color='#CE3746')
+            ax.axhline(y=_get_fdr_thres(y, cutoff_fdr), linestyle='--', color='#CE3746')
+        elif cutoff_fdr is None and (not cutoff_p is None):
+            ax.axvline(x=_get_fdr_thres(x, cutoff_p, "p"), linestyle='--', color='#CE3746')
+            ax.axhline(y=_get_fdr_thres(y, cutoff_p, "p"), linestyle='--', color='#CE3746')
     if show_contour:
         sns.kdeplot(ax=ax,
                     data=adata_cmp.var,

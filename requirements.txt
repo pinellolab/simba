@@ -15,4 +15,4 @@ umap-learn>=0.3.0
 pybedtools>=0.8.0
 # bedtools>=2.29.0 # not available in pip
 tables
-torchbiggraph @ git+https://github.com/pinellolab/simba_pbg@master#egg=torchbiggraph
+

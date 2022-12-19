@@ -34,7 +34,7 @@ def test_pbg_training_rna_significance(adata_CG, tmp_path):
                     output='model')
     si.pl.pbg_metrics(fig_ncol=1,
                       save_fig=True)
-    dict_adata = si.read_embedding()
+    dict_adata = si.read_embedding(get_marker_significance=True)
     adata_C = dict_adata['C'] 
     adata_G = dict_adata['G'] 
     adata_nG = dict_adata['nG']

@@ -1,7 +1,7 @@
 import sys
 
-if sys.version_info < (3, 6):
-    sys.exit('simba requires Python >= 3.6')
+if sys.version_info < (3, 7):
+    sys.exit('simba requires Python >= 3.7')
 
 from setuptools import setup, find_packages
 from pathlib import Path
@@ -27,11 +27,11 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     install_requires=[
         x.strip() for x in
         Path('requirements.txt').read_text('utf-8').splitlines()
-    ],
+    ]+['simba_pbg @ git+ssh://git@github.com/pinellolab/simba_pbg@v1.1#egg=torchbiggraph'],
     include_package_data=True,
     package_data={"simba": ["data/gene_anno/*.bed"]}
 )

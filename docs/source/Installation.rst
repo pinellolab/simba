@@ -12,23 +12,17 @@ To install the `simba <https://anaconda.org/bioconda/simba>`_ package with conda
 
     conda create -n env_simba python simba
     conda activate env_simba
+    
+    conda config --add channels defaults
+    conda config --add channels bioconda
+    conda config --add channels conda-forge
+    conda config --set channel_priority strict
 
 
 Dev version
 ~~~~~~~~~~~
 
-To install the latest version on `GitHub <https://github.com/pinellolab/simba>`_, 
-
-first install `simba_pbg <https://anaconda.org/bioconda/simba_pbg>`_ ::
-
-    conda install -c bioconda simba_pbg
-
-
-then run::
-
-    git clone https://github.com/pinellolab/simba.git
-    pip install simba --user
-
-or::
-
-    pip install git+https://github.com/pinellolab/simba
+To install the development version on `GitHub <https://github.com/pinellolab/simba/tree/dev>`_, run following on top of the stable installation::
+    
+    pip install 'simba @ git+https://github.com/pinellolab/simba@dev'
+    

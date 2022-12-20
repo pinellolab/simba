@@ -15,5 +15,8 @@ plotly>=4.14.0
 pybedtools>=0.8.0
 # bedtools>=2.29.0 # not available in pip
 tables
+<<<<<<< HEAD
 statsmodels
+=======
+>>>>>>> ebfea5d9af3b38e60cc367d9ac832927a9fe6fd1
 torchbiggraph @ git+https://github.com/pinellolab/simba_pbg@master#egg=torchbiggraph

@@ -31,7 +31,7 @@ setup(
     install_requires=[
         x.strip() for x in
         Path('requirements.txt').read_text('utf-8').splitlines()
-    ],
+    ]+['simba_pbg @ git+ssh://git@github.com/pinellolab/simba_pbg@v1.1#egg=torchbiggraph'],
     include_package_data=True,
     package_data={"simba": ["data/gene_anno/*.bed"]}
 )

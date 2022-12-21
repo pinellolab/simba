@@ -1,6 +1,6 @@
 [![documentation](https://readthedocs.org/projects/simba-bio/badge/?version=latest)](https://simba-bio.readthedocs.io/en/latest/)
 [![CI](https://github.com/pinellolab/simba/actions/workflows/CI.yml/badge.svg)](https://github.com/pinellolab/simba/actions/workflows/CI.yml)
-[![Install with conda](https://anaconda.org/bioconda/simba/badges/version.svg)](https://anaconda.org/bioconda/simba)
+[![Install with conda](https://anaconda.org/bioconda/simba/badges/installer/conda.svg)](https://anaconda.org/bioconda/simba)
 [![codecov](https://codecov.io/gh/pinellolab/simba/branch/master/graph/badge.svg?token=NDQJQPL18K)](https://codecov.io/gh/pinellolab/simba)
 
 # SIMBA
@@ -15,10 +15,19 @@ Preprint: Huidong Chen, Jayoung Ryu, Michael E. Vinyard, Adam Lerer & Luca Pinel
 
 ## Installation
 This branch supports marker significance calculation and continuous edge weights. For the relevant documentation, see the updated tutorial. 
+Significance calculation needs dev version of `simba_pbg` which can be installed with:
 
-To install simba from this branch:
 ```
-pip install 'simba @ git+https://github.com/pinellolab/simba@dev'
+git clone https://github.com/pinellolab/simba_pbg.git
+cd simba_pbg
+pip install .
+```
+
+Then, install simba from this branch:
+```
+git clone -b dev https://github.com/pinellolab/simba.git
+cd simba
+pip install .
 ```
 
 ## Documentation

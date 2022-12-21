@@ -13,6 +13,17 @@ Preprint: Huidong Chen, Jayoung Ryu, Michael E. Vinyard, Adam Lerer & Luca Pinel
 
 <img src="./docs/source/_static/img/logo_simba.png?raw=true" width="450">
 
+## Installation
+To install the simba package with conda, run:
+```
+conda install -c bioconda simba
+```
+Recommended: install simba in a new virtual enviroment:
+```
+conda create -n env_simba python simba
+conda activate env_simba
+```
+
 ## [SIMBA v1.2 (dev)](https://github.com/pinellolab/simba/tree/dev) update
 We have added the support for
 * Continuous edge weight encoding for scRNA-seq ([tutorial](https://github.com/huidongchen/simba_tutorials/blob/main/v1.2/rna_10xpmbc_edgeweigts.ipynb))

@@ -18,6 +18,17 @@ This branch supports marker significance calculation and continuous edge weights
 
 To install simba from this branch:
 ```
+conda install --channel conda-forge --channel bioconda pybedtools
+pip install 'simba @ git+https://github.com/pinellolab/simba@dev'
+```
+
+Make sure you don't have existing `torchbiggraph` installation. 
+We recommend setting up the clean new environment:
+```
+conda create -n simba_dev python
+conda config --add channels bioconda
+conda config --add channels conda-forge
+conda install --channel conda-forge --channel bioconda pybedtools
 pip install 'simba @ git+https://github.com/pinellolab/simba@dev'
 ```
 

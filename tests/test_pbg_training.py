@@ -42,8 +42,6 @@ def test_pbg_training_rna_significance(adata_CG, tmp_path):
     adata_cmp = si.tl.compare_entities(adata_ref=adata_C, adata_query=adata_G, adata_query_null=adata_nG)
     assert "max_fdr" in adata_cmp.var.columns
     assert ((adata_cmp.var["max_fdr"] <= 1.0) & (adata_cmp.var["max_fdr"] >= 0.0)).all()
-    si.pl.entity_metrics(adata_cmp,
-        x='max', y='gini', cutoff_fdr=0.05, save_fig=True, fig_path='.')
 
 def test_pbg_training_atac(adata_CP, tmp_path):
     si.settings.set_workdir(tmp_path / "simba_atac")

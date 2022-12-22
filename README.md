@@ -35,5 +35,5 @@ conda install r-essentials r-optparse bioconductor-jaspar2020 bioconductor-biost
 
 ## [SIMBA v1.2 (dev)](https://github.com/pinellolab/simba/tree/dev) update
 We have added the support for
-* Continuous edge weight encoding for scRNA-seq ([tutorial](https://github.com/huidongchen/simba_tutorials/blob/main/v1.2/rna_10xpmbc_edgeweigts.ipynb))
-* Significance testing of features' cell type specificity metrics ([tutorial](https://github.com/huidongchen/simba_tutorials/tree/main/v1.1sig))
+* Continuous edge weight encoding for scRNA-seq ([tutorial](https://github.com/pinellolab/simba_tutorials/blob/main/v1.2/rna_10xpmbc_edgeweigts.ipynb))
+* Significance testing of features' cell type specificity metrics ([tutorial](https://github.com/pinellolab/simba_tutorials/tree/main/v1.1sig))

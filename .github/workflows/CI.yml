@@ -44,6 +44,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
+        conda activate env_simba_dev
         conda install pytest pytest-cov
         pytest --cov
     - name: Coverage report

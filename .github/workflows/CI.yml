@@ -30,6 +30,7 @@ jobs:
         # conda install simba
         # conda install -c anaconda pip
         conda create -n env_simba_dev bedtools htslib jupyter pytorch pybedtools -y
+        conda activate env_simba_dev
         conda install r-essentials r-optparse bioconductor-jaspar2020 bioconductor-biostrings bioconductor-tfbstools bioconductor-motifmatchr bioconductor-summarizedexperiment r-doparallel bioconductor-rhdf5 bioconductor-hdf5array
         python -m pip install --upgrade pip
         pip install -r requirements.txt

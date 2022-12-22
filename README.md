@@ -38,7 +38,7 @@ We have added the support for
 * Significance testing of features' cell type specificity metrics ([tutorial](https://github.com/pinellolab/simba_tutorials/tree/main/v1.1sig))
 
 ### SIMBA v1.2 Installation
-To install simba from this branch:
+To install the latest development version of simba:
 ```
 conda create -n env_simba_dev jupyter pytorch pybedtools -y
 pip install 'simba @ git+https://github.com/pinellolab/simba@dev'

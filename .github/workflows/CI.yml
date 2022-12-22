@@ -29,6 +29,7 @@ jobs:
         # conda env update --file environment.yml --name base
         # conda install simba
         # conda install -c anaconda pip
+        apt-get install bedtools
         conda create -n env_simba_dev jupyter pytorch pybedtools -y
         conda install r-essentials r-optparse bioconductor-jaspar2020 bioconductor-biostrings bioconductor-tfbstools bioconductor-motifmatchr bioconductor-summarizedexperiment r-doparallel bioconductor-rhdf5 bioconductor-hdf5array
         python -m pip install --upgrade pip

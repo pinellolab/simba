@@ -10,6 +10,7 @@ SIMBA: **SI**ngle-cell e**MB**edding **A**long with features
 Website: https://simba-bio.readthedocs.io
 
 Preprint: Huidong Chen, Jayoung Ryu, Michael E. Vinyard, Adam Lerer & Luca Pinello. ["SIMBA: SIngle-cell eMBedding Along with features. *bioRxiv, 2021.10.17.464750v1* (2021)."](https://www.biorxiv.org/content/10.1101/2021.10.17.464750v1)  
+  
 Scripts used for the comparison analyses in the manuscript can be found [here](https://github.com/pinellolab/simba_comparison).
 
 <img src="./docs/source/_static/img/logo_simba.png?raw=true" width="450">

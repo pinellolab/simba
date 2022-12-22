@@ -14,14 +14,23 @@ Preprint: Huidong Chen, Jayoung Ryu, Michael E. Vinyard, Adam Lerer & Luca Pinel
 <img src="./docs/source/_static/img/logo_simba.png?raw=true" width="450">
 
 ## Installation
+Before installing SIMBA make sure to have the correct channels priority by executing these commands:
+```
+conda config --add channels defaults
+conda config --add channels bioconda
+conda config --add channels conda-forge
+conda config --set channel_priority strict
+```
+
 To install the simba package with conda, run:
 ```
-conda install -c bioconda simba
+conda create -n env_simba jupyter simba
 ```
-Recommended: install simba in a new virtual enviroment:
+
+To enable the k-mer and TF analyses please install these additional dependencies(optional):
+
 ```
-conda create -n env_simba python simba
-conda activate env_simba
+conda install r-essentials r-optparse bioconductor-jaspar2020 bioconductor-biostrings bioconductor-tfbstools bioconductor-motifmatchr bioconductor-summarizedexperiment r-doparallel bioconductor-rhdf5 bioconductor-hdf5array
 ```
 
 ## [SIMBA v1.2 (dev)](https://github.com/pinellolab/simba/tree/dev) update

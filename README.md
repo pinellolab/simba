@@ -28,7 +28,6 @@ conda create -n env_simba jupyter simba
 ```
 
 To enable the k-mer and TF analyses please install these additional dependencies(optional):
-
 ```
 conda install r-essentials r-optparse bioconductor-jaspar2020 bioconductor-biostrings bioconductor-tfbstools bioconductor-motifmatchr bioconductor-summarizedexperiment r-doparallel bioconductor-rhdf5 bioconductor-hdf5array
 ```
@@ -37,3 +36,14 @@ conda install r-essentials r-optparse bioconductor-jaspar2020 bioconductor-biost
 We have added the support for
 * Continuous edge weight encoding for scRNA-seq ([tutorial](https://github.com/pinellolab/simba_tutorials/blob/main/v1.2/rna_10xpmbc_edgeweigts.ipynb))
 * Significance testing of features' cell type specificity metrics ([tutorial](https://github.com/pinellolab/simba_tutorials/tree/main/v1.1sig))
+
+### SIMBA v1.2 Installation
+To install simba from this branch:
+```
+conda create -n env_simba_dev jupyter pytorch pybedtools -y
+pip install 'simba @ git+https://github.com/pinellolab/simba@dev'
+```
+To enable the k-mer and TF analyses please install these additional dependencies(optional):
+```
+conda install r-essentials r-optparse bioconductor-jaspar2020 bioconductor-biostrings bioconductor-tfbstools bioconductor-motifmatchr bioconductor-summarizedexperiment r-doparallel bioconductor-rhdf5 bioconductor-hdf5array
+```

@@ -7,11 +7,11 @@
 
 SIMBA: **SI**ngle-cell e**MB**edding **A**long with features
 
-Website: https://simba-bio.readthedocs.io
+Main website, documentation and tutorials: https://simba-bio.readthedocs.io
 
 Preprint: Huidong Chen, Jayoung Ryu, Michael E. Vinyard, Adam Lerer & Luca Pinello. ["SIMBA: SIngle-cell eMBedding Along with features. *bioRxiv, 2021.10.17.464750v1* (2021)."](https://www.biorxiv.org/content/10.1101/2021.10.17.464750v1)  
   
-Scripts used for the comparison analyses in the manuscript can be found [here](https://github.com/pinellolab/simba_comparison).
+The scripts used for the comparison analyses in the manuscript can be found [here](https://github.com/pinellolab/simba_comparison).
 
 <img src="./docs/source/_static/img/logo_simba.png?raw=true" width="450">
 
@@ -49,3 +49,6 @@ To enable the k-mer and TF analyses please install these additional dependencies
 ```
 conda install r-essentials r-optparse bioconductor-jaspar2020 bioconductor-biostrings bioconductor-tfbstools bioconductor-motifmatchr bioconductor-summarizedexperiment r-doparallel bioconductor-rhdf5 bioconductor-hdf5array
 ```
+
+Please refer to the main documentation website to learn how to use SIMBA with the provided tutorials:  https://simba-bio.readthedocs.io
+

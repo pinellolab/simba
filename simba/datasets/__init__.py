@@ -14,6 +14,7 @@ from ._datasets import (
     atac_chen2019,
     atac_cusanovich2018_subset,
     multiome_ma2020_fig4,
+    multiome_ma2020_with_freqs,
     multiome_chen2019,
     multiome_10xpbmc10k
 )

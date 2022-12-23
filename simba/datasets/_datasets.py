@@ -382,6 +382,66 @@ def multiome_ma2020_fig4():
                   'atac': adata_atac}
     return dict_adata
 
+def multiome_ma2020_with_freqs():
+    """single cell multiome mouse skin data (SHARE-seq)
+
+    ref: Ma, S. et al. Chromatin Potential Identified by Shared Single-Cell
+    Profiling of RNA and Chromatin. Cell (2020).
+    Returns
+    -------
+    dict_adata: `dict`
+        A dictionary of anndata objects
+    """
+    url_rna = 'https://www.dropbox.com/s/gmmf77l8kzle6o7/rna_seq_fig4.h5ad?dl=1'
+    url_atac = 'https://www.dropbox.com/s/ts0v2y2m5fcumcb/atac_seq_fig4.h5ad?dl=1'
+    url_PK = 'https://www.dropbox.com/s/ung3rdcnllkyj2w/freq_kmer.h5?dl=1'
+    url_PM = 'https://www.dropbox.com/s/oak6w27s1my3k8l/freq_motif.h5?dl=1'
+    filename_rna = 'multiome_ma2020_fig4_rna.h5ad'
+    filename_atac = 'multiome_ma2020_fig4_atac.h5ad'
+    filepath = os.path.join(settings.workdir, 'data')
+    fullpath_rna = os.path.join(filepath, filename_rna)
+    fullpath_atac = os.path.join(filepath, filename_atac)
+
+    filepath_freqs = os.path.join(settings.workdir, 'output_kmers_motifs')
+    filename_PK = 'freq_kmer.h5'
+    filename_PM = 'freq_motif.h5'
+    fullpath_PK = os.path.join(filepath_freqs, filename_PK)
+    fullpath_PM = os.path.join(filepath_freqs, filename_PM)
+
+    if(not os.path.exists(fullpath_rna)):
+        print('Downloading data ...')
+        os.makedirs(filepath, exist_ok=True)
+        download_url(url_rna,
+                     fullpath_rna,
+                     desc=filename_rna)
+        print(f'Downloaded to {filepath}.')
+    if(not os.path.exists(fullpath_atac)):
+        print('Downloading data ...')
+        os.makedirs(filepath, exist_ok=True)
+        download_url(url_atac,
+                     fullpath_atac,
+                     desc=filename_atac)
+        print(f'Downloaded to {filepath}.')
+    if(not os.path.exists(fullpath_PK)):
+        print('Downloading data ...')
+        os.makedirs(filepath_freqs, exist_ok=True)
+        download_url(url_PK,
+                     fullpath_PK,
+                     desc=filename_PK)
+        print(f'Downloaded to {filepath_freqs}.')
+    if(not os.path.exists(fullpath_PM)):
+        print('Downloading data ...')
+        os.makedirs(filepath_freqs, exist_ok=True)
+        download_url(url_PM,
+                     fullpath_PM,
+                     desc=filename_PM)
+        print(f'Downloaded to {filepath_freqs}.')
+    adata_rna = read_h5ad(fullpath_rna)
+    adata_atac = read_h5ad(fullpath_atac)
+    dict_adata = {'rna': adata_rna,
+                  'atac': adata_atac}
+    return dict_adata
+
 
 def multiome_chen2019():
     """single cell multiome neonatal mouse cerebral cortex data (SNARE-seq)

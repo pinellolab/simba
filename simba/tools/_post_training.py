@@ -6,16 +6,13 @@ import anndata as ad
 from scipy.stats import entropy
 from sklearn.neighbors import KDTree
 from scipy.spatial import distance
+
 # import faiss
 
 from ._utils import _gini, _get_fdr
 
 
-def softmax(adata_ref,
-            adata_query,
-            T=0.5,
-            n_top=None,
-            percentile=0):
+def softmax(adata_ref, adata_query, T=0.5, n_top=None, percentile=0):
     """Softmax-based transformation
 
     This will transform query data to reference-comparable data
@@ -42,21 +39,32 @@ def softmax(adata_ref,
         Store #observations × #dimensions softmax transformed data matrix.
     """
 
-    scores_ref_query = np.matmul(adata_ref.X, adata_query.X.T)
+    scores_ref_query = np.matmul(adata_ref.X, adata_query.X.T)  # n_ref x n_query
     # avoid overflow encountered
     scores_ref_query = scores_ref_query - scores_ref_query.max()
-    scores_softmax = np.exp(scores_ref_query/T) / \
-        (np.exp(scores_ref_query/T).sum(axis=0))[None, :]
+    scores_softmax = (
+        np.exp(scores_ref_query / T)
+        / (np.exp(scores_ref_query / T).sum(axis=0))[None, :]
+    )
     if n_top is None:
         thresh = np.percentile(scores_softmax, q=percentile, axis=0)
     else:
-        thresh = (np.sort(scores_softmax, axis=0)[::-1, :])[n_top-1, ]
+        thresh = (np.sort(scores_softmax, axis=0)[::-1, :])[n_top - 1,]
     mask = scores_softmax < thresh[None, :]
     scores_softmax[mask] = 0
     # rescale to make scores add up to 1
-    scores_softmax = scores_softmax/scores_softmax.sum(axis=0, keepdims=1)
+    scores_softmax = scores_softmax / scores_softmax.sum(axis=0, keepdims=1)
     X_query = np.dot(scores_softmax.T, adata_ref.X)
-    adata_query.layers['softmax'] = X_query
+    adata_query.layers["softmax"] = X_query
+
+
+def stable_softmax(x):
+    z = x - np.max(x, axis=0)
+    numerator = np.exp(z)
+    denominator = np.sum(numerator, axis=0)[None, :]
+    softmax = numerator / denominator
+
+    return softmax
 
 
 class SimbaEmbed:
@@ -70,16 +78,17 @@ class SimbaEmbed:
 
     """
 
-    def __init__(self,
-                 adata_ref,
-                 list_adata_query,
-                 T=0.5,
-                 list_T=None,
-                 percentile=50,
-                 n_top=None,
-                 list_percentile=None,
-                 use_precomputed=True,
-                 ):
+    def __init__(
+        self,
+        adata_ref,
+        list_adata_query,
+        T=0.5,
+        list_T=None,
+        percentile=50,
+        n_top=None,
+        list_percentile=None,
+        use_precomputed=True,
+    ):
         """
         Parameters
         ----------
@@ -105,11 +114,9 @@ class SimbaEmbed:
             It should correspond to each of query data.
             Once it's specified, it will override `cutoff`.
         """
-        assert isinstance(list_adata_query, list), \
-            "`list_adata_query` must be list"
+        assert isinstance(list_adata_query, list), "`list_adata_query` must be list"
         if list_T is not None:
-            assert isinstance(list_T, list), \
-                "`list_T` must be list"
+            assert isinstance(list_T, list), "`list_T` must be list"
         self.adata_ref = adata_ref
         self.list_adata_query = list_adata_query
         self.T = T
@@ -142,7 +149,7 @@ class SimbaEmbed:
         #     index=adata_ref.obs.index,
         #     columns=['id_dataset'])
         obs_all = adata_ref.obs.copy()
-        obs_all['id_dataset'] = ['ref']*adata_ref.shape[0]
+        obs_all["id_dataset"] = ["ref"] * adata_ref.shape[0]
         for i, adata_query in enumerate(list_adata_query):
             if list_T is not None:
                 param_T = list_T[i]
@@ -153,12 +160,15 @@ class SimbaEmbed:
             else:
                 param_percentile = percentile
             if use_precomputed:
-                if 'softmax' in adata_query.layers.keys():
-                    print(f'Reading in precomputed softmax-transformed matrix '
-                          f'for query data {i};')
+                if "softmax" in adata_query.layers.keys():
+                    print(
+                        f"Reading in precomputed softmax-transformed matrix "
+                        f"for query data {i};"
+                    )
                 else:
-                    print(f'No softmax-transformed matrix exists '
-                          f'for query data {i}')
+                    print(
+                        f"No softmax-transformed matrix exists " f"for query data {i}"
+                    )
                     print("Performing softmax transformation;")
                     softmax(
                         adata_ref,
@@ -168,16 +178,15 @@ class SimbaEmbed:
                         n_top=n_top,
                     )
             else:
-                print(f'Performing softmax transformation '
-                      f'for query data {i};')
+                print(f"Performing softmax transformation " f"for query data {i};")
                 softmax(
                     adata_ref,
                     adata_query,
                     T=param_T,
                     percentile=param_percentile,
                     n_top=n_top,
-                    )
-            X_all = np.vstack((X_all, adata_query.layers['softmax']))
+                )
+            X_all = np.vstack((X_all, adata_query.layers["softmax"]))
             # obs_all = obs_all.append(
             #     pd.DataFrame(
             #         data=[f'query_{i}']*adata_query.shape[0],
@@ -185,22 +194,22 @@ class SimbaEmbed:
             #         columns=['id_dataset'])
             #         )
             obs_query = adata_query.obs.copy()
-            obs_query['id_dataset'] = [f'query_{i}']*adata_query.shape[0]
-            obs_all = pd.concat(
-                [obs_all, obs_query], ignore_index=False)
-        adata_all = ad.AnnData(X=X_all,
-                               obs=obs_all)
+            obs_query["id_dataset"] = [f"query_{i}"] * adata_query.shape[0]
+            obs_all = pd.concat([obs_all, obs_query], ignore_index=False)
+        adata_all = ad.AnnData(X=X_all, obs=obs_all)
         return adata_all
 
 
-def embed(adata_ref,
-          list_adata_query,
-          T=0.5,
-          list_T=None,
-          percentile=0,
-          n_top=None,
-          list_percentile=None,
-          use_precomputed=False):
+def embed(
+    adata_ref,
+    list_adata_query,
+    T=0.5,
+    list_T=None,
+    percentile=0,
+    n_top=None,
+    list_percentile=None,
+    use_precomputed=False,
+):
     """Embed a list of query datasets along with reference dataset
     into the same space
 
@@ -230,21 +239,21 @@ def embed(adata_ref,
     softmax: `array_like` (`.layers['softmax']`)
         Store #observations × #dimensions softmax transformed data matrix.
     """
-    SE = SimbaEmbed(adata_ref,
-                    list_adata_query,
-                    T=T,
-                    list_T=list_T,
-                    percentile=percentile,
-                    n_top=n_top,
-                    list_percentile=list_percentile,
-                    use_precomputed=use_precomputed)
+    SE = SimbaEmbed(
+        adata_ref,
+        list_adata_query,
+        T=T,
+        list_T=list_T,
+        percentile=percentile,
+        n_top=n_top,
+        list_percentile=list_percentile,
+        use_precomputed=use_precomputed,
+    )
     adata_all = SE.embed()
     return adata_all
 
-def _compare_entities(adata_ref,
-                     adata_query,
-                     n_top_cells=50,
-                     T=1):
+
+def _compare_entities(adata_ref, adata_query, n_top_cells=50, T=1):
     """Compare the embeddings of two entities by calculating
 
     the following values between reference and query entities:
@@ -288,31 +297,33 @@ def _compare_entities(adata_ref,
     X_ref = adata_ref.X
     X_query = adata_query.X
     X_cmp = np.matmul(X_ref, X_query.T)
-    adata_cmp = ad.AnnData(X=X_cmp,
-                           obs=adata_ref.obs,
-                           var=adata_query.obs)
-    adata_cmp.layers['norm'] = X_cmp \
-        - np.log(np.exp(X_cmp).mean(axis=0)).reshape(1, -1)
-    X_sorted_normed = np.sort(adata_cmp.layers['norm'], axis=0)
-    adata_cmp.layers['softmax'] = np.exp(X_cmp/T) \
-        / np.exp(X_cmp/T).sum(axis=0).reshape(1, -1)
-    adata_cmp.var['max'] = \
-        np.clip(np.sort(adata_cmp.layers['norm'], axis=0)[-n_top_cells:, ],
-                a_min=0,
-                a_max=None).mean(axis=0)
-    adata_cmp.var['maxmin'] = (X_sorted_normed[-n_top_cells:, ]-X_sorted_normed[:n_top_cells,]).mean(axis=0)
-    adata_cmp.var['std'] = np.std(X_cmp, axis=0, ddof=1)
-    adata_cmp.var['gini'] = np.array([_gini(adata_cmp.layers['softmax'][:, i])
-                                      for i in np.arange(X_cmp.shape[1])])
-    adata_cmp.var['entropy'] = entropy(adata_cmp.layers['softmax'])
+    adata_cmp = ad.AnnData(X=X_cmp, obs=adata_ref.obs, var=adata_query.obs)
+    adata_cmp.layers["norm"] = X_cmp - np.log(np.exp(X_cmp).mean(axis=0)).reshape(1, -1)
+    X_sorted_normed = np.sort(adata_cmp.layers["norm"], axis=0)
+    adata_cmp.layers["softmax"] = np.exp(X_cmp / T) / np.exp(X_cmp / T).sum(
+        axis=0
+    ).reshape(1, -1)
+    adata_cmp.var["max"] = np.clip(
+        np.sort(adata_cmp.layers["norm"], axis=0)[-n_top_cells:,], a_min=0, a_max=None
+    ).mean(axis=0)
+    adata_cmp.var["maxmin"] = (
+        X_sorted_normed[-n_top_cells:,] - X_sorted_normed[:n_top_cells,]
+    ).mean(axis=0)
+    adata_cmp.var["std"] = np.std(X_cmp, axis=0, ddof=1)
+    adata_cmp.var["gini"] = np.array(
+        [_gini(adata_cmp.layers["softmax"][:, i]) for i in np.arange(X_cmp.shape[1])]
+    )
+    adata_cmp.var["entropy"] = entropy(adata_cmp.layers["softmax"])
     return adata_cmp
 
-def compare_entities(adata_ref,
-                     adata_query,
-                     adata_query_null = None,
-                     n_top_cells=50,
-                     T=1,
-                     ):
+
+def compare_entities(
+    adata_ref,
+    adata_query,
+    adata_query_null=None,
+    n_top_cells=50,
+    T=1,
+):
     """Compare the embeddings of two entities by calculating
 
     the following values between reference and query entities:
@@ -333,7 +344,7 @@ def compare_entities(adata_ref,
       based on softmax probability)
 
     Optionally produces FDR of metrics when null query embedding is provided.
-    Metric score of null embedding will be used as the null disbribution of the 
+    Metric score of null embedding will be used as the null disbribution of the
     metrics.
 
     Parameters
@@ -361,13 +372,15 @@ def compare_entities(adata_ref,
     adata_cmp: `AnnData`
         Store reference entity as observations and query entity as variables
     """
-    adata_cmp = _compare_entities(adata_ref, adata_query, n_top_cells = n_top_cells, T = T)
-    if adata_query_null is None: 
-        return(adata_cmp)
-    
-    adata_cmp_null = _compare_entities(adata_ref, adata_query_null, n_top_cells = n_top_cells, T = T)
-    for metric in ['max', 'std', 'gini', 'entropy']:
-        if metric == 'entropy':
+    adata_cmp = _compare_entities(adata_ref, adata_query, n_top_cells=n_top_cells, T=T)
+    if adata_query_null is None:
+        return adata_cmp
+
+    adata_cmp_null = _compare_entities(
+        adata_ref, adata_query_null, n_top_cells=n_top_cells, T=T
+    )
+    for metric in ["max", "std", "gini", "entropy"]:
+        if metric == "entropy":
             # for entropy, we need the p_value in the opposite direction (lower value if significant)
             p_val, fdr = _get_fdr(-adata_cmp.var[metric], -adata_cmp_null.var[metric])
         else:
@@ -377,19 +390,20 @@ def compare_entities(adata_ref,
     return adata_cmp
 
 
-def query(adata,
-          obsm='X_umap',
-          layer=None,
-          metric='euclidean',
-          anno_filter=None,
-          filters=None,
-          entity=None,
-          pin=None,
-          k=20,
-          use_radius=False,
-          r=None,
-          **kwargs
-          ):
+def query(
+    adata,
+    obsm="X_umap",
+    layer=None,
+    metric="euclidean",
+    anno_filter=None,
+    filters=None,
+    entity=None,
+    pin=None,
+    k=20,
+    use_radius=False,
+    r=None,
+    **kwargs,
+):
     """Query the "database" of entites
 
     Parameters
@@ -432,17 +446,14 @@ def query(adata,
     output: `pandas.DataFrame`, (`adata.uns['query']['output']`)
         Query result.
     """
-    if sum(list(map(lambda x: x is None,
-                    [entity, pin]))) == 2:
+    if sum(list(map(lambda x: x is None, [entity, pin]))) == 2:
         raise ValueError("One of `entity` and `pin` must be specified")
-    if sum(list(map(lambda x: x is not None,
-                    [entity, pin]))) == 2:
+    if sum(list(map(lambda x: x is not None, [entity, pin]))) == 2:
         print("`entity` will be ignored.")
     if entity is not None:
         entity = np.array(entity).flatten()
 
-    if sum(list(map(lambda x: x is not None,
-                    [layer, obsm]))) == 2:
+    if sum(list(map(lambda x: x is not None, [layer, obsm]))) == 2:
         raise ValueError("Only one of `layer` and `obsm` can be used")
     elif obsm is not None:
         X = adata.obsm[obsm].copy()
@@ -461,29 +472,25 @@ def query(adata,
     if use_radius:
         kdt = KDTree(X, metric=metric, **kwargs)
         if r is None:
-            r = np.mean(X.max(axis=0) - X.min(axis=0))/5
-        ind, dist = kdt.query_radius(pin,
-                                     r=r,
-                                     sort_results=True,
-                                     return_distance=True)
+            r = np.mean(X.max(axis=0) - X.min(axis=0)) / 5
+        ind, dist = kdt.query_radius(pin, r=r, sort_results=True, return_distance=True)
         df_output = pd.DataFrame()
         for ii in np.arange(pin.shape[0]):
-            df_output_ii = adata.obs.iloc[ind[ii], ].copy()
-            df_output_ii['distance'] = dist[ii]
+            df_output_ii = adata.obs.iloc[ind[ii],].copy()
+            df_output_ii["distance"] = dist[ii]
             if entity is not None:
-                df_output_ii['query'] = entity[ii]
+                df_output_ii["query"] = entity[ii]
             else:
-                df_output_ii['query'] = ii
-            df_output = pd.concat(
-                [df_output, df_output_ii], ignore_index=False)
+                df_output_ii["query"] = ii
+            df_output = pd.concat([df_output, df_output_ii], ignore_index=False)
         if anno_filter is not None:
             if anno_filter in adata.obs_keys():
                 if filters is None:
                     filters = df_output[anno_filter].unique().tolist()
-                df_output.query(f'{anno_filter} == @filters', inplace=True)
+                df_output.query(f"{anno_filter} == @filters", inplace=True)
             else:
-                raise ValueError(f'could not find {anno_filter}')
-        df_output = df_output.sort_values(by='distance')
+                raise ValueError(f"could not find {anno_filter}")
+        df_output = df_output.sort_values(by="distance")
     else:
         # assert (metric in ['euclidean', 'dot_product']),\
         #             "`metric` must be one of ['euclidean','dot_product']"
@@ -491,17 +498,13 @@ def query(adata,
             if anno_filter in adata.obs_keys():
                 if filters is None:
                     filters = adata.obs[anno_filter].unique().tolist()
-                ids_filters = \
-                    np.where(np.isin(adata.obs[anno_filter], filters))[0]
+                ids_filters = np.where(np.isin(adata.obs[anno_filter], filters))[0]
             else:
-                raise ValueError(f'could not find {anno_filter}')
+                raise ValueError(f"could not find {anno_filter}")
         else:
             ids_filters = np.arange(X.shape[0])
         kdt = KDTree(X[ids_filters, :], metric=metric, **kwargs)
-        dist, ind = kdt.query(pin,
-                              k=k,
-                              sort_results=True,
-                              return_distance=True)
+        dist, ind = kdt.query(pin, k=k, sort_results=True, return_distance=True)
 
         # use faiss
         # X = X.astype('float32')
@@ -517,46 +520,47 @@ def query(adata,
 
         df_output = pd.DataFrame()
         for ii in np.arange(pin.shape[0]):
-            df_output_ii = \
-                adata.obs.iloc[ids_filters, ].iloc[ind[ii, ], ].copy()
-            df_output_ii['distance'] = dist[ii, ]
+            df_output_ii = adata.obs.iloc[ids_filters,].iloc[ind[ii,],].copy()
+            df_output_ii["distance"] = dist[ii,]
             if entity is not None:
-                df_output_ii['query'] = entity[ii]
+                df_output_ii["query"] = entity[ii]
             else:
-                df_output_ii['query'] = ii
-            df_output = pd.concat(
-                [df_output, df_output_ii], ignore_index=False)
-        df_output = df_output.sort_values(by='distance')
+                df_output_ii["query"] = ii
+            df_output = pd.concat([df_output, df_output_ii], ignore_index=False)
+        df_output = df_output.sort_values(by="distance")
 
-    adata.uns['query'] = dict()
-    adata.uns['query']['params'] = {'obsm': obsm,
-                                    'layer': layer,
-                                    'entity': entity,
-                                    'pin': pin,
-                                    'k': k,
-                                    'use_radius': use_radius,
-                                    'r': r}
-    adata.uns['query']['output'] = df_output.copy()
+    adata.uns["query"] = dict()
+    adata.uns["query"]["params"] = {
+        "obsm": obsm,
+        "layer": layer,
+        "entity": entity,
+        "pin": pin,
+        "k": k,
+        "use_radius": use_radius,
+        "r": r,
+    }
+    adata.uns["query"]["output"] = df_output.copy()
     return df_output
 
 
-def find_master_regulators(adata_all,
-                           list_tf_motif=None,
-                           list_tf_gene=None,
-                           metric='euclidean',
-                           anno_filter='entity_anno',
-                           filter_gene='gene',
-                           metrics_gene=None,
-                           metrics_motif=None,
-                           cutoff_gene_max=1.5,
-                           cutoff_gene_gini=0.3,
-                           cutoff_gene_std=None,
-                           cutoff_gene_entropy=None,
-                           cutoff_motif_max=1.5,
-                           cutoff_motif_gini=0.3,
-                           cutoff_motif_std=None,
-                           cutoff_motif_entropy=None,
-                           ):
+def find_master_regulators(
+    adata_all,
+    list_tf_motif=None,
+    list_tf_gene=None,
+    metric="euclidean",
+    anno_filter="entity_anno",
+    filter_gene="gene",
+    metrics_gene=None,
+    metrics_motif=None,
+    cutoff_gene_max=1.5,
+    cutoff_gene_gini=0.3,
+    cutoff_gene_std=None,
+    cutoff_gene_entropy=None,
+    cutoff_motif_max=1.5,
+    cutoff_motif_gini=0.3,
+    cutoff_motif_std=None,
+    cutoff_motif_entropy=None,
+):
     """Find all the master regulators
 
     Parameters
@@ -599,108 +603,108 @@ def find_master_regulators(adata_all,
     df_MR: `pandas.DataFrame`
         Dataframe of master regulators
     """
-    if sum(list(map(lambda x: x is None,
-                    [list_tf_motif, list_tf_gene]))) > 0:
+    if sum(list(map(lambda x: x is None, [list_tf_motif, list_tf_gene]))) > 0:
         return "Please specify both `list_tf_motif` and `list_tf_gene`"
 
-    assert isinstance(list_tf_motif, list), \
-        "`list_tf_motif` must be list"
-    assert isinstance(list_tf_gene, list), \
-        "`list_tf_gene` must be list"
-    assert len(list_tf_motif) == len(list_tf_gene), \
-        "`list_tf_motif` and `list_tf_gene` must have the same length"
-    assert len(list_tf_motif) == len(set(list_tf_motif)), \
-        "Duplicates are found in `list_tf_motif`"
+    assert isinstance(list_tf_motif, list), "`list_tf_motif` must be list"
+    assert isinstance(list_tf_gene, list), "`list_tf_gene` must be list"
+    assert len(list_tf_motif) == len(
+        list_tf_gene
+    ), "`list_tf_motif` and `list_tf_gene` must have the same length"
+    assert len(list_tf_motif) == len(
+        set(list_tf_motif)
+    ), "Duplicates are found in `list_tf_motif`"
 
-    genes = adata_all[adata_all.obs[anno_filter] == filter_gene].\
-        obs_names.tolist().copy()
+    genes = (
+        adata_all[adata_all.obs[anno_filter] == filter_gene].obs_names.tolist().copy()
+    )
     # Master Regulator
-    df_MR = pd.DataFrame(list(zip(list_tf_motif, list_tf_gene)),
-                         columns=['motif', 'gene'])
+    df_MR = pd.DataFrame(
+        list(zip(list_tf_motif, list_tf_gene)), columns=["motif", "gene"]
+    )
 
     if metrics_motif is not None:
-        print('Adding motif metrics ...')
-        assert isinstance(metrics_motif, pd.DataFrame), \
-            "`metrics_motif` must be pd.DataFrame"
-        df_metrics_motif = metrics_motif.loc[list_tf_motif, ].copy()
-        df_metrics_motif.columns = df_metrics_motif.columns + '_motif'
-        df_MR = df_MR.merge(df_metrics_motif,
-                            how='left',
-                            left_on='motif',
-                            right_index=True)
+        print("Adding motif metrics ...")
+        assert isinstance(
+            metrics_motif, pd.DataFrame
+        ), "`metrics_motif` must be pd.DataFrame"
+        df_metrics_motif = metrics_motif.loc[list_tf_motif,].copy()
+        df_metrics_motif.columns = df_metrics_motif.columns + "_motif"
+        df_MR = df_MR.merge(
+            df_metrics_motif, how="left", left_on="motif", right_index=True
+        )
 
     if metrics_gene is not None:
-        print('Adding gene metrics ...')
-        assert isinstance(metrics_gene, pd.DataFrame), \
-            "`metrics_gene` must be pd.DataFrame"
-        df_metrics_gene = metrics_gene.loc[list_tf_gene, ].copy()
+        print("Adding gene metrics ...")
+        assert isinstance(
+            metrics_gene, pd.DataFrame
+        ), "`metrics_gene` must be pd.DataFrame"
+        df_metrics_gene = metrics_gene.loc[list_tf_gene,].copy()
         df_metrics_gene.index = list_tf_motif  # avoid duplicate genes
-        df_metrics_gene.columns = df_metrics_gene.columns + '_gene'
-        df_MR = df_MR.merge(df_metrics_gene,
-                            how='left',
-                            left_on='motif',
-                            right_index=True)
-    print('Computing distances between TF motifs and genes ...')
-    dist_MG = distance.cdist(adata_all[df_MR['motif'], ].X,
-                             adata_all[genes, ].X,
-                             metric=metric)
-    dist_MG = pd.DataFrame(dist_MG,
-                           index=df_MR['motif'].tolist(),
-                           columns=genes)
-    df_MR.insert(2, 'rank', -1)
-    df_MR.insert(3, 'dist', -1)
+        df_metrics_gene.columns = df_metrics_gene.columns + "_gene"
+        df_MR = df_MR.merge(
+            df_metrics_gene, how="left", left_on="motif", right_index=True
+        )
+    print("Computing distances between TF motifs and genes ...")
+    dist_MG = distance.cdist(
+        adata_all[df_MR["motif"],].X, adata_all[genes,].X, metric=metric
+    )
+    dist_MG = pd.DataFrame(dist_MG, index=df_MR["motif"].tolist(), columns=genes)
+    df_MR.insert(2, "rank", -1)
+    df_MR.insert(3, "dist", -1)
     for i in np.arange(df_MR.shape[0]):
-        x_motif = df_MR['motif'].iloc[i]
-        x_gene = df_MR['gene'].iloc[i]
-        df_MR.loc[i, 'rank'] = dist_MG.loc[x_motif, ].rank()[x_gene]
-        df_MR.loc[i, 'dist'] = dist_MG.loc[x_motif, x_gene]
+        x_motif = df_MR["motif"].iloc[i]
+        x_gene = df_MR["gene"].iloc[i]
+        df_MR.loc[i, "rank"] = dist_MG.loc[x_motif,].rank()[x_gene]
+        df_MR.loc[i, "dist"] = dist_MG.loc[x_motif, x_gene]
 
     if metrics_gene is not None:
-        print('filtering master regulators based on gene metrics:')
+        print("filtering master regulators based on gene metrics:")
         if cutoff_gene_entropy is not None:
-            print('entropy')
-            df_MR = df_MR[df_MR['entropy_gene'] > cutoff_gene_entropy]
+            print("entropy")
+            df_MR = df_MR[df_MR["entropy_gene"] > cutoff_gene_entropy]
         if cutoff_gene_gini is not None:
-            print('Gini index')
-            df_MR = df_MR[df_MR['gini_gene'] > cutoff_gene_gini]
+            print("Gini index")
+            df_MR = df_MR[df_MR["gini_gene"] > cutoff_gene_gini]
         if cutoff_gene_max is not None:
-            print('max')
-            df_MR = df_MR[df_MR['max_gene'] > cutoff_gene_max]
+            print("max")
+            df_MR = df_MR[df_MR["max_gene"] > cutoff_gene_max]
         if cutoff_gene_std is not None:
-            print('standard deviation')
-            df_MR = df_MR[df_MR['std_gene'] > cutoff_gene_std]
+            print("standard deviation")
+            df_MR = df_MR[df_MR["std_gene"] > cutoff_gene_std]
     if metrics_motif is not None:
-        print('filtering master regulators based on motif metrics:')
+        print("filtering master regulators based on motif metrics:")
         if cutoff_motif_entropy is not None:
-            print('entropy')
-            df_MR = df_MR[df_MR['entropy_motif'] > cutoff_motif_entropy]
+            print("entropy")
+            df_MR = df_MR[df_MR["entropy_motif"] > cutoff_motif_entropy]
         if cutoff_motif_gini is not None:
-            print('Gini index')
-            df_MR = df_MR[df_MR['gini_motif'] > cutoff_motif_gini]
+            print("Gini index")
+            df_MR = df_MR[df_MR["gini_motif"] > cutoff_motif_gini]
         if cutoff_motif_max is not None:
-            print('max')
-            df_MR = df_MR[df_MR['max_motif'] > cutoff_motif_max]
+            print("max")
+            df_MR = df_MR[df_MR["max_motif"] > cutoff_motif_max]
         if cutoff_motif_std is not None:
-            print('standard deviation')
-            df_MR = df_MR[df_MR['std_motif'] > cutoff_motif_std]
-    df_MR = df_MR.sort_values(by='rank', ignore_index=True)
+            print("standard deviation")
+            df_MR = df_MR[df_MR["std_motif"] > cutoff_motif_std]
+    df_MR = df_MR.sort_values(by="rank", ignore_index=True)
     return df_MR
 
 
-def find_target_genes(adata_all,
-                      adata_PM,
-                      list_tf_motif=None,
-                      list_tf_gene=None,
-                      adata_CP=None,
-                      metric='euclidean',
-                      anno_filter='entity_anno',
-                      filter_peak='peak',
-                      filter_gene='gene',
-                      n_genes=200,
-                      cutoff_gene=None,
-                      cutoff_peak=1000,
-                      use_precomputed=True,
-                      ):
+def find_target_genes(
+    adata_all,
+    adata_PM,
+    list_tf_motif=None,
+    list_tf_gene=None,
+    adata_CP=None,
+    metric="euclidean",
+    anno_filter="entity_anno",
+    filter_peak="peak",
+    filter_gene="gene",
+    n_genes=200,
+    cutoff_gene=None,
+    cutoff_peak=1000,
+    use_precomputed=True,
+):
     """For a given TF, infer its target genes
 
     Parameters
@@ -752,168 +756,169 @@ def find_target_genes(adata_all,
     tf_targets: `dict`, (`adata.uns['tf_targets']`)
         Distances calculated between genes, peaks, and motifs
     """
-    if sum(list(map(lambda x: x is None,
-                    [list_tf_motif, list_tf_gene]))) > 0:
+    if sum(list(map(lambda x: x is None, [list_tf_motif, list_tf_gene]))) > 0:
         return "Please specify both `list_tf_motif` and `list_tf_gene`"
 
-    assert isinstance(list_tf_motif, list), \
-        "`list_tf_motif` must be list"
-    assert isinstance(list_tf_gene, list), \
-        "`list_tf_gene` must be list"
-    assert len(list_tf_motif) == len(list_tf_gene), \
-        "`list_tf_motif` and `list_tf_gene` must have the same length"
+    assert isinstance(list_tf_motif, list), "`list_tf_motif` must be list"
+    assert isinstance(list_tf_gene, list), "`list_tf_gene` must be list"
+    assert len(list_tf_motif) == len(
+        list_tf_gene
+    ), "`list_tf_motif` and `list_tf_gene` must have the same length"
 
     def isin(a, b):
         return np.array([item in b for item in a])
 
-    print('Preprocessing ...')
-    if use_precomputed and 'tf_targets' in adata_all.uns_keys():
-        print('importing precomputed variables ...')
-        genes = adata_all.uns['tf_targets']['genes']
-        peaks = adata_all.uns['tf_targets']['peaks']
-        peaks_in_genes = adata_all.uns['tf_targets']['peaks_in_genes']
-        dist_PG = adata_all.uns['tf_targets']['dist_PG']
-        overlap_PG = adata_all.uns['tf_targets']['overlap']
+    print("Preprocessing ...")
+    if use_precomputed and "tf_targets" in adata_all.uns_keys():
+        print("importing precomputed variables ...")
+        genes = adata_all.uns["tf_targets"]["genes"]
+        peaks = adata_all.uns["tf_targets"]["peaks"]
+        peaks_in_genes = adata_all.uns["tf_targets"]["peaks_in_genes"]
+        dist_PG = adata_all.uns["tf_targets"]["dist_PG"]
+        overlap_PG = adata_all.uns["tf_targets"]["overlap"]
     else:
-        assert (adata_CP is not None), \
-            '`adata_CP` needs to be specified '\
-            'when no precomputed variable is stored'
-        if 'gene_scores' not in adata_CP.uns_keys():
+        assert adata_CP is not None, (
+            "`adata_CP` needs to be specified " "when no precomputed variable is stored"
+        )
+        if "gene_scores" not in adata_CP.uns_keys():
             print('Please run "si.tl.gene_scores(adata_CP)" first.')
         else:
-            overlap_PG = adata_CP.uns['gene_scores']['overlap'].copy()
-            overlap_PG['peak'] = \
-                overlap_PG[['chr_p', 'start_p', 'end_p']].apply(
-                    lambda row: '_'.join(row.values.astype(str)), axis=1)
-            tuples = list(zip(overlap_PG['symbol_g'], overlap_PG['peak']))
-            multi_indices = pd.MultiIndex.from_tuples(
-                tuples, names=["gene", "peak"])
+            overlap_PG = adata_CP.uns["gene_scores"]["overlap"].copy()
+            overlap_PG["peak"] = overlap_PG[["chr_p", "start_p", "end_p"]].apply(
+                lambda row: "_".join(row.values.astype(str)), axis=1
+            )
+            tuples = list(zip(overlap_PG["symbol_g"], overlap_PG["peak"]))
+            multi_indices = pd.MultiIndex.from_tuples(tuples, names=["gene", "peak"])
             overlap_PG.index = multi_indices
 
-        genes = adata_all[adata_all.obs[anno_filter] == filter_gene].\
-            obs_names.tolist().copy()
-        peaks = adata_all[adata_all.obs[anno_filter] == filter_peak].\
-            obs_names.tolist().copy()
-        peaks_in_genes = list(set(overlap_PG['peak']))
+        genes = (
+            adata_all[adata_all.obs[anno_filter] == filter_gene]
+            .obs_names.tolist()
+            .copy()
+        )
+        peaks = (
+            adata_all[adata_all.obs[anno_filter] == filter_peak]
+            .obs_names.tolist()
+            .copy()
+        )
+        peaks_in_genes = list(set(overlap_PG["peak"]))
 
-        print(f'#genes: {len(genes)}')
-        print(f'#peaks: {len(peaks)}')
-        print(f'#genes-associated peaks: {len(peaks_in_genes)}')
-        print('computing distances between genes '
-              'and genes-associated peaks ...')
+        print(f"#genes: {len(genes)}")
+        print(f"#peaks: {len(peaks)}")
+        print(f"#genes-associated peaks: {len(peaks_in_genes)}")
+        print("computing distances between genes " "and genes-associated peaks ...")
         dist_PG = distance.cdist(
-            adata_all[peaks_in_genes, ].X,
-            adata_all[genes, ].X,
+            adata_all[peaks_in_genes,].X,
+            adata_all[genes,].X,
             metric=metric,
-            )
+        )
         dist_PG = pd.DataFrame(dist_PG, index=peaks_in_genes, columns=[genes])
         print("Saving variables into `.uns['tf_targets']` ...")
-        adata_all.uns['tf_targets'] = dict()
-        adata_all.uns['tf_targets']['overlap'] = overlap_PG
-        adata_all.uns['tf_targets']['dist_PG'] = dist_PG
-        adata_all.uns['tf_targets']['peaks_in_genes'] = peaks_in_genes
-        adata_all.uns['tf_targets']['genes'] = genes
-        adata_all.uns['tf_targets']['peaks'] = peaks
-        adata_all.uns['tf_targets']['peaks_in_genes'] = peaks_in_genes
+        adata_all.uns["tf_targets"] = dict()
+        adata_all.uns["tf_targets"]["overlap"] = overlap_PG
+        adata_all.uns["tf_targets"]["dist_PG"] = dist_PG
+        adata_all.uns["tf_targets"]["peaks_in_genes"] = peaks_in_genes
+        adata_all.uns["tf_targets"]["genes"] = genes
+        adata_all.uns["tf_targets"]["peaks"] = peaks
+        adata_all.uns["tf_targets"]["peaks_in_genes"] = peaks_in_genes
 
     dict_tf_targets = dict()
     for tf_motif, tf_gene in zip(list_tf_motif, list_tf_gene):
-
-        print(f'searching for target genes of {tf_motif}')
+        print(f"searching for target genes of {tf_motif}")
         motif_peaks = adata_PM.obs_names[adata_PM[:, tf_motif].X.nonzero()[0]]
         motif_genes = list(
-            set(overlap_PG[isin(overlap_PG['peak'], motif_peaks)]['symbol_g'])
-            .intersection(genes))
+            set(
+                overlap_PG[isin(overlap_PG["peak"], motif_peaks)]["symbol_g"]
+            ).intersection(genes)
+        )
 
         # rank of the distances from genes to tf_motif
-        dist_GM_motif = distance.cdist(adata_all[genes, ].X,
-                                       adata_all[tf_motif, ].X,
-                                       metric=metric)
-        dist_GM_motif = pd.DataFrame(dist_GM_motif,
-                                     index=genes,
-                                     columns=[tf_motif])
+        dist_GM_motif = distance.cdist(
+            adata_all[genes,].X, adata_all[tf_motif,].X, metric=metric
+        )
+        dist_GM_motif = pd.DataFrame(dist_GM_motif, index=genes, columns=[tf_motif])
         rank_GM_motif = dist_GM_motif.rank(axis=0)
 
         # rank of the distances from genes to tf_gene
-        dist_GG_motif = distance.cdist(adata_all[genes, ].X,
-                                       adata_all[tf_gene, ].X,
-                                       metric=metric)
-        dist_GG_motif = pd.DataFrame(dist_GG_motif,
-                                     index=genes,
-                                     columns=[tf_gene])
+        dist_GG_motif = distance.cdist(
+            adata_all[genes,].X, adata_all[tf_gene,].X, metric=metric
+        )
+        dist_GG_motif = pd.DataFrame(dist_GG_motif, index=genes, columns=[tf_gene])
         rank_GG_motif = dist_GG_motif.rank(axis=0)
 
         # rank of the distances from peaks to tf_motif
         dist_PM_motif = distance.cdist(
-            adata_all[peaks_in_genes, ].X,
-            adata_all[tf_motif, ].X,
-            metric=metric)
-        dist_PM_motif = pd.DataFrame(dist_PM_motif,
-                                     index=peaks_in_genes,
-                                     columns=[tf_motif])
+            adata_all[peaks_in_genes,].X, adata_all[tf_motif,].X, metric=metric
+        )
+        dist_PM_motif = pd.DataFrame(
+            dist_PM_motif, index=peaks_in_genes, columns=[tf_motif]
+        )
         rank_PM_motif = dist_PM_motif.rank(axis=0)
 
         # rank of the distances from peaks to candidate genes
-        cand_genes = \
-            dist_GG_motif[tf_gene].nsmallest(n_genes).index.tolist()\
+        cand_genes = (
+            dist_GG_motif[tf_gene].nsmallest(n_genes).index.tolist()
             + dist_GM_motif[tf_motif].nsmallest(n_genes).index.tolist()
-        print(f'#candinate genes is {len(cand_genes)}')
-        print('removing duplicate genes ...')
-        print('removing genes that do not contain TF motif ...')
+        )
+        print(f"#candinate genes is {len(cand_genes)}")
+        print("removing duplicate genes ...")
+        print("removing genes that do not contain TF motif ...")
         cand_genes = list(set(cand_genes).intersection(set(motif_genes)))
-        print(f'#candinate genes is {len(cand_genes)}')
+        print(f"#candinate genes is {len(cand_genes)}")
         dist_PG_motif = distance.cdist(
-            adata_all[peaks_in_genes, ].X,
-            adata_all[cand_genes, ].X,
-            metric=metric
-            )
-        dist_PG_motif = pd.DataFrame(dist_PG_motif,
-                                     index=peaks_in_genes,
-                                     columns=cand_genes)
+            adata_all[peaks_in_genes,].X, adata_all[cand_genes,].X, metric=metric
+        )
+        dist_PG_motif = pd.DataFrame(
+            dist_PG_motif, index=peaks_in_genes, columns=cand_genes
+        )
         rank_PG_motif = dist_PG_motif.rank(axis=0)
 
         df_tf_targets = pd.DataFrame(index=cand_genes)
-        df_tf_targets['average_rank'] = -1
-        df_tf_targets['has_motif'] = 'no'
-        df_tf_targets['rank_gene_to_TFmotif'] = -1
-        df_tf_targets['rank_gene_to_TFgene'] = -1
-        df_tf_targets['rank_peak_to_TFmotif'] = -1
-        df_tf_targets['rank_peak2_to_TFmotif'] = -1
-        df_tf_targets['rank_peak_to_gene'] = -1
-        df_tf_targets['rank_peak2_to_gene'] = -1
+        df_tf_targets["average_rank"] = -1
+        df_tf_targets["has_motif"] = "no"
+        df_tf_targets["rank_gene_to_TFmotif"] = -1
+        df_tf_targets["rank_gene_to_TFgene"] = -1
+        df_tf_targets["rank_peak_to_TFmotif"] = -1
+        df_tf_targets["rank_peak2_to_TFmotif"] = -1
+        df_tf_targets["rank_peak_to_gene"] = -1
+        df_tf_targets["rank_peak2_to_gene"] = -1
         for i, g in enumerate(cand_genes):
-            g_peaks = list(set(overlap_PG.loc[[g]]['peak']))
+            g_peaks = list(set(overlap_PG.loc[[g]]["peak"]))
             g_motif_peaks = list(set(g_peaks).intersection(motif_peaks))
             if len(g_motif_peaks) > 0:
-                df_tf_targets.loc[g, 'has_motif'] = 'yes'
-                df_tf_targets.loc[g, 'rank_gene_to_TFmotif'] = \
-                    rank_GM_motif[tf_motif][g]
-                df_tf_targets.loc[g, 'rank_gene_to_TFgene'] = \
-                    rank_GG_motif[tf_gene][g]
-                df_tf_targets.loc[g, 'rank_peak_to_TFmotif'] = \
-                    rank_PM_motif.loc[g_peaks, tf_motif].min()
-                df_tf_targets.loc[g, 'rank_peak2_to_TFmotif'] = \
-                    rank_PM_motif.loc[g_motif_peaks, tf_motif].min()
-                df_tf_targets.loc[g, 'rank_peak_to_gene'] = \
-                    rank_PG_motif.loc[g_peaks, g].min()
-                df_tf_targets.loc[g, 'rank_peak2_to_gene'] = \
-                    rank_PG_motif.loc[g_peaks, g].min()
-            if i % int(len(cand_genes)/5) == 0:
-                print(f'completed: {i/len(cand_genes):.1%}')
-        df_tf_targets['average_rank'] = \
-            df_tf_targets[['rank_gene_to_TFmotif',
-                           'rank_gene_to_TFgene']].mean(axis=1)
+                df_tf_targets.loc[g, "has_motif"] = "yes"
+                df_tf_targets.loc[g, "rank_gene_to_TFmotif"] = rank_GM_motif[tf_motif][
+                    g
+                ]
+                df_tf_targets.loc[g, "rank_gene_to_TFgene"] = rank_GG_motif[tf_gene][g]
+                df_tf_targets.loc[g, "rank_peak_to_TFmotif"] = rank_PM_motif.loc[
+                    g_peaks, tf_motif
+                ].min()
+                df_tf_targets.loc[g, "rank_peak2_to_TFmotif"] = rank_PM_motif.loc[
+                    g_motif_peaks, tf_motif
+                ].min()
+                df_tf_targets.loc[g, "rank_peak_to_gene"] = rank_PG_motif.loc[
+                    g_peaks, g
+                ].min()
+                df_tf_targets.loc[g, "rank_peak2_to_gene"] = rank_PG_motif.loc[
+                    g_peaks, g
+                ].min()
+            if i % int(len(cand_genes) / 5) == 0:
+                print(f"completed: {i/len(cand_genes):.1%}")
+        df_tf_targets["average_rank"] = df_tf_targets[
+            ["rank_gene_to_TFmotif", "rank_gene_to_TFgene"]
+        ].mean(axis=1)
         if cutoff_peak is not None:
-            print('Pruning candidate genes based on nearby peaks ...')
+            print("Pruning candidate genes based on nearby peaks ...")
             df_tf_targets = df_tf_targets[
-                (df_tf_targets[[
-                    'rank_peak_to_TFmotif',
-                    'rank_peak_to_gene']]
-                    < cutoff_peak).sum(axis=1) > 0]
+                (
+                    df_tf_targets[["rank_peak_to_TFmotif", "rank_peak_to_gene"]]
+                    < cutoff_peak
+                ).sum(axis=1)
+                > 0
+            ]
         if cutoff_gene is not None:
-            print('Pruning candidate genes based on average rank ...')
-            df_tf_targets = df_tf_targets[
-                df_tf_targets['average_rank'] < cutoff_gene]
-        dict_tf_targets[tf_motif] = \
-            df_tf_targets.sort_values(by='average_rank').copy()
+            print("Pruning candidate genes based on average rank ...")
+            df_tf_targets = df_tf_targets[df_tf_targets["average_rank"] < cutoff_gene]
+        dict_tf_targets[tf_motif] = df_tf_targets.sort_values(by="average_rank").copy()
     return dict_tf_targets

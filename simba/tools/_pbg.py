@@ -33,14 +33,20 @@ from .._settings import settings
 def gen_graph(list_CP=None,
               list_PM=None,
               list_PK=None,
+              list_PV=None,
+              list_VI=None,
               list_CG=None,
+              list_CI=None,
               list_CC=None,
+              list_PG=None,
               list_adata=None,
               prefix_C='C',
               prefix_P='P',
               prefix_M='M',
               prefix_K='K',
+              prefix_V='V',
               prefix_G='G',
+              prefix_I='I',
               prefix='E',
               layer='simba',
               copy=False,
@@ -51,6 +57,7 @@ def gen_graph(list_CP=None,
               use_top_pcs_CP=None,
               use_top_pcs_PM=None,
               use_top_pcs_PK=None,
+              use_top_pcs_PV=None,
               get_marker_significance=False,
               fold_null_nodes = 1.0,
               ):
@@ -82,6 +89,8 @@ def gen_graph(list_CP=None,
         A list of anndata objects that store relation between Peaks and Motifs
     list_PK: `list`, optional (default: None)
         A list of anndata objects that store relation between Peaks and Kmers
+    list_PV: `list`, optional (default: None)
+        A list of anndata objects that store relation between Peaks and Variants
     list_CG: `list`, optional (default: None)
         A list of anndata objects that store RNA-seq data (Cells by Genes)
     list_CC: `list`, optional (default: None)
@@ -121,6 +130,9 @@ def gen_graph(list_CP=None,
     use_top_pcs_PK: `bool`, optional (default: None)
         Use top-PCs-associated features for PK
         Once specified, it will overwrite `use_top_pcs`
+    use_top_pcs_PV: `bool`, optional (default: None)
+        Use top-PCs-associated features for PV
+        Once specified, it will overwrite `use_top_pcs`
     copy: `bool`, optional (default: False)
         If True, it returns the graph file as a data frame
     Returns
@@ -152,21 +164,31 @@ def gen_graph(list_CP=None,
                     [list_CP,
                      list_PM,
                      list_PK,
+                     list_PV,
+                     list_VI,
                      list_CG,
+                     list_CI,
                      list_CC,
-                     list_adata]))) == 6:
+                     list_PG,
+                     list_adata]))) == 10:
         return 'No graph is generated'
     if get_marker_significance: 
         gen_graph(list_CP=list_CP,
               list_PM=list_PM,
               list_PK=list_PK,
+              list_PV=list_PV,
+              list_VI=list_VI,
+              list_PG=list_PG,
               list_CG=list_CG,
+              list_CI=list_CI,
               list_CC=list_CC,
               prefix_C=prefix_C,
               prefix_P=prefix_P,
               prefix_M=prefix_M,
               prefix_K=prefix_K,
+              prefix_V=prefix_V,
               prefix_G=prefix_G,
+              prefix_I=prefix_I,
               layer=layer,
               copy=copy,
               dirname=dirname,
@@ -176,6 +198,7 @@ def gen_graph(list_CP=None,
               use_top_pcs_CP=use_top_pcs_CP,
               use_top_pcs_PM=use_top_pcs_PM,
               use_top_pcs_PK=use_top_pcs_PK,
+              use_top_pcs_PV=use_top_pcs_PV,
               get_marker_significance=False,
               )
         dirname_orig = dirname
@@ -347,7 +370,9 @@ def gen_graph(list_CP=None,
         ids_peaks = pd.Index([])
         ids_kmers = pd.Index([])
         ids_motifs = pd.Index([])
-
+        ids_variants = pd.Index([])
+        ids_individuals = pd.Index([])
+        
         if list_CP is not None:
             for adata_ori in list_CP:
                 if use_top_pcs_CP is None:
@@ -379,6 +404,7 @@ def gen_graph(list_CP=None,
             if get_marker_significance:
                 n_npeaks = min(int(len(ids_peaks)*fold_null_nodes), len(ids_peaks))
                 ids_npeaks = pd.Index([f'n{prefix_P}.{x}' for x in range(n_npeaks)])
+
         if list_PM is not None:
             for adata_ori in list_PM:
                 if use_top_pcs_PM is None:
@@ -409,8 +435,29 @@ def gen_graph(list_CP=None,
             if get_marker_significance:
                 n_nkmers = int(len(ids_kmers)*fold_null_nodes)
                 ids_nkmers = pd.Index([f'n{prefix_K}.{x}' for x in range(n_nkmers)])
+        if list_PV is not None:
+            for adata_ori in list_PV:
+                if use_top_pcs_PV is None:
+                    flag_top_pcs = use_top_pcs
+                else:
+                    flag_top_pcs = use_top_pcs_PV
+                if flag_top_pcs:
+                    adata = adata_ori[:, adata_ori.var['top_pcs']].copy()
+                else:
+                    adata = adata_ori.copy()
+                ids_peaks = ids_peaks.union(adata.obs.index)
+                ids_variants = ids_variants.union(adata.var.index)
+            if get_marker_significance:
+                n_nvariants = int(len(ids_variants)*fold_null_nodes)
+                ids_nvariants = pd.Index([f'n{prefix_V}.{x}' for x in range(n_nvariants)])
+
+        if list_PG is not None:
+            for adata_ori in list_PG:
+                adata = adata_ori.copy()
+                ids_peaks = ids_peaks.union(adata.obs.index)
+                ids_genes = ids_genes.union(adata.var.index)
         if list_CG is not None:
-            for adata_ori in list_CG:
+            for adata_ori in tqdm(list_CG,desc="Processing CG"):
                 if use_highly_variable:
                     adata = adata_ori[
                         :, adata_ori.var['highly_variable']].copy()
@@ -437,6 +484,34 @@ def gen_graph(list_CP=None,
             if get_marker_significance:
                 n_ngenes = int(len(ids_genes)*fold_null_nodes)
                 ids_ngenes = pd.Index([f'n{prefix_G}.{x}' for x in range(n_ngenes)])
+                
+        if list_CI is not None:
+            for adata_ori in tqdm(list_CI,desc="Processing CI"):
+                adata = adata_ori.copy()
+                ids_cells_i = adata.obs.index
+                if len(dict_cells) == 0:
+                    dict_cells[prefix_C] = ids_cells_i
+                else:
+                    # check if cell indices are included in dict_cells
+                    flag_included = False
+                    for k in dict_cells.keys():
+                        ids_cells_k = dict_cells[k]
+                        if set(ids_cells_i) <= set(ids_cells_k):
+                            flag_included = True
+                            break
+                    if not flag_included:
+                        # create a new set of entities
+                        # when not all indices are included
+                        dict_cells[
+                            f'{prefix_C}{len(dict_cells)+1}'] = \
+                                ids_cells_i
+                ids_individuals = ids_individuals.union(adata.var.index)
+                
+        if list_VI is not None:
+            for adata_ori in tqdm(list_VI,desc="Processing VI"):
+                adata = adata_ori.copy()
+                ids_variants = ids_variants.union(adata.obs.index)
+                ids_individuals = ids_individuals.union(adata.var.index)
 
         entity_alias = pd.DataFrame(columns=['alias'])
         dict_df_cells = dict()  # unique cell dataframes
@@ -466,6 +541,16 @@ def gen_graph(list_CP=None,
                 settings.pbg_params['entities'][f'n{prefix_G}'] = {'num_partitions': 1}
                 entity_alias = pd.concat([entity_alias, df_ngenes],
                                                     ignore_index=False)
+        if len(ids_individuals) > 0:
+            df_individuals = pd.DataFrame(
+                    index=ids_individuals,
+                    columns=['alias'],
+                    data=[f'{prefix_I}.{x}' for x in range(len(ids_individuals))])
+            settings.pbg_params['entities'][prefix_I] = {'num_partitions': 1}
+            entity_alias = pd.concat(
+                [entity_alias, df_individuals],
+                ignore_index=False)
+            
         if len(ids_peaks) > 0:
             df_peaks = pd.DataFrame(
                     index=ids_peaks,
@@ -517,6 +602,24 @@ def gen_graph(list_CP=None,
                 settings.pbg_params['entities'][f'n{prefix_M}'] = {'num_partitions': 1}
                 entity_alias = pd.concat([entity_alias,df_nmotifs],
                                                     ignore_index=False)
+        if len(ids_variants) > 0:
+            df_variants = pd.DataFrame(
+                index=ids_variants,
+                columns=['alias'],
+                data=[f'{prefix_V}.{x}' for x in range(len(ids_variants))])
+            settings.pbg_params['entities'][prefix_V] = {'num_partitions': 1}
+            entity_alias = pd.concat(
+                [entity_alias, df_variants],
+                ignore_index=False)
+            if get_marker_significance and (len(ids_nvariants) > 0):
+                df_nvariants = pd.DataFrame(
+                    index=ids_nvariants,
+                    columns=['alias'],
+                    data=ids_nvariants.tolist())
+                settings.pbg_params['entities'][f'n{prefix_V}'] = {'num_partitions': 1}
+                entity_alias = pd.concat([entity_alias,df_nvariants],
+                                                    ignore_index=False)
+
         # generate edges
         dict_graph_stats = dict()
         if add_edge_weights:
@@ -616,6 +719,61 @@ def gen_graph(list_CP=None,
                     df_edges = pd.concat(
                         [df_edges, df_edges_x],
                         ignore_index=True)
+                    
+        if list_CI is not None:
+            for i, adata_ori in enumerate(list_CI):
+                adata = adata_ori.copy()
+                # select reference of cells
+                for key, df_cells in dict_df_cells.items():
+                    if set(adata.obs_names) <= set(df_cells.index):
+                        break
+                if layer is not None:
+                    if layer in adata.layers.keys():
+                        arr_simba = adata.layers[layer]
+                    else:
+                        print(f'`{layer}` does not exist in anndata {i} '
+                              'in `list_CI`.`.X` is being used instead.')
+                        arr_simba = adata.X
+                else:
+                    arr_simba = adata.X
+                _row, _col = arr_simba.nonzero()
+                df_edges_x = pd.DataFrame(columns=col_names)
+                
+                df_edges_x['source'] = df_cells.loc[
+                    adata.obs_names[_row], 'alias'].values
+                df_edges_x['relation'] = f'r{id_r}'
+                df_edges_x['destination'] = df_individuals.loc[
+                    adata.var_names[_col], 'alias'].values
+                if add_edge_weights:
+                    df_edges_x['weight'] = \
+                        arr_simba[_row, _col].A.flatten()
+                settings.pbg_params['relations'].append({
+                    'name': f'r{id_r}',
+                    'lhs': f'{key}',
+                    'rhs': f'{prefix_I}',
+                    'operator': 'none',
+                    'weight': 1.0
+                    })
+                dict_graph_stats[f'relation{id_r}'] = {
+                    'source': key,
+                    'destination': prefix_I,
+                    'n_edges': df_edges_x.shape[0]}
+                print(
+                    f'relation{id_r}: '
+                    f'source: {key}, '
+                    f'destination: {prefix_I}\n'
+                    f'#edges: {df_edges_x.shape[0]}')
+                id_r += 1
+                df_edges = pd.concat(
+                    [df_edges, df_edges_x],
+                    ignore_index=True)
+                adata_ori.obs['pbg_id'] = ""
+                adata_ori.var['pbg_id'] = ""
+                adata_ori.obs.loc[adata.obs_names, 'pbg_id'] = \
+                    df_cells.loc[adata.obs_names, 'alias'].copy()
+                adata_ori.var.loc[adata.var_names, 'pbg_id'] = \
+                    df_individuals.loc[adata.var_names, 'alias'].copy()
+
 
         if list_PM is not None:
             for i, adata_ori in enumerate(list_PM):
@@ -806,6 +964,218 @@ def gen_graph(list_CP=None,
                     df_edges = pd.concat(
                         [df_edges, df_edges_x],
                         ignore_index=True)
+
+        if list_PV is not None:
+            for i, adata_ori in enumerate(list_PV):
+                if use_top_pcs:
+                    adata = adata_ori[:, adata_ori.var['top_pcs']].copy()
+                else:
+                    adata = adata_ori.copy()
+                if layer is not None:
+                    if layer in adata.layers.keys():
+                        arr_simba = adata.layers[layer]
+                    else:
+                        print(f'`{layer}` does not exist in anndata {i} '
+                              'in `list_PV`.`.X` is being used instead.')
+                        arr_simba = adata.X
+                else:
+                    arr_simba = adata.X
+                if get_marker_significance:
+                    n_nvariants = int(len(ids_variants)*fold_null_nodes)
+                    null_matrix = _randomize_matrix(arr_simba, n_nvariants, method='degPreserving')
+                    null_adata = ad.AnnData(obs=adata.obs, var=df_nvariants, layers={"disc":null_matrix})
+                _row, _col = arr_simba.nonzero()
+                df_edges_x = pd.DataFrame(columns=col_names)
+                df_edges_x['source'] = df_peaks.loc[
+                    adata.obs_names[_row], 'alias'].values
+                df_edges_x['relation'] = f'r{id_r}'
+                df_edges_x['destination'] = df_variants.loc[
+                    adata.var_names[_col], 'alias'].values
+                if add_edge_weights:
+                    df_edges_x['weight'] = \
+                        arr_simba[_row, _col].A.flatten()
+                    settings.pbg_params['relations'].append({
+                        'name': f'r{id_r}',
+                        'lhs': f'{prefix_P}',
+                        'rhs': f'{prefix_V}',
+                        'operator': 'none',
+                        'weight': 0.2
+                        })
+                else:
+                    settings.pbg_params['relations'].append({
+                        'name': f'r{id_r}',
+                        'lhs': f'{prefix_P}',
+                        'rhs': f'{prefix_V}',
+                        'operator': 'none',
+                        'weight': 0.2
+                        })
+                dict_graph_stats[f'relation{id_r}'] = {
+                    'source': prefix_P,
+                    'destination': prefix_V,
+                    'n_edges': df_edges_x.shape[0]}
+                print(
+                    f'relation{id_r}: '
+                    f'source: {prefix_P}, '
+                    f'destination: {prefix_V}\n'
+                    f'#edges: {df_edges_x.shape[0]}')
+
+                id_r += 1
+                df_edges = pd.concat(
+                    [df_edges, df_edges_x],
+                    ignore_index=True)
+                adata_ori.obs['pbg_id'] = ""
+                adata_ori.var['pbg_id'] = ""
+                adata_ori.obs.loc[adata.obs_names, 'pbg_id'] = \
+                    df_peaks.loc[adata.obs_names, 'alias'].copy()
+                adata_ori.var.loc[adata.var_names, 'pbg_id'] = \
+                    df_variants.loc[adata.var_names, 'alias'].copy()
+                if get_marker_significance:
+                    _col, _row = null_matrix.transpose().nonzero()
+                    df_edges_x = pd.DataFrame(columns=col_names)
+                    df_edges_x['destination'] = df_peaks.loc[
+                        null_adata.obs_names[_row], 'alias'].values
+                    df_edges_x['relation'] = f'r{id_r}'
+                    df_edges_x['source'] = df_nvariants.loc[
+                        null_adata.var_names[_col], 'alias'].values
+                    df_edges_x['weight'] = \
+                        null_matrix.transpose()[_col, _row].A.flatten()
+                    settings.pbg_params['relations'].append({
+                        'name': f'r{id_r}',
+                        'lhs': f'n{prefix_P}',
+                        'rhs': f'{prefix_V}',
+                        'operator': 'none',
+                        'weight': 1.0,
+                        })
+                    print(
+                        f'relation{id_r}: '
+                        f'source: n{prefix_P}, '
+                        f'destination: {prefix_V}\n'
+                        f'#edges: {df_edges_x.shape[0]}')
+                    dict_graph_stats[f'relation{id_r}'] = {
+                        'source': f'n{prefix_P}',
+                        'destination': prefix_V,
+                        'n_edges': df_edges_x.shape[0]}
+                    id_r += 1
+                    df_edges = pd.concat(
+                        [df_edges, df_edges_x],
+                        ignore_index=True)
+                    
+        if list_VI is not None:
+            for i, adata_ori in enumerate(list_VI):
+                adata = adata_ori.copy()
+                if layer is not None:
+                    if layer in adata.layers.keys():
+                        arr_simba = adata.layers[layer]
+                    else:
+                        print(f'`{layer}` does not exist in anndata {i} '
+                              'in `list_VI`.`.X` is being used instead.')
+                        arr_simba = adata.X
+                else:
+                    arr_simba = adata.X
+                _row, _col = arr_simba.nonzero()
+                df_edges_x = pd.DataFrame(columns=col_names)
+                df_edges_x['source'] = df_variants.loc[
+                    adata.obs_names[_row], 'alias'].values
+                df_edges_x['relation'] = f'r{id_r}'
+                df_edges_x['destination'] = df_individuals.loc[
+                    adata.var_names[_col], 'alias'].values
+                if add_edge_weights:
+                    df_edges_x['weight'] = \
+                        arr_simba[_row, _col].A.flatten()
+                    settings.pbg_params['relations'].append({
+                        'name': f'r{id_r}',
+                        'lhs': f'{prefix_V}',
+                        'rhs': f'{prefix_I}',
+                        'operator': 'none',
+                        'weight': 0.2
+                        })
+                else:
+                    settings.pbg_params['relations'].append({
+                        'name': f'r{id_r}',
+                        'lhs': f'{prefix_V}',
+                        'rhs': f'{prefix_I}',
+                        'operator': 'none',
+                        'weight': 0.2
+                        })
+                dict_graph_stats[f'relation{id_r}'] = {
+                    'source': prefix_V,
+                    'destination': prefix_I,
+                    'n_edges': df_edges_x.shape[0]}
+                print(
+                    f'relation{id_r}: '
+                    f'source: {prefix_V}, '
+                    f'destination: {prefix_I}\n'
+                    f'#edges: {df_edges_x.shape[0]}')
+
+                id_r += 1
+                df_edges = pd.concat(
+                    [df_edges, df_edges_x],
+                    ignore_index=True)
+                adata_ori.obs['pbg_id'] = ""
+                adata_ori.var['pbg_id'] = ""
+                adata_ori.obs.loc[adata.obs_names, 'pbg_id'] = \
+                    df_variants.loc[adata.obs_names, 'alias'].copy()
+                adata_ori.var.loc[adata.var_names, 'pbg_id'] = \
+                    df_individuals.loc[adata.var_names, 'alias'].copy()
+        
+        if list_PG is not None:
+            for i, adata_ori in enumerate(list_PG):
+                if use_top_pcs:
+                    adata = adata_ori.copy()
+                if layer is not None:
+                    if layer in adata.layers.keys():
+                        arr_simba = adata.layers[layer]
+                    else:
+                        print(f'`{layer}` does not exist in anndata {i} '
+                              'in `list_PG`.`.X` is being used instead.')
+                        arr_simba = adata.X
+                else:
+                    arr_simba = adata.X
+                _row, _col = arr_simba.nonzero()
+                df_edges_x = pd.DataFrame(columns=col_names)
+                df_edges_x['destination'] = df_genes.loc[
+                    adata.var_names[_col], 'alias'].values
+                df_edges_x['relation'] = f'r{id_r}'
+                df_edges_x['source'] = df_peaks.loc[
+                    adata.obs_names[_row], 'alias'].values
+                if add_edge_weights:
+                    df_edges_x['weight'] = \
+                        arr_simba[_row, _col].A.flatten()
+                    settings.pbg_params['relations'].append({
+                        'name': f'r{id_r}',
+                        'lhs': f'{prefix_P}',
+                        'rhs': f'{prefix_G}',
+                        'operator': 'none',
+                        'weight': 0.2
+                        })
+                else:
+                    settings.pbg_params['relations'].append({
+                        'name': f'r{id_r}',
+                        'lhs': f'{prefix_P}',
+                        'rhs': f'{prefix_G}',
+                        'operator': 'none',
+                        'weight': 0.2
+                        })
+                dict_graph_stats[f'relation{id_r}'] = {
+                    'source': prefix_P,
+                    'destination': prefix_G,
+                    'n_edges': df_edges_x.shape[0]}
+                print(
+                    f'relation{id_r}: '
+                    f'source: {prefix_P}, '
+                    f'destination: {prefix_G}\n'
+                    f'#edges: {df_edges_x.shape[0]}')
+
+                id_r += 1
+                df_edges = pd.concat(
+                    [df_edges, df_edges_x],
+                    ignore_index=True)
+                adata_ori.obs['pbg_id'] = ""
+                adata_ori.var['pbg_id'] = ""
+                adata_ori.obs.loc[adata.obs_names, 'pbg_id'] = \
+                    df_peaks.loc[adata.obs_names, 'alias'].copy()
+                adata_ori.var.loc[adata.var_names, 'pbg_id'] = \
+                    df_genes.loc[adata.var_names, 'alias'].copy()
 
         if list_CG is not None:
             for i, adata_ori in enumerate(list_CG):
